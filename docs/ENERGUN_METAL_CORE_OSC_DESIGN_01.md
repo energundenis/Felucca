@@ -149,3 +149,8 @@ Approval freezes this design direction, not unverified DSP details. No engine re
 ## Source-correction notice (2026-10-31)
 
 This document is superseded by OSC_DESIGN_02_V98_FAITHFUL.md. The v98 source proves that OSC2 is a direct-audio source, while a separate wcMod oscillator performs Complex FM/AM; wcMMod, wcRingOsc, and wcRing2Osc are also separate sources. Do not implement the earlier OSC2-as-FM-modulator architecture.
+
+
+## Superseded
+
+Use OSC_DESIGN_02_V98_FAITHFUL.md. The v98 source shows that OSC2 is direct audio and wcMod is a separate FM/AM oscillator.
