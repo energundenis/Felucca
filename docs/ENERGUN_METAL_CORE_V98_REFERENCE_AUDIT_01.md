@@ -60,11 +60,28 @@ The core reference values remained FREQ 160, METAL RATIO 4.20, TIMBRE 0, DRIVE 0
 
 A separate v99 filter experiment was also described as changing the v98 single 12 dB/oct low-pass into two serial low-pass biquads (24 dB/oct) with softer nonlinear Q scaling. Treat that as a separate experiment, not as part of the protected v98 architecture.
 
-## 4. WAVEFOLDER control inventory — still unverified for v98
+## 4. WAVEFOLDER control inventory — verified directly in v98
 
-The v104 prototype shows a dedicated WAVEFOLDER with FOLD, SYMMETRY, DRIVE, MODULE VOLUME, and SOFT / CLASSIC / HARD mode. This is useful later-version evidence only.
+The exact v98 HTML is now available in the project Library and has been inspected.
 
-No prior conversation record recovered the exact v98 WAVEFOLDER control labels, order, numeric ranges, or default values. Do not assert that v104's UI is identical to v98. The v98 HTML source is still required to freeze the exact control map.
+The dedicated WAVEFOLDER module contains, in order:
+
+1. FOLD — blend between the unprocessed input and the second-stage folded transfer; range 0..1; default 0.25.
+2. SYMMETRY — shifts the second-stage transfer curve; range -1..1; default 0.
+3. DRIVE — pre-fold gain inside the second-stage transfer; range 0..1; default 0.20.
+4. MODULE VOLUME — second-stage output level; range 0..1; default 1.
+5. MODE selector — SOFT / CLASSIC / HARD; default CLASSIC.
+
+The two-stage structure is confirmed:
+- Stage 1 is the fixed wcShaper reflection curve, generated over x=-2..+2 with up to four reflections. Its input gain is controlled by TIMBRE (1 + TIMBRE × 6); TIMBRE is not the same control as the WAVEFOLDER DRIVE.
+- Stage 2 is wcFolder2Shaper, with the adjustable FOLD / SYMMETRY / DRIVE transfer curve and 4× oversampling.
+- A unity-gain stage sits between the two shapers.
+- MODULE VOLUME is after the second shaper.
+- Pre-fold and post-fold scopes are visual monitors, not additional DSP stages.
+
+The separate WEST COAST DRIVE control is also not the same as WAVEFOLDER DRIVE: it scales the FM amount and the METAL FM contribution through wcDrv(). Keep these three controls distinct: TIMBRE (stage-1 input gain), WEST COAST DRIVE (FM scaling), and WAVEFOLDER DRIVE (stage-2 fold drive).
+
+The v98 source therefore confirms the exact WAVEFOLDER control labels, order, ranges, defaults, modes, and two-stage structure. The v104 evidence is no longer needed to establish this part of the design.
 
 ## 5. FOLLOW and METAL behavior
 
