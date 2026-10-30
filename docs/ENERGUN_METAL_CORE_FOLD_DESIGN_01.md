@@ -106,3 +106,12 @@ Do not add an automatic limiter or gain control merely to conceal an unstable tr
 This document restores the original prototype's control roles and routing. It is a source-based reconstruction of the browser implementation, not proof that its floating-point/Web Audio transfer curve is already suitable for the FM-1 fixed-point target.
 
 DSP implementation remains blocked until the transfer-curve port and engine integration are audited and agreed.
+
+
+## 9. FM-1 preset and modulation-routing decision
+
+**Approved decision:** use Felucca's existing preset/project system to save and recall ENERGUN METAL CORE sounds. Do not introduce a separate ENERGUN preset manager in this phase.
+
+**Approved non-goal:** do not port the browser prototype's standalone PATCH BAY as a separate FM-1 feature in the initial implementation. References above to the prototype's FOLD CV patch-bay route are historical source-analysis notes only; they are not an approved FM-1 requirement.
+
+The initial FM-1 scope is the Metal Core voice and its explicitly approved controls/modulation behavior, integrated into Felucca's existing part, sequencer, modulation, effects, and preset/project architecture. Any later request for additional user-configurable patch routing requires a separate design and approval.
