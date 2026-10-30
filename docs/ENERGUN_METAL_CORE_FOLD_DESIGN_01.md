@@ -1,137 +1,108 @@
 # ENERGUN METAL CORE — FOLD DESIGN 01
 
-**Status:** Draft for user review — not yet approved for DSP implementation  
+**Status:** Corrected draft for user review — not approved for DSP implementation  
 **Target branch:** `energun-metal-core`  
-**Scope:** FOLD stage and the independent FOLLOW / METAL enable controls
+**Source references inspected:** ENERGUN West Coast v99 and v104 prototypes; v105 is the protected preferred baseline.
 
-## 1. Design intent
+## 1. Important architectural correction
 
-The FOLD stage must extend the established ENERGUN METAL CORE voice without replacing its existing identity. The reference character is a weighty, usable metal bass/lead with a stable low-frequency foundation and controllable upper harmonics.
+FOLLOW is **not part of WAVEFOLDER** and must not be placed on the FOLD page.
 
-The first implementation must prioritize:
-- stable bass fundamentals;
-- gradual, musically useful harmonic growth;
-- no uncontrolled high-frequency whistle, crackle, clicks, or harsh overload;
-- predictable behavior across low, middle, and high registers;
-- smooth parameter changes and safe signal headroom.
+In the original ENERGUN Metal Core / West Coast prototype, FOLLOW is a sequencer-note tracking function:
+- the sequencer sends a step object to the voice trigger;
+- when FOLLOW is ON, the voice calculates oscillator frequency from the step's note and octave data;
+- when the step has a valid note, semitone transposition and note octave are applied to the base frequency;
+- otherwise the step's octave offset is used;
+- the resulting frequency is applied to the main oscillators and related modulation/ring oscillator frequency sources.
 
-This document defines a conservative control and integration contract. It does **not** claim that the exact original Metal Core transfer function has already been recovered or implemented.
+When FOLLOW is OFF, this per-step pitch-following update is skipped. It does not bypass or alter the Wavefolder.
 
-## 2. Signal-chain position
+This behavior is visible in the original `wcTrig(p)` implementation in v99. It must be ported as sequencer-to-voice pitch tracking, not reinterpreted as an envelope follower, CV follower, or waveshaper control.
 
-Approved high-level chain:
+METAL is also separate from WAVEFOLDER. In the original trigger path it independently enables the metal-related frequency-ratio updates (including the METAL RATIO relationship). Do not merge its state or processing with FOLLOW or FOLD.
 
-`OSCILLATORS → FM → FOLD → LPG → OUTPUT`
+## 2. Recovered WAVEFOLDER structure
 
-FOLD receives the combined oscillator/FM signal and passes its processed result to LPG. The exact oscillator mix point and internal fixed-point scaling must be confirmed during the DSP source audit before coding.
+The v104 prototype defines a dedicated WAVEFOLDER module with the following controls:
 
-FOLD must not be confused with:
-- the PHASE engine's existing E7 fold parameter;
-- Felucca's global/insert FX fold effect.
+| Original control | Actual role in the prototype |
+|---|---|
+| FOLD | Blend / amount of the folding transfer curve |
+| SYMMETRY | Offset of the transfer curve around its center |
+| DRIVE | Pre-fold input gain into the nonlinear transfer |
+| MODULE VOLUME | Output level of the Wavefolder module |
 
-Those are separate existing features and must remain untouched.
+The prototype also has a discrete **MODE** selector:
+- **SOFT** — softer folding transfer;
+- **CLASSIC** — original folding transfer;
+- **HARD** — more intense folding transfer.
 
-## 3. FOLD page controls
+The original code constructs a waveshaping curve and applies the selected transfer. The SOFT path uses a repeated reflection fold followed by a tanh softening curve. CLASSIC and HARD use repeated reflection folding with different drive and symmetry scaling and different reflection limits. The final output blends the unprocessed input and folded signal according to FOLD amount.
 
-Proposed four primary controls:
+The module includes pre-fold and post-fold waveform scopes. These are visual monitors, not extra audio-processing stages.
 
-| Control | Purpose | Initial implementation constraint |
-|---|---|---|
-| FOLD | Main waveshaping amount | Start at neutral; bounded, monotonic control response; no abrupt gain jump |
-| BIAS | Symmetry / harmonic-balance offset | Center position is neutral; bounded around neutral |
-| DRIVE | Level entering the nonlinear stage | Conservative range; must not be used as an uncontrolled output-volume boost |
-| TONE | Post-fold spectral tilt / brightness | Neutral center; must not create narrow resonant peaks or self-oscillation |
+Therefore the recovered first-pass control set is **FOLD / SYMMETRY / DRIVE / MODULE VOLUME + MODE**. The previous proposal of BIAS and TONE was not recovered from the reference and is withdrawn.
 
-These are functional descriptions, not a commitment to a specific waveshaper, transfer curve, or numeric range. The final numeric mapping depends on the fixed-point engine conventions and headroom audit.
+## 3. Sequencer interaction with FOLD
 
-### Neutral state
+FOLD can receive sequencer-synchronous modulation independently of FOLLOW.
 
-The neutral FOLD state must be effectively transparent: no unintended gain change, DC offset, or audible coloration when FOLD is at minimum and BIAS is centered. DRIVE and TONE must also have documented neutral positions.
+In v99, the sequencer trigger reads the step's `foldMod` value and combines it with the motion-fold contribution, scaled by the master modulation depth. That temporary value is added to the base FOLD amount, clamped to the valid 0–1 range, and the waveshaper curve is refreshed. The temporary step contribution is then cleared after the step gate interval.
 
-The FOLD stage must not silently normalize or compensate the user's level in a way that changes the established voice balance.
+The patch-bay destination **FOLD CV** is another separate modulation route into the fold input-gain control. It is not FOLLOW.
 
-## 4. FOLLOW and METAL switches
+These mechanisms must remain distinct:
+- FOLLOW: sequencer note/octave → oscillator pitch tracking;
+- step FOLD modulation: sequencer step data → temporary FOLD amount movement;
+- FOLD CV: patch-bay modulation source → fold input gain;
+- METAL: independent metal-related oscillator/modulator ratio behavior.
 
-FOLLOW and METAL remain independent ON/OFF controls on the FOLD page.
+## 4. Signal-chain position
 
-### Required behavior
+The approved high-level voice chain remains:
 
-- Each switch has its own persistent state.
-- OFF bypasses only the contribution associated with that switch.
-- OFF must not clear, overwrite, or reset any associated parameter value.
-- Turning ON restores processing using the retained value.
-- Switching must not produce clicks, discontinuities, stuck state, or a sudden level jump.
-- UI state must visibly distinguish ON from OFF.
-- FOLLOW must not implicitly switch METAL, and METAL must not implicitly switch FOLLOW.
+`OSCILLATORS → FM → WAVEFOLDER → LPG → OUTPUT`
 
-### DSP definition still required
+The exact mix/tap points and fixed-point scaling for the FM-1 implementation must be confirmed against the Felucca engine architecture before coding. Do not use the PHASE engine's E7 fold parameter or Felucca's FX insert fold as a substitute for this dedicated Metal Core module.
 
-The exact signal tap, control source, transfer function, and parameter set for FOLLOW have not yet been specified. The exact processing role and transfer function for METAL have not yet been specified either.
+## 5. Porting requirements
 
-Do not infer these algorithms from their names, and do not substitute a generic envelope follower or generic metallic waveshaper without approval. Before implementation, define each feature's:
-1. input/tap point;
-2. control or modulation source, if any;
-3. processing operation;
-4. exposed parameter(s);
-5. neutral and bypass behavior;
-6. smoothing and transition behavior;
-7. expected audible result and regression tests.
+- Preserve the recovered controls and their meanings: FOLD, SYMMETRY, DRIVE, MODULE VOLUME, MODE.
+- Preserve the SOFT / CLASSIC / HARD distinction unless a later listening test demonstrates a concrete reason to change it.
+- Preserve the separate FOLLOW sequencer pitch-tracking function.
+- Preserve independent METAL behavior and METAL RATIO.
+- Keep step-synchronous FOLD modulation separate from FOLLOW.
+- Keep the FOLD CV patch route separate from FOLLOW.
+- Do not introduce a new TONE control or rename SYMMETRY to BIAS without explicit approval.
+- Do not change the protected v105 reference prototype.
 
-Until those definitions are approved, the switches are an interface/state contract only; they are not permission to invent DSP behavior.
+## 6. Stability and validation requirements
 
-## 5. Stability and signal-integrity requirements
+The browser prototype uses Web Audio's WaveShaper and oversampling. That implementation cannot be copied literally into Felucca's fixed-point audio engine. The transfer curves must be ported deliberately using Felucca's actual numeric conventions, CPU budget, and audio block behavior.
 
-The implementation must be designed around the existing Felucca fixed-point audio path and its actual numeric conventions.
+Required checks:
+- transparent/neutral baseline and output-level consistency;
+- low, middle, and high register sweeps;
+- FOLD / SYMMETRY / DRIVE interaction in each mode;
+- no unwanted whistle, crackle, clicks, or abrupt level changes;
+- safe signal headroom and bounded internal values;
+- smooth updates when sequencer step FOLD modulation changes;
+- FOLLOW ON/OFF changes pitch tracking only, never FOLD behavior;
+- METAL ON/OFF changes only the metal-related contribution;
+- CPU and fixed-point headroom measured on target hardware.
 
-Required safeguards to investigate and specify before implementation:
-- bounded internal signal levels at every nonlinear stage;
-- explicit headroom budget before and after waveshaping;
-- DC-offset control where the chosen algorithm requires it;
-- parameter smoothing or block-safe interpolation;
-- safe handling of extreme parameter combinations;
-- no denormal/undefined arithmetic assumptions imported from floating-point desktop DSP;
-- no allocation, blocking, or unbounded work in the audio interrupt;
-- no new clipping stage hidden behind the DRIVE control.
+Do not add an automatic limiter or gain control merely to conceal an unstable transfer curve.
 
-Do not add a limiter or automatic gain control merely to conceal an unstable transfer function. Any output-level compensation must be measured, documented, and separately approved.
+## 7. Explicit non-goals
 
-## 6. Proposed test sequence
-
-1. **Transparent baseline:** FOLD neutral/bypassed; verify the existing oscillator/FM signal remains unchanged in level and character.
-2. **Amount sweep:** raise FOLD slowly at low, middle, and high notes; check harmonic growth and bass retention.
-3. **Bias sweep:** test both sides of center at restrained FOLD values; check DC offset, asymmetry, and level jumps.
-4. **Drive sweep:** test only after the internal headroom budget is measured; reject settings that create uncontrolled harshness.
-5. **Tone sweep:** verify smooth spectral change without narrow whistling peaks.
-6. **Switch matrix:** FOLLOW and METAL independently ON/OFF in all four combinations; verify retained values and no clicks.
-7. **Register and sequence tests:** sustained low notes, high notes, fast note changes, and repeated sequences.
-8. **Regression with FM:** repeat the tests with FM amount at zero and at several moderate values, including the approved 4.20:1 ratio landmark.
-9. **Resource checks:** measure target CPU load and worst-case fixed-point headroom on the actual target, not only in the host golden-render harness.
-
-## 7. Acceptance criteria
-
-FOLD DESIGN 01 can move to implementation only after the user approves the control behavior and the unresolved FOLLOW/METAL definitions are settled.
-
-A DSP build is not accepted until:
-- neutral FOLD preserves the established clean baseline;
-- the low-frequency foundation remains usable as harmonics increase;
-- no unwanted whistle, crackle, clicks, or abrupt level jumps are heard;
-- FOLLOW and METAL operate independently and retain values while OFF;
-- all tests pass on the target hardware with adequate CPU and numeric headroom.
-
-## 8. Explicit non-goals for this revision
-
-- No changes to Felucca's existing PHASE engine or FX fold effect.
-- No new oscillator, noise source, hard sync, ring modulation, or unison.
-- No speculative implementation of FOLLOW or METAL.
-- No DSP source changes in this design-document commit.
+- No changes to Felucca's existing PHASE engine or FX insert fold.
+- No generic envelope follower under the name FOLLOW.
+- No merging of FOLLOW, METAL, step FOLD modulation, or FOLD CV.
+- No DSP source changes in this design-document correction.
 - No firmware flashing.
 
-## 9. Decisions needed for approval
+## 8. Approval boundary
 
-Please review these points:
-1. Are FOLD, BIAS, DRIVE, and TONE the right four controls for the FOLD page?
-2. Should the FOLD amount control begin with a very restrained range, expanding only after listening tests?
-3. What should FOLLOW actually track or respond to in the established Metal Core design?
-4. What is the intended audible role of METAL, distinct from ordinary FOLD amount?
+This document restores the original prototype's control roles and routing. It is a source-based reconstruction of the browser implementation, not proof that its floating-point/Web Audio transfer curve is already suitable for the FM-1 fixed-point target.
 
-Items 3–4 are intentionally left open rather than guessed.
+DSP implementation remains blocked until the transfer-curve port and engine integration are audited and agreed.
