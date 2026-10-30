@@ -110,3 +110,8 @@ Validation sequence:
 ## Parameter-storage correction (2026-10-31)
 
 The earlier suggestion to squeeze the four LPG controls into the eight engine EDIT values is not the preferred route. The engine ABI's E0–E7 values are already persisted, but the dedicated OSC / FM / FOLD / LPG / VOICE pages may require additional common `P_MC_*` parameter IDs. The current FUN10 project object has no complete spare per-track parameter slot, so those IDs require the proposed project sidecar described in `docs/ENERGUN_METAL_CORE_PARAMETER_STORAGE_PLAN_01.md`. The four LPG controls remain independent; do not collapse them into a macro without explicit approval. This is a storage design proposal, not implementation approval.
+
+
+## Superseded
+
+Use LPG_DESIGN_02_V98_FAITHFUL.md. The v98 LPG has RESPONSE, DECAY and MODULE VOLUME; CUTOFF and RESONANCE belong to the separate main filter.
