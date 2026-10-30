@@ -21,27 +21,36 @@ This behavior is visible in the original `wcTrig(p)` implementation in v99. It m
 
 METAL is also separate from WAVEFOLDER. In the original trigger path it independently enables the metal-related frequency-ratio updates (including the METAL RATIO relationship). Do not merge its state or processing with FOLLOW or FOLD.
 
-## 2. Recovered WAVEFOLDER structure
+## 2. Recovered WAVEFOLDER structure — verified in v98
 
-The v104 prototype defines a dedicated WAVEFOLDER module with the following controls:
+The exact v98 HTML directly confirms the dedicated WAVEFOLDER module and its controls:
 
-| Original control | Actual role in the prototype |
-|---|---|
-| FOLD | Blend / amount of the folding transfer curve |
-| SYMMETRY | Offset of the transfer curve around its center |
-| DRIVE | Pre-fold input gain into the nonlinear transfer |
-| MODULE VOLUME | Output level of the Wavefolder module |
+| Control | Range | v98 default | Actual role |
+|---|---:|---:|---|
+| FOLD | 0..1 | 0.25 | Blend between the unprocessed input and the second-stage folded transfer |
+| SYMMETRY | -1..1 | 0 | Offset of the second-stage transfer curve |
+| DRIVE | 0..1 | 0.20 | Pre-fold gain inside the second-stage nonlinear transfer |
+| MODULE VOLUME | 0..1 | 1 | Output level after the second-stage wavefolder |
 
-The prototype also has a discrete **MODE** selector:
-- **SOFT** — softer folding transfer;
-- **CLASSIC** — original folding transfer;
-- **HARD** — more intense folding transfer.
+The discrete MODE selector has three choices and defaults to CLASSIC:
+- SOFT — repeated reflection fold followed by a tanh softening curve;
+- CLASSIC — repeated reflection fold with the classic drive/symmetry scaling;
+- HARD — stronger drive/symmetry scaling and more reflection iterations.
 
-The original code constructs a waveshaping curve and applies the selected transfer. The SOFT path uses a repeated reflection fold followed by a tanh softening curve. CLASSIC and HARD use repeated reflection folding with different drive and symmetry scaling and different reflection limits. The final output blends the unprocessed input and folded signal according to FOLD amount.
+### Two-stage signal structure
 
-The module includes pre-fold and post-fold waveform scopes. These are visual monitors, not extra audio-processing stages.
+1. **Stage 1 — wcShaper:** fixed reflection curve generated over x = -2..+2, with up to four reflections. Its input gain is controlled by TIMBRE (1 + TIMBRE × 6). TIMBRE is not the WAVEFOLDER DRIVE control.
+2. **Interstage gain:** unity gain in the v98 reference.
+3. **Stage 2 — wcFolder2Shaper:** adjustable transfer curve controlled by FOLD, SYMMETRY, DRIVE, and MODE. This second stage uses 4× oversampling.
+4. **MODULE VOLUME:** applied after Stage 2.
+5. **PRE-FOLD / POST-FOLD scopes:** visual monitors only; they are not extra DSP stages.
 
-Therefore the recovered first-pass control set is **FOLD / SYMMETRY / DRIVE / MODULE VOLUME + MODE**. The previous proposal of BIAS and TONE was not recovered from the reference and is withdrawn.
+There are three distinct controls that must not be conflated:
+- TIMBRE — stage-1 input gain;
+- WEST COAST DRIVE — scales the FM amount and METAL FM contribution through wcDrv();
+- WAVEFOLDER DRIVE — stage-2 fold drive.
+
+The previous proposal of BIAS and TONE was not recovered from the reference and remains withdrawn.
 
 ## 3. Sequencer interaction with FOLD
 
