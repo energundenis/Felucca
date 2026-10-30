@@ -144,3 +144,8 @@ The following is approved as the OSC architecture baseline:
 - preserve the established ENERGUN METAL CORE sonic identity, especially the role of FM, FOLD, FOLLOW, and METAL.
 
 Approval freezes this design direction, not unverified DSP details. No engine registration, UI integration, or firmware flashing is authorized by this document alone.
+
+
+## Source-correction notice (2026-10-31)
+
+This document is superseded by OSC_DESIGN_02_V98_FAITHFUL.md. The v98 source proves that OSC2 is a direct-audio source, while a separate wcMod oscillator performs Complex FM/AM; wcMMod, wcRingOsc, and wcRing2Osc are also separate sources. Do not implement the earlier OSC2-as-FM-modulator architecture.
