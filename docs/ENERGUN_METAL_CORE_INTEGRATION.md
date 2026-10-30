@@ -19,26 +19,27 @@ Status: initial source audit; no DSP or UI behavior changed in this commit.
 5. Engine IDs are append-only because presets, projects, and the editor protocol store them. The current build has optional SLICE and ADPCM engines; METAL CORE's numeric ID and conditional-build behavior must be designed so existing IDs never shift.
 6. `voice.c` renders engines in the audio ISR. DSP changes must be bounded, fixed-point, block-aware, and measured against the target CPU budget.
 7. `tests/regress.c` and the existing host test harness provide golden audio renders, clipping/DC/tail checks, voice lifecycle checks, and CPU budget checks. A new engine needs dedicated coverage; golden data must only be updated after reviewing intended sound changes.
-8. The existing `P_E0..P_E7` slots are the engine's eight editable values. The agreed FOLLOW and METAL ON/OFF switches must preserve their associated parameter values while bypassing only the corresponding processing. Their storage/UI representation still needs a deliberate design; do not silently repurpose unrelated Felucca parameters or the PHASE engine's E7 FOLD.
+8. The existing `P_E0..P_E7` slots are the engine's eight editable values. FOLLOW and METAL are independent ON/OFF controls in the **OSCILLATORS / SYNTH VOICE** block. Their storage/UI representation must preserve associated parameter values while OFF; do not silently repurpose unrelated Felucca parameters or the PHASE engine's E7 FOLD.
 
 ## Agreed product constraints
 
 - METAL CORE is our own custom engine. Felucca is the firmware base, not the source of the METAL CORE sound design.
 - Initial METAL CORE target is monophonic, with stereo output through Felucca's existing signal path.
 - Keep Felucca's MIDI, sync, effects, mixer, presets/projects, and four-part architecture.
-- FOLLOW and METAL remain on the FOLD page as independent ON/OFF controls. OFF bypasses the corresponding processing but retains its setting; ON restores it.
+- FOLLOW and METAL are displayed in the **OSCILLATORS / SYNTH VOICE** block, not on the FOLD page. FOLLOW OFF bypasses sequencer pitch tracking while retaining base FREQ; METAL OFF bypasses the additional METAL FM and Ring Modulation contributions while retaining METAL RATIO / METAL DECAY values.
+- Preserve the reference behavior: METAL ON also selects its METAL-specific trigger attack/decay behavior. Do not add a new DSP algorithm or change the agreed sound architecture.
 - Do not alter other engines, pages, or global behavior as a shortcut.
 - Do not flash the FM-1 until hardware revision, reproducible build, and recovery path are verified.
 
 ## Integration sequence
 
 1. Confirm submodule checkout/build reproducibility and inspect the exact engine build/test inclusion points.
-2. Define METAL CORE's DSP state, parameter mapping, note lifecycle, block processing, memory requirement, and CPU budget.
+2. Complete the reference-derived DSP/control map: oscillator destinations, FOLLOW pitch-tracking behavior, METAL FM/Ring Mod tap points, trigger envelope selection, parameter scaling, retained OFF-state values, and memory/CPU requirements.
 3. Resolve append-only engine ID handling with optional SLICE/ADPCM builds.
 4. Implement the engine in isolated source files and register it without modifying existing engines' DSP.
-5. Add engine-specific host tests and CPU measurements; run the full regression suite.
+5. Add engine-specific host regression tests and CPU measurements; run the full regression suite.
 6. Port the FMini-1-inspired UI patterns into Felucca's four-part UI without enabling its single-track-only application mode.
-7. Add FOLLOW/METAL switches with persistent, value-preserving OFF behavior.
+7. Add FOLLOW/METAL switches in the **OSCILLATORS / SYNTH VOICE** block with persistent, value-preserving OFF behavior.
 8. Build and verify the package and recovery route before any hardware installation.
 
 ## Explicit non-goals for this audit commit
