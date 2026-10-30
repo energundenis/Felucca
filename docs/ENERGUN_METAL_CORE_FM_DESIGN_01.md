@@ -1,6 +1,6 @@
 # ENERGUN METAL CORE — FM design 01
 
-Status: **design proposal for approval**. This document defines the intended FM behavior and parameter semantics. It does not implement DSP, change engine registration, or claim target performance.
+Status: **APPROVED BASELINE — compatible with the established METAL CORE direction**. This freezes the FM design direction, not completed DSP or proven target performance.
 
 ## 1. Design objective
 
@@ -24,7 +24,7 @@ For the first digital implementation, use phase modulation (PM) as the practical
 - Modulation is audio-rate, not a low-rate control update.
 - Do not add a third hidden modulator.
 
-This choice is deliberate: a phase-offset implementation provides predictable digital behavior and avoids directly accumulating modulator values into OSC 1's phase increment. UI terminology remains FM to match the instrument design.
+This choice is deliberate: a phase-offset implementation provides a bounded, practical digital approach and avoids directly accumulating modulator values into OSC 1's phase increment. PM and every form of true FM are not sonically identical in all conditions; the mapping must be evaluated against METAL CORE reference patches and recalibrated if listening tests show a mismatch. UI terminology remains FM to match the instrument design.
 
 Conceptual path:
 
@@ -42,8 +42,8 @@ The final order of direct OSC 2 mixing relative to the FOLD input must be confir
 
 - Ratio is a frequency multiplier for the modulator relative to the carrier's note frequency.
 - OSC 2 coarse and fine tuning apply as an additional pitch offset to the modulator; ratio remains an independent multiplier.
-- Proposed continuous range: 0.5:1 to 8.0:1.
-- Proposed default: 4.20:1, preserving the previously useful METAL CORE ratio reference.
+- Approved continuous range: 0.5:1 to 8.0:1.
+- Approved default: 4.20:1, preserving the previously useful METAL CORE ratio reference.
 - Provide stable musical landmarks around 0.5, 1.0, 2.0, 3.0, 4.0, and 4.2; the control may remain continuous between them.
 - The parameter must not jump unpredictably when crossing integer ratios.
 - Ratio changes must be smoothed or phase-increment-ramped to avoid clicks.
@@ -57,7 +57,7 @@ The exact fixed-point conversion and clamping must follow Felucca's pitch / osci
 ## 4. FM AMOUNT (INDEX)
 
 - Range: 0 to a conservative bounded maximum.
-- Default: 0.
+- Approved default: 0.
 - At 0, OSC 1 must be unaffected by FM, regardless of ratio or feedback setting.
 - Increase amount to add sidebands / metallic complexity.
 - Amount must be calibrated in a stable normalized or fixed-point scale, not exposed as an arbitrary unbounded phase offset.
@@ -128,12 +128,15 @@ Validation sequence:
 - Automatic ratio quantization / scale locking.
 - Any change to Felucca's existing engines or global effects.
 
-## 9. Approval required
+## 9. Approved decision
 
-Confirm or revise:
+The following is approved as the FM architecture baseline:
 - OSC 2 phase-modulates OSC 1 at audio rate.
 - Ratio range 0.5:1–8.0:1, default 4.20:1.
 - FM AMOUNT range is conservatively bounded, default 0; exact numeric scale is calibrated during DSP implementation.
 - Feedback acts on OSC 2's own modulator signal, default 0, with topology finalized only after source audit.
 - OSC 2 direct-audio level remains independent and linked between OSC and FM page if shown twice.
 - The existing METAL CORE sound with FM amount 0 remains a valid baseline; FM is an optional extension, not a prerequisite for the core character.
+- Preserve the established METAL CORE identity: solid bass foundation, controlled metallic harmonics, and no unwanted whistles, crackles, or forced acid-like nasal motion.
+
+Approval freezes this design direction, not unverified DSP details. The PM/FM sonic mapping and feedback topology must pass listening and technical validation before being considered complete. No engine registration, UI integration, or firmware flashing is authorized by this document alone.
