@@ -28,7 +28,7 @@ This is a count of independent stored controls, not a proposed ID assignment. To
 5. TIMBRE (first fixed wavefolder-stage input gain).
 6. WEST COAST DRIVE (FM-depth scaling; distinct from folder DRIVE).
 
-### B. Complex FM / AM — 9
+### B. Complex FM / AM — 10
 7. COMPLEX MODE (FM / AM).
 8. MOD RATIO.
 9. MOD OSC WAVE.
