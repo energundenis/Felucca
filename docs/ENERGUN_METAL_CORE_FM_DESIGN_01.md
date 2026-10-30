@@ -140,3 +140,8 @@ The following is approved as the FM architecture baseline:
 - Preserve the established METAL CORE identity: solid bass foundation, controlled metallic harmonics, and no unwanted whistles, crackles, or forced acid-like nasal motion.
 
 Approval freezes this design direction, not unverified DSP details. The PM/FM sonic mapping and feedback topology must pass listening and technical validation before being considered complete. No engine registration, UI integration, or firmware flashing is authorized by this document alone.
+
+
+## Superseded
+
+Use FM_DESIGN_02_V98_FAITHFUL.md. The v98 source has separate MOD RATIO (3.07 default) and METAL RATIO (4.20 default), plus separate wcMod and METAL modulation sources.
