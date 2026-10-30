@@ -115,3 +115,10 @@ DSP implementation remains blocked until the transfer-curve port and engine inte
 **Approved non-goal:** do not port the browser prototype's standalone PATCH BAY as a separate FM-1 feature in the initial implementation. References above to the prototype's FOLD CV patch-bay route are historical source-analysis notes only; they are not an approved FM-1 requirement.
 
 The initial FM-1 scope is the Metal Core voice and its explicitly approved controls/modulation behavior, integrated into Felucca's existing part, sequencer, modulation, effects, and preset/project architecture. Any later request for additional user-configurable patch routing requires a separate design and approval.
+
+
+## 10. Dedicated ENERGUN Patch Manager — phased decision
+
+**Approved first phase:** do not build a separate ENERGUN Patch Manager. Integrate Metal Core with Felucca's existing PRESET / PROJECT system and verify that all required Metal Core sound parameters are saved and recalled correctly.
+
+**Deferred future option:** a dedicated ENERGUN Patch Manager remains technically possible, but is not part of the initial implementation. It may be designed later if practical needs justify it (for example, dedicated sound categories, favorites, renaming, or fast patch browsing). Any such manager requires a separate design, storage-format and compatibility review, and explicit approval before implementation.
