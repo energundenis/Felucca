@@ -81,3 +81,14 @@ Before editing `core.h`, `params.c` or the engine:
 5. Define a migration test: old project + old user preset -> new firmware -> values of old common params and E0..E7 unchanged; new Metal Core params receive defaults; save/reload preserves all new values.
 
 No parameter IDs, pages, DSP, UI or storage formats were changed by this audit. No firmware build, hardware test or flash was performed.
+
+
+## Correction — project persistence capacity (2026-10-31)
+
+The recommendation above to add dedicated common parameter IDs remains valid at the track-model and preset level, but the project-storage consequence needs this correction.
+
+The current FUN10 serializer has only three unused bytes after the MIDI-IN-TRACK metadata. Each new common per-track parameter needs four packed bytes across the four tracks. Therefore a complete additional common parameter does **not** fit in the current 3840-byte FUN10 object. The earlier statement that new IDs can simply be added and migrated in the project format was incomplete.
+
+The preferred direction remains dedicated `P_MC_*` IDs before `P_E0`, not macro compression. If more than the existing eight E values are needed, project persistence requires a separately versioned sidecar that stores the new parameter values and any motion/parameter-lock events referring to those IDs. See `docs/ENERGUN_METAL_CORE_PARAMETER_STORAGE_PLAN_01.md`. This sidecar is a proposal only and must not be implemented until its flash sectors are verified against the user's own full V1.5 dump.
+
+The browser emulator already persists changed sectors from its full 1 MiB NOR image; the required work is sidecar-specific A/B, power-cycle, backup/restore, and corruption testing, not adding a general XDATA persistence allowlist.
