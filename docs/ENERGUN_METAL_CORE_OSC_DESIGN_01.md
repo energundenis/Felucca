@@ -1,6 +1,6 @@
-# ENERGUN METAL CORE — OSC design proposal 01
+# ENERGUN METAL CORE — OSC design 01
 
-Status: **design proposal, not yet frozen**. This document proposes the first oscillator architecture for review. It does not implement DSP or register an engine.
+Status: **APPROVED BASELINE — preserve the METAL CORE sonic identity**. This document records the accepted oscillator architecture. It does not implement DSP or register an engine.
 
 ## 1. Design goal
 
@@ -9,6 +9,8 @@ Build a compact two-oscillator source that can cover:
 - harmonically rich industrial leads;
 - metallic and inharmonic FM textures;
 - restrained detuning and beating without forcing an acid/303-style character.
+
+The oscillator architecture must support the established ENERGUN METAL CORE character. It is not intended to turn the engine into a generic subtractive two-oscillator synth. The defining sound remains the interaction of the oscillator source, FM, FOLD, LPG, and the independent FOLLOW and METAL functions.
 
 Avoid adding a third oscillator, noise generator, unison stack, or sub-oscillator in this first implementation. Keep CPU use and parameter interactions predictable.
 
@@ -37,9 +39,11 @@ Use a deliberately small, useful waveform set:
 - SAW — dense harmonic content.
 - PULSE — hollow / nasal harmonic spectrum.
 
+This set is an initial toolkit, not a replacement for the characteristic METAL CORE sound. The final choice of defaults and any waveform-shaping behavior must be judged against the established metallic bass/lead character. Do not force an acid/303-like nasal slide or excessive high-frequency harshness.
+
 Waveforms should be generated or selected using the project's existing table/generator facilities where practical. Do not introduce expensive per-sample waveform construction in the audio interrupt.
 
-The waveform set is a proposal. Final table formats, interpolation, phase behavior, and anti-aliasing must follow the audited Felucca engine conventions.
+The final table formats, interpolation, phase behavior, and anti-aliasing must follow the audited Felucca engine conventions.
 
 ## 4. Pitch and tuning
 
@@ -57,20 +61,20 @@ The waveform set is a proposal. Final table formats, interpolation, phase behavi
 - OSC 2's FM depth is controlled only on the FM page.
 - OSC 2 direct-audio level at zero must not disable its FM role.
 - FM amount at zero must not mute OSC 2's direct-audio contribution.
-- The mixed oscillator source then feeds FOLD after the FM operation.
+- The oscillator mix feeds the FM/FOLD processing path according to the final DSP graph; the exact operation order must be settled in the FM-stage design before implementation.
 - Normalize / headroom behavior must be deterministic: adding OSC 2 must not unexpectedly double the output level or cause clipping. Use explicit gain staging rather than relying on the final limiter.
 
-Conceptual routing:
+Conceptual roles:
 
 ```text
-OSC 1 ---------------------> (+) -----> FM result -----> FOLD
-                              ^
-OSC 2 direct audio ----------|
-                              |
-OSC 2 FM source ---> FM ------+
+OSC 1 -----------------------> carrier path ----+
+                                                 +--> FM / tone shaping --> FOLD
+OSC 2 --> FM source -----------------------------+
+   |
+   +--> optional direct audio mix -------------->+
 ```
 
-The diagram shows functional roles, not a final implementation graph. The exact modulation operation and placement are specified in the FM design.
+This diagram shows functional roles, not a final implementation graph. The exact modulation operation and placement are specified in the FM design.
 
 ## 6. Proposed OSC page controls
 
@@ -83,18 +87,18 @@ Four primary controls, consistent with the FMini-style four-knob page model:
 | OSC 2 TUNE | Coarse semitone offset | 0 st |
 | OSC 2 LEVEL | Direct audible OSC 2 mix | 0% |
 
-OSC 1 level should be a stable engine parameter with a conservative default and can be exposed in an edit/detail control if the page layout requires it. OSC 2 fine tune and OSC 1 level should not be omitted from the parameter model merely because the four primary knobs are limited.
+OSC 1 level should be a stable engine parameter with a conservative default and can be exposed in an edit/detail control if the page layout requires it. OSC 2 fine tune and OSC 1 level must not be omitted from the parameter model merely because the four primary knobs are limited.
 
-Possible detail controls:
+Detail controls:
 - OSC 1 LEVEL: 0–100%, default 100%.
 - OSC 2 FINE: -50…+50 cents, default 0.
 - OSC 2 TUNE: -24…+24 semitones, default 0.
 
-The UI mapping is provisional pending the full parameter/page design. Do not assume the four-knob page means the engine can store only four parameters.
+The UI mapping is provisional pending the full parameter/page design. Four primary knobs do not limit the number of stored engine parameters.
 
 ## 7. Initial sound-design defaults
 
-Recommended clean starting patch:
+Recommended clean starting patch for isolated oscillator validation:
 - OSC 1: SINE, level 100%.
 - OSC 2: SINE, coarse tune 0, fine tune 0.
 - OSC 2 direct level: 0%.
@@ -102,7 +106,7 @@ Recommended clean starting patch:
 - FOLD: bypassed / neutral during oscillator validation.
 - LPG: neutral / open during oscillator validation.
 
-This makes the first oscillator test easy to diagnose: OSC 1 alone should produce a stable, clean note; OSC 2 direct mix should add a controllable second tone; OSC 2 FM should be tested separately later.
+These are diagnostic defaults only, not the required factory sound or the final METAL CORE preset. Once the oscillator is validated, the characteristic FM/FOLD/FOLLOW/METAL interaction must be restored and tuned as the sound-design target.
 
 ## 8. Validation gates
 
@@ -113,9 +117,10 @@ Before proceeding to FM:
 4. OSC 2 pitch changes affect its direct tone and FM source consistently, while FM ratio remains an independent parameter.
 5. No clicks at note-on/note-off, waveform changes, or tuning changes.
 6. No unexpected clipping or level jump when OSC 2 is blended.
-7. Measure CPU cost on the target hardware; host rendering tests alone do not establish target timing.
+7. The result can reproduce the established METAL CORE bass/lead character after the later FM/FOLD stages are enabled; it must not be judged only as a clean isolated oscillator.
+8. Measure CPU cost on the target hardware; host rendering tests alone do not establish target timing.
 
-## 9. Explicitly out of scope for proposal 01
+## 9. Explicitly out of scope for design 01
 
 - Third oscillator or dedicated sub-oscillator.
 - Noise source.
@@ -128,11 +133,14 @@ Before proceeding to FM:
 
 These can be considered later only if listening tests show a concrete need.
 
-## 10. Decision required before implementation
+## 10. Approved decision
 
-Confirm or revise:
-- two oscillators with OSC 2 serving as both FM source and optional direct-audio source;
-- SINE / TRIANGLE / SAW / PULSE waveform set;
+The following is approved as the OSC architecture baseline:
+- two oscillators, with OSC 2 serving as both the FM source and optional direct-audio source;
+- SINE / TRIANGLE / SAW / PULSE as the initial waveform set;
 - OSC 2 coarse tune ±24 semitones and fine tune ±50 cents;
 - independent OSC 2 direct level and FM amount;
-- no third oscillator, noise, hard sync, ring modulation, or unison in the first version.
+- no third oscillator, noise, hard sync, ring modulation, or unison in the first version;
+- preserve the established ENERGUN METAL CORE sonic identity, especially the role of FM, FOLD, FOLLOW, and METAL.
+
+Approval freezes this design direction, not unverified DSP details. No engine registration, UI integration, or firmware flashing is authorized by this document alone.
