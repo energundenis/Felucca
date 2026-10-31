@@ -271,7 +271,7 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added it to `tests/run_tests.sh` (commit `cfdaec17a76b3ce1457dc928c8361825b342e5b8`).
 - Host tests cover sine and triangle bounds/full scale/DC, polyBLEP saw and 50% pulse bounds/DC, A4 pitch increment, octave ratio and independent phase accumulators.
 - This exercises existing Felucca fixed-point primitives only. It does not implement or register the Metal Core engine and does not claim target aliasing/audio quality.
-- Validation is pending in GitHub Actions run `41162325731` for current HEAD `cfdaec17a76b3ce1457dc928c8361825b342e5b8`; do not mark the harness passed until that run completes.
+- Host validation passed in GitHub Actions run `41203873611` at HEAD `f8511f49e558f1fb470e2cbde0c3b1ad30e039ba`: all oscillator harness checks passed, including the corrected half-scale 50% pulse expectation. This validates the host harness against the pinned Felucca primitives, not target aliasing or a Metal Core render.
 
 
 ## CP1.11 — LPG MODULE VOLUME behavior approved (2026-10-31)
@@ -287,7 +287,7 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 
 - Added `eng_metal_lpg_peak_q15()` in `firmware/src/eng_metal_core_math.h` and host test `tests/metal_core_lpg_test.c`.
 - Tests cover RESPONSE endpoints/midpoint, MODULE VOLUME mute/half/monotonicity, response contour ordering and input clamping.
-- Integrated into `tests/run_tests.sh`. CI validation is pending; do not mark passed until the latest run for the current source revision succeeds.
+- Integrated into `tests/run_tests.sh`. Host validation passed in run `41203873611` at HEAD `f8511f49e558f1fb470e2cbde0c3b1ad30e039ba`: all LPG peak-math tests passed. The helper remains isolated from the engine render path.
 - Math helper is not connected to the engine render callback.
 
 
@@ -297,7 +297,7 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Ported the v98 timing relationships into integer sample counts: LPG attack, gate-limited tail, gain decay time constant, transient filter cutoff, filter return time and filter return time constant.
 - Added `tests/metal_core_lpg_timing_test.c` and integrated it into `tests/run_tests.sh`.
 - The test is host-only and checks schedule math; it does not execute audio-rate envelopes or filter updates, produce reference renders, measure target CPU, or register the engine.
-- CI validation is pending. Do not mark CP2.3 passed until the latest CI run completes successfully.
+- Host validation passed in run `41203873611` at HEAD `f8511f49e558f1fb470e2cbde0c3b1ad30e039ba`: all LPG timing / filter-target math tests passed, including sample-rate conversion and bounds. The helper does not execute an audio-rate filter.
 
 
 ## CP2.4 — isolated sample-by-sample LPG gain envelope (2026-10-31)
@@ -307,4 +307,24 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Coefficient division occurs only at trigger time; the per-sample routine performs no allocation, floating-point operation, table lookup, or division. It uses a 64-bit intermediate for the Q30 multiply; target CPU/instruction cost remains to be measured.
 - Added `tests/metal_core_lpg_env_test.c` and wired it into `tests/run_tests.sh`. Tests cover attack monotonicity/time constant, gate event, decay, idle, retrigger hold, zero gate, peak clamp and null safety.
 - This is a host-testable isolated DSP primitive. It does not implement the LPG filter, host note lifecycle, or complete engine render; it is not included in `engines.c` and does not change engine registration, parameter IDs, UI, storage, package or device state.
-- CI is pending for the current branch revision. Do not mark CP2.4 complete until the relevant CI run succeeds and target cost review is performed.
+- Host validation passed in run `41203873611` at HEAD `f8511f49e558f1fb470e2cbde0c3b1ad30e039ba`: all sample-by-sample LPG envelope tests passed (attack, gate event, decay, idle, retrigger hold, zero gate, clamp and null safety). Target instruction/CPU cost of the 64-bit Q30 multiply remains open; CP2.4 is host-validated, not target-cost-cleared.
+
+
+## CP2 validation update — successful host regression (2026-10-31)
+
+- Current branch HEAD at validation: `f8511f49e558f1fb470e2cbde0c3b1ad30e039ba`.
+- GitHub Actions run [41203873611](https://github.com/energundenis/Felucca/actions/runs/41203873611) completed with conclusion **success**. Target build, `tests/run_tests.sh`, web tests and backup tests all passed.
+- ENERGUN oscillator tests: sine, triangle, polyBLEP saw, 50% pulse, A4 pitch increment, octave ratio and five independent phase accumulators all passed. The 50% pulse test now correctly expects approximately half-scale output from the pinned `osc_pulse()` implementation; no upstream DSP code was changed.
+- ENERGUN LPG peak math, LPG timing/filter-target math, and sample-by-sample LPG envelope tests all passed with zero failures.
+- Build outputs: `felucca.bin` 513,532 bytes; `loader/ota.bin` 7,130 bytes; `felucca.fwsc` 610,286 bytes (identity `FM-1_900`). Artifact ID `13043878389`, 946,537 bytes; [run artifact](https://github.com/energundenis/Felucca/actions/runs/41203873611/artifacts/13043878389).
+- Browser emulator was skipped because Emscripten was not installed; this is a skip, not a pass.
+- CP2.1–CP2.4 now have passing host-test evidence. They are not complete engine DSP: no ENERGUN render callback exists, the LPG filter is not implemented, and target CPU cost / RAM headroom / aliasing measurements remain open. Therefore the broad Phase 2 checkboxes remain open.
+- No firmware was flashed and no physical device was changed.
+
+## CP2.5 — FOLLOW source-provenance audit (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP2_5_FOLLOW_SOURCE_AUDIT.md`.
+- Source inspection found that Felucca currently routes live keyboard/MIDI, arpeggiator and step-sequencer events through the same `trk_note_on()` API; engine callbacks receive no note-origin field.
+- The resolved `vmod_t.inc` pitch also includes host pitch modulation, so simply ignoring it with FOLLOW OFF would incorrectly suppress live performance pitch and unrelated modulation.
+- Proposed a host-owned per-voice provenance contract and deterministic FOLLOW-01..08 acceptance tests. Exact v98 base-frequency mapping and arpeggiator/preview policy remain to be verified.
+- Documentation-only milestone. No host source, shared engine ABI, DSP code, engine registration, IDs, UI, storage, package or device state changed.
