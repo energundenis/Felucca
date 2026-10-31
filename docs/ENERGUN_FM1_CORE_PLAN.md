@@ -534,3 +534,14 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Status: source/test added; CI result pending. VCA-01..VCA-21 are not all proven by this initial test.
 - Remaining before integration: high-precision reference comparison, complete edge-case matrix, manual-mode vs sequencer-mode source mapping, per-voice RAM and target CPU measurements, and decision between sample-domain render multiplication and host `amp()` callback. Do not connect both paths.
 - No device writes/flashing, factory firmware changes, Flash allocation, package changes or `main` branch changes.
+
+
+## CP2.14 — isolated VCA arithmetic and state-size audit (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP2_14_VCA_ARITHMETIC_AUDIT.md`.
+- Quantified the reciprocal/Euler one-pole approximation against `exp(-1)`: relative one-time-constant error is below 0.23% at the shortest in-domain 5 ms time constant and falls below 0.006% for the documented 0.2–0.3 s decay/release cases.
+- The generic tau=1 case converges immediately; this is outside V98's intended operating range because V98 clamps its time constants to at least 5 ms. Callers must preserve that lower bound.
+- Source-level state payload is 33 bytes; expected 32-bit ABI size is 36 bytes (288 bytes for eight voices). Actual AC79 ABI size remains unmeasured.
+- Hot path uses one 64-bit multiply per sample and no float/division/allocation. Theoretical 8-voice/44.1 kHz rate is 352,800 64-bit multiplies/s; this is not a CPU benchmark.
+- Next: add size assertions/diagnostics to host and target build where supported, inspect AC79 generated code, benchmark worst-case render load, then compare render() versus amp() integration. No engine registration or device write is authorized by this audit.
+- CI run 41221213282 completed successfully: firmware baseline build, host regression, web regression and isolated VCA tests passed; VCA reported 0 failures. This does not establish target rendering or hardware validation.
