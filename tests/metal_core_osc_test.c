@@ -71,9 +71,11 @@ static void test_saw_and_pulse(void)
     check("polyBLEP saw: bounded full-scale output and near-zero DC",
           saw_lo >= -32768 && saw_hi <= 32767 && saw_lo < -30000 &&
           saw_hi > 30000 && llabs(saw_sum) < 4 * 1024);
-    check("50% pulse: bounded full-scale output and near-zero DC",
-          pulse_lo >= -32768 && pulse_hi <= 32767 && pulse_lo < -30000 &&
-          pulse_hi > 30000 && llabs(pulse_sum) < 4 * 1024);
+    /* osc_pulse() is the difference of two full-scale saws, divided by
+     * two; its expected 50% pulse level is therefore approximately +/-16384. */
+    check("50% pulse: bounded half-scale output and near-zero DC",
+          pulse_lo >= -32768 && pulse_hi <= 32767 && pulse_lo < -15000 &&
+          pulse_hi > 15000 && llabs(pulse_sum) < 4 * 1024);
 }
 
 static void test_pitch_table(void)
