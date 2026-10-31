@@ -490,3 +490,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - **Resolved V1 default for parameter #12: METALLIC (value 2).** Keep all three modes and their source-defined response curves. Do not edit the original V98 file to remove the static-markup mismatch.
 - Updated [CP1.13 decision record](ENERGUN_METAL_CORE_CP1_13_FM_CHARACTER_STARTUP_DECISION.md) in commit `9b784b609f9203fac2638177cc214b74fa9a9122`.
 - This closes only the FM CHARACTER default decision. CP1 as a whole remains open; source inspection is not physical-device audio validation. No firmware, parameter IDs, UI, storage, Flash, factory firmware, physical FM-1 or `main` branch changed.
+
+## CP1.14 — V98-compatible VCA ownership accepted (2026-10-31)
+
+- The user approved preserving the original V98 amplitude-envelope behavior as the V1 target.
+- Architecture: dedicated engine-owned METAL CORE VCA; Felucca continues to own voice allocation, note/gate delivery, shared voice budgeting and the overall audio path.
+- Do not cascade/multiply Felucca host ADSR with the internal VCA. Host ADSR must not act as a second amplitude envelope for METAL CORE.
+- Preserve V98 Velocity/Accent scaling, METAL fast-Attack behavior, retrigger and Gate-off/Release semantics after exact source tracing and deterministic tests.
+- Keep LPG and FM-index envelopes independent from VCA.
+- Verify the exact Felucca `ownenv=1` / `done()` lifecycle contract before implementation; this is a required API gate, not yet assumed proven.
+- Decision record: [CP1.14 VCA ownership decision](ENERGUN_METAL_CORE_CP1_14_VCA_OWNERSHIP_DECISION.md), commit `90ac36e6ac95df6b7bc2723f4d6d38ec1cc08bae`.
+- This supersedes the earlier CP1.9 recommendation to defer VCA ownership pending comparison. The architecture choice is resolved; exact source math, sample-domain specification, isolated tests, target CPU/RAM and engine integration remain open.
+- No firmware implementation, engine registration, parameter IDs, storage/Flash changes, package, factory firmware, physical FM-1 state or `main` branch changed.
