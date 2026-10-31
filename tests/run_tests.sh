@@ -476,7 +476,7 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "ENERGUN METAL CORE: LPG timing and filter target math (host-only)" "$OUT/metal_core_lpg_timing_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_lpg_env_test" tests/metal_core_lpg_env_test.c
     run "ENERGUN METAL CORE: sample-by-sample LPG envelope (host-only)" "$OUT/metal_core_lpg_env_test"
-    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_vca_test" tests/metal_core_vca_test.c
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_vca_test" tests/metal_core_vca_test.c -lm
     run "ENERGUN METAL CORE: sample-by-sample VCA (host-only; CP1.16 short-Gate priority)" "$OUT/metal_core_vca_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_follow_test" tests/metal_core_follow_test.c -lm
     run "ENERGUN METAL CORE: FOLLOW fixed-point pitch mapping and source selector (host-only)" "$OUT/metal_core_follow_test"
