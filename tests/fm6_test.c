@@ -234,7 +234,31 @@ static void envelopes(void)
         printf("fm6: envelope: attack to L1 in %u / %u / %u blocks (rates 60 / 80 / 99), L1 reached at block %u\n",
                tl[0], tl[1], tl[2], t_l1);
     }
-    {   /* a percussive patch held: the voice ends once its carriers are silent, the key still down */
+    {
+        /* An engine-owned release must outlive the unrelated host ADSR release. */
+        static const int R_LONG[4] = {99, 99, 99, 0}, L_LONG[4] = {99, 99, 99, 0};
+        init_patch(base);
+        op_set(base, 1, R_LONG, L_LONG, 99, 1);
+        for (i = 2; i <= 6u; i++)
+            op_set(base, i, Z, LZ, 0, 1);
+        setup(base, 0);
+        trk[0].p[P_REL] = 127;                           /* fastest host release */
+        trk_note_on(&trk[0], 60, 100);
+        n = fm6_note_of(&trk[0], &trk[0].v[0]);
+        for (i = 0; i < FS / 10u / CTL; i++) {
+            static int32_t b[CTL];
+            track_render(&trk[0], b, CTL);
+        }
+        trk_note_off(&trk[0], 60);
+        for (i = 0; i < 8u; i++) {
+            static int32_t b[CTL];
+            track_render(&trk[0], b, CTL);
+        }
+        check("ownenv: engine-controlled release outlives the fastest host ADSR release",
+              trk[0].v[0].active && n->live && !n->down && n->env[5].ix == 3u);
+    }
+    {
+        /* a percussive patch held: the voice ends once its carriers are silent, the key still down */
         static const int RP[4] = {99, 70, 99, 60}, LP[4] = {99, 0, 0, 0};
         init_patch(base);
         op_set(base, 1, RP, LP, 99, 1);
