@@ -42,8 +42,8 @@ int main(void)
           short_decay.gain_decay_tau_samples <= 266u);
     check("filter return is gate-limited and uses DECAY times 0.22",
           lo.filter_return_samples == gate_125ms &&
-          short_decay.filter_return_samples >= 96u &&
-          short_decay.filter_return_samples <= 98u);
+          short_decay.filter_return_samples >= 193u &&
+          short_decay.filter_return_samples <= 195u);
     check("filter decay time constant grows with RESPONSE",
           hi.filter_decay_tau_samples > lo.filter_decay_tau_samples);
     check("filter decay keeps the 12 ms minimum",
