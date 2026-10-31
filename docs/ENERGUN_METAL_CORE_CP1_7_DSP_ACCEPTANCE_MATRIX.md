@@ -179,3 +179,17 @@ The LPG semantic decision is no longer open. User approval is recorded in CP1.11
 | LPG-13 | Sample-rate conversion | 44.1/48 kHz and edge rates | timing remains within one sample of rounded reference schedule |
 
 The isolated timing helper currently computes these targets and sample counts. It does not yet execute a per-sample envelope, filter coefficient update, or render audio. The corresponding host test is `tests/metal_core_lpg_timing_test.c`.
+
+
+## LPG sample-envelope verification — CP2.4
+
+| ID | Test | Stimulus | Acceptance |
+|---|---|---|---|
+| LPG-14 | Sample-by-sample attack | zero-to-peak, RESPONSE endpoints | monotonic bounded Q15 output; one-pole attack uses the scheduled time constant |
+| LPG-15 | Gate event | short/long gate and DECAY | attack target changes to the near-zero floor exactly at the scheduled gate-limited tail sample |
+| LPG-16 | Exponential decay | low/high DECAY and RESPONSE | bounded one-pole decay; reaches silence and returns to idle without hanging |
+| LPG-17 | Retrigger / cancel-and-hold | retrigger during attack and decay | current level is retained; no reset-to-zero discontinuity; new peak/timing takes effect |
+| LPG-18 | Zero-length gate and zero peak | edge events | immediate decay, no stuck attack state, no negative or out-of-range level |
+| LPG-19 | Per-sample safety | long deterministic runs and extreme values | no overflow, allocation, floating point, or division in sample loop |
+
+Implementation: `firmware/src/eng_metal_core_lpg.h`. Host regression: `tests/metal_core_lpg_env_test.c`. The one-pole coefficient uses Q30 and is calculated at trigger time; the sample loop uses bounded integer arithmetic. Its Q30 multiply currently uses a 64-bit intermediate; target instruction cost must be measured before engine integration. This module remains isolated and is not registered or connected to a render callback.
