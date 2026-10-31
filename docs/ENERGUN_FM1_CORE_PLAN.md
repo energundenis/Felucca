@@ -443,3 +443,11 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Cache key includes OS and full commit SHA, so SDK revisions cannot be silently mixed.
 - SDK cache is saved independently before firmware compilation. Build source, firmware logic, package identity and device state are unchanged.
 - Validation pending in the CI run triggered by this workflow update.
+
+## Plan freeze — user confirmation (2026-10-31)
+
+- The user confirmed this complete ENERGUN FM-1 CORE implementation plan as the working roadmap.
+- The roadmap remains phased: CP0 baseline; CP1 METAL CORE V1 specification; CP2 isolated DSP; CP3 Felucca engine integration; CP4 FM-1 interface; CP5 ENERGUN sequencer; CP6 optimization/regression; CP7 packaging and physical-device validation.
+- Immediate execution order is unchanged: (1) obtain and inspect fresh CI for the latest FOLLOW adapter/test commit; (2) verify the pinned AC79 SDK in CI; (3) close the remaining CP1 specification decisions, including the 37-control inventory, signal flow, parameter persistence/sidecar and memory/resource budgets; (4) continue isolated DSP implementation and tests; (5) integrate only after the relevant gates pass.
+- This confirmation freezes the roadmap, not the implementation status: no phase or checkbox is marked complete solely by this approval. Existing evidence and open gates above remain authoritative.
+- Safety boundary reaffirmed: do not modify `main`, do not overwrite known-good milestones, do not flash the FM-1, and do not alter factory firmware. Physical-device work requires a separate explicit go/no-go approval after package and recovery verification.
