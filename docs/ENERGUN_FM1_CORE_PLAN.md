@@ -31,7 +31,9 @@ Sound-engine direction: ENERGUN METAL CORE V1
 ## Audit update — 2026-10-31
 
 - The exact working-branch HEAD is `4ea3ed85877a8a7f241ecfdb5c9604686309a0c8`; the comparison baseline on `main` is `65b21d344fca68bd4bbc1eb24d7b90edfbe98200`.
-- The separate DSP prototype branch is not merged. Its reports describe successful host-side subsystem tests and syntax-only checking of `engines.c`, but explicitly do not establish a full JieLi target firmware build, target CPU/RAM measurements, or physical FM-1 validation.
+- The separate DSP prototype branch is not merged. Its reports describe successful host-side subsystem tests and syntax-only checking of `engines.c`; GitHub Actions runs 41155060811, 41155691495, 41156380647, 41157732492, and 41158153324 were independently checked and all completed successfully. These checks do not establish a full JieLi target firmware build, target CPU/RAM measurements, or physical FM-1 validation.
+- The integration audit records Felucca-Engines pin `d0260074ce100a47675814b7f38d61f11176c926` and felucca-bsp pin `5942e68b89ab9ccd23f2c541d712ca38fe635f11`; both commit objects exist in their respective upstream repositories. The actual local submodule checkout state still needs verification on the development Mac.
+- macOS build prerequisites are documented: Docker Desktop, Python 3 with Pillow/fontTools, JieLi pi32v2 toolchain, and AC79 SDK. `build.sh` checks for the toolchain, SDK, Pillow, and a running Docker service. The target toolchain/SDK are external dependencies and have not been verified on the user's Mac.
 - The approved FOLLOW/METAL UI placement is OSCILLATORS / SYNTH VOICE. Any older FOLD-page wording in scaffold comments or this plan is stale and must not guide UI implementation.
 - No firmware source has been changed during this audit. No cherry-pick, engine registration, firmware build, or device write has been performed.
 
@@ -41,7 +43,7 @@ Sound-engine direction: ENERGUN METAL CORE V1
 - [x] Record the exact HEAD SHA of `energun-metal-core`: `4ea3ed85877a8a7f241ecfdb5c9604686309a0c8` (2026-10-31 audit).
 - [x] Compare ancestry and changed files with `main` and the separate DSP-stage branch; the working branch is 77 commits ahead of `main` and 0 behind it.
 - [x] Inventory DSP code: the working branch contains only the unregistered scaffold. A separate branch, `metal-core-dsp-stage1-osc` (HEAD `cf22f01b23f618feda65ccde85b0503fccacc7b0`), contains OSC/FM/feedback prototypes, per-part state, an unregistered callback adapter, tests, and stage reports. It has diverged from `energun-metal-core` (86 commits on its side and 1 commit on the working-branch side after their merge base); none of that implementation is present in the working branch. No cherry-pick/port has been performed.
-- [ ] Verify the checked-out `firmware/engines` and `firmware/bsp` submodule SHAs against the intended pins. Repository docs identify the submodules and macOS build prerequisites; actual local checkout verification remains pending.
+- [ ] Verify the checked-out `firmware/engines` and `firmware/bsp` submodule SHAs against the intended pins. The expected commit objects exist upstream; actual local checkout verification remains pending.
 - [ ] Build unmodified Felucca from this branch on the development Mac.
 - [ ] Record baseline test results, firmware size, RAM use, and CPU/audio-render budget.
 - Exit criteria: reproducible clean baseline build and an evidence-based branch/code inventory.
