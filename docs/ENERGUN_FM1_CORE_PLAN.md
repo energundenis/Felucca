@@ -204,3 +204,14 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Confirmed METAL ring is post-VCA amplitude modulation, not a pre-folder oscillator mix. METAL RATIO controls both METAL FM and ring oscillator frequencies.
 - Confirmed deferred RING2 is a separate branch with a stage-1 tap and folder-output dry path, rejoining at main filter; it is not the METAL ring path.
 - Added gain/headroom regression requirements for fixed-point port. No DSP code, parameter IDs, engine registration, storage, Flash or hardware changes.
+
+
+## CP1.7 — DSP acceptance matrix (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_7_DSP_ACCEPTANCE_MATRIX.md` (commit `462d2a2e40a384820183ebbe989387cf8b15ec3b`).
+- Defined layered evidence: static/contract, deterministic DSP unit, host engine integration, target build/disassembly cost, and physical FM-1 validation. These layers are not interchangeable.
+- Added test IDs for oscillator pitch/FOLLOW, Complex FM/AM/feedback, METAL FM and post-VCA ring, two-stage fold and gain staging, main filter/LPG/VCA, host lifecycle, additive stereo rendering, numerical health, CPU and memory.
+- Required deterministic fixture renders with source revision, sample rate, block size, event sequence, parameter snapshot, output hash, peak/RMS/DC and tolerances.
+- Recorded current status honestly: existing scaffold test checks only isolation; ENERGUN DSP and host integration tests do not yet exist; no render symbol is present for target budget; physical tests not started.
+- Flagged unresolved LPG MODULE VOLUME source-semantics conflict between CP1.5 and LPG design 02 as an explicit blocker for the LPG-03 expected result.
+- No DSP, engine registration, parameter IDs, storage, Flash or device changes.
