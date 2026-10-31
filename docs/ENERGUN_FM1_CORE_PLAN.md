@@ -421,3 +421,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Defined PERFORMANCE / SEQUENCER+FOLLOW ON / SEQUENCER+FOLLOW OFF behavior and safety/index checks.
 - Added test gates for real host pitch tables, all MIDI notes, glide and pitch modulation, lifecycle, target CPU and Nyquist.
 - Documentation only; adapter code/render integration remains pending. CP2.11 CI run `41210894867` is still running at source HEAD `d12d7a3f3eccedf6e347e66a1b68a00aad07631a`.
+
+
+## CP2.11 / CP2.12 adapter implementation update (2026-10-31)
+
+- Corrected the synthetic CP2.11 MIDI endpoint fixtures: MIDI 0 = 1/32 C4; MIDI 127 = approximately 47.9458× C4, not 24×.
+- Added `eng_metal_core_follow_host.h`, an isolated host adapter using per-voice source tags, actual `pitch_inc()` reference/target increments at `FS`, and final `vmod_t.inc`.
+- Included the adapter header in the firmware translation unit after `dsp.c`; no registered engine calls it, so there is no audio/runtime behavior change.
+- Added host adapter tests against Felucca's generated pitch table for all MIDI notes 0..127, monotonicity, source/FOLLOW combinations, host pitch offset retention and invalid inputs.
+- Target CPU cost of 64-bit division and render integration remain open gates.
+- CP2.12 implementation CI pending.

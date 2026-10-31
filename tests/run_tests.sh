@@ -478,6 +478,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "ENERGUN METAL CORE: sample-by-sample LPG envelope (host-only)" "$OUT/metal_core_lpg_env_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_follow_test" tests/metal_core_follow_test.c -lm
     run "ENERGUN METAL CORE: FOLLOW fixed-point pitch mapping and source selector (host-only)" "$OUT/metal_core_follow_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_follow_host_test" tests/metal_core_follow_host_test.c
+    run "ENERGUN METAL CORE: host FOLLOW adapter with real Felucca pitch table (host-only)" "$OUT/metal_core_follow_host_test"
     # SLICE is in the standard build (firmware/src/core.h): its test always runs (after #22 by andreahaku)
     if grep -q '^#define SLC_BREAK_BPM ' build/gen/felucca_samples.h; then
         mkdir -p build/slice_demo

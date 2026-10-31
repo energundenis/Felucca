@@ -3,6 +3,7 @@
 /* Engine table (order = PRESETS browsing order and the engine numbers of the editor protocol), the
  * factory patterns (SAVE > PHRASES) and the parts' sounds at power-on. */
 #include "../engines/src/dsp.c"   /* Felucca-Engines (MIT): the shared DSP blocks */
+#include "eng_metal_core_follow_host.h" /* isolated host pitch/source adapter; not called by an engine yet */
 
 /* The parts' engine memory (1.5): a part plays one engine at a time, so the engines with large per-part state
  * (engine_t.mem: PHYS's slots, GRAIN's grains and index, DRUM's lanes, FM6's notes, SLICE's reverse windows)

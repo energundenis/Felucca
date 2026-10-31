@@ -140,14 +140,14 @@ static void test_host_pitch_delta(void)
 
 
     got = eng_metal_follow_host_phase_inc(base, 48000u, 1, 1,
-                                           reference, 31250u, 31250u);
+                                           reference, 62500u, 62500u);
     check("MIDI 0 endpoint maps below C4 without octave clamp",
           got == 31250u);
 
     got = eng_metal_follow_host_phase_inc(base, 48000u, 1, 1,
-                                           reference, 48000000u, 48000000u);
+                                           reference, 95891653u, 95891653u);
     check("MIDI 127 endpoint maps above C4 without octave clamp",
-          got == 48000000u);
+          near_u32(got, 47945826.0, 2.0));
 
     check("zero sample rate produces no phase increment",
           eng_metal_follow_host_phase_inc(base, 0u, 1, 1,

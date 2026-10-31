@@ -60,3 +60,7 @@ No engine registration, parameter ID, UI, preset/storage layout, package, factor
 ## CP2.12 host adapter audit note
 
 The follow-on host adapter contract is documented in `docs/ENERGUN_METAL_CORE_CP2_12_HOST_FOLLOW_ADAPTER_CONTRACT.md`. It uses the host-owned per-voice source tag, `v->note` as the target note, and final `m->inc` as the numerator. Source audit confirms `m->inc` already includes residual fine pitch and modulation-matrix pitch. A wrapper must validate the voice index and use the same generated `pitch_inc()` table / `FS` as the host. 64-bit division cost remains unmeasured and is a hard gate before audio-callback integration.
+
+## Endpoint fixture correction
+
+The synthetic MIDI endpoint fixtures were corrected to use the proper ratios relative to C4: MIDI 0 is 1/32 of C4; MIDI 127 is approximately 47.9458× C4 (67 semitones above), not 24×. Real-table endpoint and monotonicity coverage is added separately in CP2.12 host-adapter tests.

@@ -2,7 +2,7 @@
 
 Date: 2026-10-31
 Branch: `energun-metal-core`
-Status: source-audited integration contract; implementation not yet connected.
+Status: isolated host adapter implemented and compiled; render callback integration and CI validation pending.
 
 ## 1. Host facts verified
 
@@ -62,3 +62,21 @@ All pitch increments must come from the same generated Felucca pitch table / sam
 ## 5. Scope boundary
 
 CP2.12 defines the host adapter only. It does not register Metal Core, add UI or parameter IDs, change preset/storage, package firmware or write to the FM-1. CP2.11 CI is still pending; no claim of render integration is made.
+
+
+## 6. CP2.12 adapter implementation
+
+Added `firmware/src/eng_metal_core_follow_host.h` and included it after Felucca's shared DSP table setup in `engines.c`. The static inline adapter:
+- validates non-null host inputs;
+- derives the voice index under Felucca's documented render callback guarantee that `v` belongs to `t->v[]`;
+- reads `t->voice_source[index]` and rejects unknown tags;
+- obtains C4 and target-note increments from the actual generated `pitch_inc()` table at `FS`;
+- passes the host's final `m->inc` to the CP2.11 ratio mapper.
+
+The helper is compiled into the firmware translation unit but is not called by any registered engine/render callback. It therefore has no runtime/audio effect yet.
+
+Added `tests/metal_core_follow_host_test.c`, compiled against Felucca's actual generated tables. It checks all MIDI notes 0..127 for monotonicity and agreement with `pitch_inc()`, both source classes, FOLLOW ON/OFF, low register, retained host pitch offset, unknown source and null inputs.
+
+The CP2.11 synthetic endpoint fixtures were corrected: MIDI 0 uses 1/32 of C4; MIDI 127 uses approximately 47.9458× C4.
+
+CI validation pending. The adapter's 64-bit division remains a target CPU-cost gate before it may be called from render.
