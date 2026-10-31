@@ -296,3 +296,15 @@ This is bounded-loop evidence for the candidate ring at nominal 44.1 kHz, not pr
 3. the full engine state and fixed-point gain path pass target-side overflow and clipping tests.
 
 No production DSP, engine registration, parameter map, persistence, audio graph, hardware access, or firmware flashing was changed by this regression increment.
+
+
+## 18. AC79 compile-only feedback arithmetic probe (2026-11-01)
+
+Added `tests/metal_core_feedback_delay_target_probe.c` and wired it into the full baseline workflow's pinned AC79 pi32v2 compile step. It emits three noinline symbols for:
+- fractional ring interpolation read;
+- signed Q15 feedback gain multiplication using an int64 intermediate;
+- ring write.
+
+The workflow archives the target object disassembly and symbol table alongside the existing VCA probes. It checks that all three probe symbols are present. This is a repeatable target-compiler/code-generation inspection gate; it does not run on FM-1 hardware, link into firmware, measure ISR wall-clock timing, or prove a full-engine CPU budget. Inspect the archived disassembly for helper calls (especially 64-bit multiply support) and instruction count before deciding whether the production feedback multiplier should remain 64-bit or be redesigned.
+
+The probe reuses the host-only candidate ring header strictly for compile-time arithmetic inspection. It is not included by production source and does not authorize integration.
