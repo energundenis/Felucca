@@ -1,0 +1,121 @@
+# ENERGUN FM-1 CORE — Implementation Plan
+
+Status: planning baseline (2026-10-31)
+Repository: `energundenis/Felucca`
+Working branch: `energun-metal-core`
+Target hardware: M-VAVE FM-1
+Firmware foundation: Felucca
+Sound-engine direction: ENERGUN METAL CORE V1
+
+## Project boundaries and safety
+
+- This is a standalone FM-1 firmware project.
+- Do not mix this work with ENERGUN SYNTH LAB, browser-based Metal Core prototypes, or other ENERGUN projects.
+- Do not modify `main` as part of this work.
+- Preserve the factory firmware and the ability to return to it. No device flashing until the build, package, recovery path, and hardware test plan are verified.
+- Keep each working milestone in a separate commit; do not overwrite known-good milestones.
+- The selected direction is Option A: Felucca as the firmware foundation, FMini-1 as the interface reference, and ENERGUN METAL CORE V1 as the sound-engine design target.
+
+## Verified repository state at plan creation
+
+- The `energun-metal-core` branch exists.
+- `firmware/src/eng_metal_core.c` is currently an isolated integration scaffold.
+- Its source comment explicitly says it is not included by `engines.c`, exports no functions or symbols, and is not a playable registered engine.
+- The scaffold records pending work: parameter map and signal-flow agreement; oscillator/FM/fold/LPG implementation; note lifecycle and block rendering; host regression tests and CPU baseline; append-only engine registration and UI pages.
+- The scaffold specifies an initial monophonic voice mode, additive rendering into the host mix, host-provided stereo path, bounded fixed-point DSP, and per-part memory constraints.
+- FOLLOW and METAL are specified as independent ON/OFF controls on the FOLD page. OFF must bypass only its own processing stage while retaining its amount/value.
+- No project-specific document at `docs/ENERGUN_FM1_CORE.md` was found on this branch at audit time.
+- Do not treat DSP Stage 1/2/3 as integrated or complete based only on references to commits or other branch names. Their presence and ancestry must be verified before relying on them.
+- No successful full firmware build or physical-device test of ENERGUN METAL CORE is established by this plan.
+
+## Implementation plan
+
+### Phase 0 — Branch, source, and build audit
+- [ ] Record the exact HEAD SHA of `energun-metal-core`.
+- [ ] Compare its ancestry and changed files with the agreed baseline commit and any DSP-stage branches/commits.
+- [ ] Identify which DSP code is actually present on this branch; cherry-pick or port only after reviewing diffs and licences.
+- [ ] Verify `firmware/engines` and `firmware/bsp` submodules and required toolchain/SDK.
+- [ ] Build unmodified Felucca from this branch on the development Mac.
+- [ ] Record baseline test results, firmware size, RAM use, and CPU/audio-render budget.
+- Exit criteria: reproducible clean baseline build and an evidence-based branch/code inventory.
+
+### Phase 1 — Sound-engine specification
+- [ ] Write and approve the METAL CORE V1 signal-flow diagram.
+- [ ] Define the eight engine edit parameters (P_E0..P_E7), ranges, units, defaults, and UI labels.
+- [ ] Define how FOLLOW and METAL toggles retain their associated values without consuming ambiguous parameter slots.
+- [ ] Define note/retrigger/legato behavior and the initial monophonic voice contract.
+- [ ] Define fixed-point formats, headroom, clipping policy, and CPU/RAM budgets.
+- Exit criteria: reviewed parameter map and signal-flow specification before DSP implementation.
+
+### Phase 2 — DSP primitives in isolation
+- [ ] Implement and test oscillator core and waveform generation.
+- [ ] Implement FM operators/routing and modulation depth.
+- [ ] Implement wavefolder and level/headroom management.
+- [ ] Implement LPG response and decay behavior.
+- [ ] Implement FOLLOW processing as a separately bypassable stage.
+- [ ] Implement METAL processing as a separately bypassable stage.
+- [ ] Implement feedback only after its routing, stability limits, delay memory, and CPU cost are specified.
+- [ ] Add parameter smoothing and safe bounds where needed.
+- [ ] Add deterministic host-side tests and reference renders for each primitive.
+- Exit criteria: isolated DSP tests pass; no uncontrolled feedback, invalid arithmetic, or unexplained clipping; measured resource use is within budget.
+
+### Phase 3 — Engine lifecycle and Felucca integration
+- [ ] Implement the Felucca engine interface using its documented track/voice/modulation types and allocator.
+- [ ] Implement note-on, note-off, retrigger, voice reset, and block rendering.
+- [ ] Render additively into the host mix; do not overwrite it.
+- [ ] Keep stereo in the host's existing part/mix path unless the host contract requires otherwise.
+- [ ] Fit persistent per-part state within ENG_MEM_PART and use only permitted per-voice state.
+- [ ] Add engine registration using a new append-only engine ID; do not renumber existing engines.
+- [ ] Add regression tests for coexistence with existing engines and parts.
+- Exit criteria: engine is registered, selectable, produces audio, and passes host regression tests.
+
+### Phase 4 — FM-1 interface
+- [ ] Implement the engine pages with FMini-1 as the interaction/layout reference.
+- [ ] Map all eight edit parameters to the physical controls and display.
+- [ ] Add independent FOLLOW and METAL switches on the FOLD page, retaining their amounts when OFF.
+- [ ] Implement navigation, value display, and settings persistence.
+- [ ] Test every control on the browser/emulator where applicable and on the physical FM-1.
+- Exit criteria: all controls operate predictably and saved settings restore correctly.
+
+### Phase 5 — Sequencer integration
+- [ ] Port/adapt the agreed ENERGUN sequencer design to Felucca's timing and input architecture.
+- [ ] Implement 16 steps and note data.
+- [ ] Implement ACCENT and agreed step parameters.
+- [ ] Implement constrained randomization, preserving step ON/OFF and ACCENT as specified.
+- [ ] Implement FOLLOW behavior as defined for this project.
+- [ ] Synchronize to internal and external MIDI clock.
+- [ ] Test sequencing and live playing together without timing drift or audio dropouts.
+- Exit criteria: repeatable 16-step playback and reliable clock synchronization on FM-1.
+
+### Phase 6 — Optimization and regression
+- [ ] Measure CPU at realistic voice/part counts and worst-case modulation.
+- [ ] Measure RAM and per-part engine memory.
+- [ ] Test clipping/headroom, denormals/undefined behavior, feedback stability, and parameter changes during playback.
+- [ ] Run the full Felucca test suite and all new ENERGUN tests.
+- [ ] Run long-duration playback and stress tests.
+- Exit criteria: documented passing tests and resource budgets with no known critical audio faults.
+
+### Phase 7 — Packaging and physical-device validation
+- [ ] Produce a clearly labelled experimental build separate from factory firmware.
+- [ ] Verify package format, target size, checksums, and loader compatibility.
+- [ ] Document and verify the recovery/return-to-factory procedure before flashing.
+- [ ] Install only after explicit go/no-go review.
+- [ ] Test audio output, controls, display, MIDI, sequencer, save/load, reboot, and long-run stability.
+- Exit criteria: documented successful physical FM-1 test and verified recovery route.
+
+## Milestones and required evidence
+
+| Milestone | Required evidence |
+| --- | --- |
+| CP0 — Baseline | branch SHA, dependency/toolchain inventory, clean build, baseline metrics |
+| CP1 — DSP specification | approved signal flow and parameter map |
+| CP2 — DSP primitives | host tests, reference renders, CPU/RAM measurements |
+| CP3 — Integrated engine | engine registration, audio render, regression results |
+| CP4 — Interface | FM-1 control map and device test results |
+| CP5 — Sequencer | 16-step and MIDI-clock test results |
+| CP6 — Release candidate | full test report, resource report, package and recovery verification |
+| CP7 — Device validation | physical FM-1 test report |
+
+## Working rule
+
+Do not mark a checkbox complete based on an intended design, a source comment, or a test from another branch. Mark it complete only when the relevant code is present on `energun-metal-core` and the stated evidence is available. Update this document in the same milestone commit as the implementation it describes.
