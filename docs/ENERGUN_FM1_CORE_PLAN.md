@@ -611,3 +611,11 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - This is isolated model/API work only. It does not yet dispatch MIDI or sequencer events, connect `voice_t.gate` to VCA, or prove sample-accurate Note Off. Current host interface still implies block-boundary Gate observation.
 - CI verification is pending; do not count CP2.20 as passed until the latest branch workflow completes.
 - Accent provenance remains unresolved; no velocity heuristic is introduced. No engine registration, parameter/UI/storage/Flash/package/device changes; no flashing; `main` and factory firmware untouched.
+## CP2.21 — Accent provenance source audit (2026-10-31)
+
+- Confirmed the sequencer stores synth-step Accent explicitly in `SF_ACCENT`; lane-hit Accent is separately stored in `step_t.acc`. `seq_step()` currently collapses synth Accent into velocity 127, which loses provenance.
+- Confirmed the host already stores note provenance in `track_t.voice_source[]` and `mono_source[]`; `voice_t` ABI need not change. Pending engine-switch notes use `xp_note[]` (bit 7 source) and `xp_vel[]` (velocity 0..127).
+- Proposed, not yet implemented, metadata: source bit 0 remains performance/sequencer; bit 1 represents explicit Accent; pending-note queue could preserve Accent in the unused high bit of `xp_vel[]` while keeping velocity in 7 bits. METAL CORE would read the voice metadata at `note_on()` rather than infer Accent from velocity.
+- Audit record: [CP2.21 Accent provenance transport audit](ENERGUN_METAL_CORE_CP2_21_ACCENT_PROVENANCE_AUDIT.md), commit `8d1801c4c81b88932481b7effd47710cb83bceb0`.
+- Before implementation, test poly isolation, mono/legato fallback, unison, retrigger, engine-switch queue, note-off removal, sequencer ratchets/ties/preview, ordinary MIDI velocity 127, and unchanged `track_t` size/alignment. No `voice_t` ABI, project/Flash format, parameter/UI or device changes are proposed.
+- CP2.21 is source audit/design only. Accent transport is not yet implemented or approved; no production VCA integration or engine registration. No flashing; `main` and factory firmware untouched.
