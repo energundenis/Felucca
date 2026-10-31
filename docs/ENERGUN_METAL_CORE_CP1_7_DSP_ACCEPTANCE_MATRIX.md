@@ -193,3 +193,33 @@ The isolated timing helper currently computes these targets and sample counts. I
 | LPG-19 | Per-sample safety | long deterministic runs and extreme values | no overflow, allocation, floating point, or division in sample loop |
 
 Implementation: `firmware/src/eng_metal_core_lpg.h`. Host regression: `tests/metal_core_lpg_env_test.c`. The one-pole coefficient uses Q30 and is calculated at trigger time; the sample loop uses bounded integer arithmetic. Its Q30 multiply currently uses a 64-bit intermediate; target instruction cost must be measured before engine integration. This module remains isolated and is not registered or connected to a render callback.
+
+## VCA — V98-compatible amplitude envelope (CP1.14 / CP1.15)
+
+Architecture decision: engine-owned VCA, `ownenv=1`; no host ADSR × internal VCA cascade. The VCA follows the equations and source-derived defaults in `ENERGUN_METAL_CORE_CP1_15_VCA_SOURCE_SPEC.md`. These are planned acceptance tests; none is claimed as implemented until a test executable and evidence exist.
+
+| ID | Test | Stimulus | Acceptance |
+|---|---|---|---|
+| VCA-01 | Normal Attack | METAL OFF; ATTACK min/default/max; peak target | Monotonic rise; fixed-point output bounded; curve matches V98 one-pole reference within declared tolerance |
+| VCA-02 | METAL fast Attack | METAL ON; varied ATTACK values | Effective attack remains 2 ms regardless of ATTACK control |
+| VCA-03 | Normal / METAL Decay selection | METAL OFF/ON; vary DECAY and METAL DECAY independently | Correct decay control selected; Attack/Decay segment start and tau match source equations |
+| VCA-04 | Sustain target | SUSTAIN 0, mid, max; LEVEL and velocity corners | Target equals max(0.0001, LEVEL × SUSTAIN × velocity × accent factor), within quantization tolerance |
+| VCA-05 | Velocity scaling | velocity absent, 0, 0.1, 0.8, 1.0, >1 | Absent defaults to 0.8; supplied values clamp to 0.1..1.0; peak and sustain scale correctly |
+| VCA-06 | Accent scaling | Accent OFF/ON at velocity/LEVEL corners | Peak factor 1.18 and sustain factor 1.08; no arithmetic overflow or unintended clipping |
+| VCA-07 | Release | Short/long Gate; RELEASE min/default/max | Release starts at the source-defined Gate event; target 0.0001 and tau max(5 ms, RELEASE/3) |
+| VCA-08 | Retrigger during Attack | New trigger before Attack completes | Current level held; stale events cancelled; no discontinuity or stale target |
+| VCA-09 | Retrigger during Decay/Sustain | New trigger during Decay and steady Sustain | Current level held; new peak/decay schedule applied without click |
+| VCA-10 | Retrigger during Release / ratchets | Trigger while Release is active; repeated subdivisions | Current level held and envelope retriggered; no unexpected silence or peak jump |
+| VCA-11 | Short Gate / long Attack ordering | Gate shorter than max(5 ms, Attack) | Explicit compatibility rule selected and tested; no accidental post-release re-opening |
+| VCA-12 | Zero Sustain | SUSTAIN=0 with short/long Gate | Target remains the V98 floor 0.0001; no stuck voice |
+| VCA-13 | Manual mode | Sequencer mode OFF; WC ON/OFF; LEVEL min/default/max | Constant LEVEL behavior matches V98; sequencer-triggered envelope is not accidentally applied |
+| VCA-14 | Sequencer mode | Sequencer mode ON; note/rest/probability/ratchet patterns | VCA is silent between triggers and follows the per-step contour |
+| VCA-15 | Felucca ownenv lifecycle | Host ADSR varied while engine VCA fixed | Host ADSR does not multiply amplitude; host velocity is not applied a second time; engine VCA owns level |
+| VCA-16 | done() / release completion | Release completion around CTL block boundary | Voice remains allocated until VCA is silent; no early reuse, stuck active voice or audible click |
+| VCA-17 | Note transitions / legato | Gate held, Gate off, overlapping note, retrigger | Behavior matches the approved FM-1 mapping for sequencer and manual modes |
+| VCA-18 | Voice stealing / engine switch | Steal during each VCA phase; switch engine after fade | Per-voice state is safely retired/reset; no leaked envelope or stale audio |
+| VCA-19 | Sample-rate consistency | 44.1 / 48 / 96 kHz | Time constants remain within one sample or declared block-ramp tolerance |
+| VCA-20 | Long-run numeric safety | Extreme parameter combinations and deterministic long render | No overflow, NaN, allocation, floating point or division in sample loop; output bounded |
+| VCA-21 | Regression reference | Fixed vectors for all segment boundaries and retrigger cases | Deterministic output; reference error is measured and recorded, not inferred by listening alone |
+
+Implementation target: isolated module and host test first; candidate files `firmware/src/eng_metal_core_vca.h` and `tests/metal_core_vca_test.c` are proposals only and have not been created. The implementation must state whether it uses sample-domain processing in `render()` or the once-per-control-tick `amp()` hook with the host's `amp0 → amp1` ramp. Do not use both amplitude paths.
