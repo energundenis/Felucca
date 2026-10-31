@@ -149,10 +149,15 @@ jobs:
             > build/metal-core-vca-target/vca_probe.symbols
           grep -q "eng_metal_vca_target_probe_process" build/metal-core-vca-target/vca_probe.dis
           grep -q "eng_metal_vca_target_probe_block32" build/metal-core-vca-target/vca_probe.dis
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin -Wall -Wno-unused-function -Ifirmware/src -c tests/metal_core_vca_harness_target_probe.c -o build/metal-core-vca-target/vca_harness_probe.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/vca_harness_probe.o > build/metal-core-vca-target/vca_harness_probe.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/vca_harness_probe.o > build/metal-core-vca-target/vca_harness_probe.symbols
+          grep -q "eng_metal_vca_harness_target_sample" build/metal-core-vca-target/vca_harness_probe.dis
+          grep -q "eng_metal_vca_harness_target_block32" build/metal-core-vca-target/vca_harness_probe.dis
           {
             echo "## ENERGUN VCA target code generation"
-            echo "AC79 pi32v2 compile-only probe passed; sizeof(eng_metal_vca_t) is statically asserted as 36 bytes."
-            echo 'Disassembly and symbol table are included in the workflow artifact.'
+            echo "AC79 pi32v2 compile-only probes passed; VCA state is 36 bytes and eight-voice state is 288 bytes."
+            echo 'Isolated VCA and combined VCA + host-ramp disassembly and symbol tables are included in the workflow artifact.'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run Felucca host and web regression tests
