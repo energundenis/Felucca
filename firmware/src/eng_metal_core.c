@@ -534,3 +534,139 @@ static void metal_core_complex_fm_feedback_pair_block(
     v->ph[2] = phm;
 }
 
+
+/* ------------------------------------------------ V1 per-part free-running state --- */
+
+/* The approved V1 engine is monophonic. Unlike the earlier multi-voice test
+ * harness above, this is the intended compact per-part state for engine_t.mem.
+ * One phase set and one 3 ms delay continue through note-off and silent gaps. */
+typedef struct {
+    uint32_t phase[3];                 /* OSC1, OSC2, wcMod */
+    uint16_t delay_write;
+    uint8_t rendered_this_block;
+    uint8_t configured;
+    int32_t feedback_q15;              /* smoothed control */
+    int32_t delay[MC_FEEDBACK_DELAY_SAMPLES];
+    uint32_t osc1_inc, osc2_inc, feedback_ref_inc, ratio_q16;
+    uint32_t osc_wave, mod_wave, character;
+    int32_t fm_index_q15, drive_q15, osc2_level_q15, feedback_target_q15;
+} metal_core_part_state_t;
+
+typedef char metal_core_part_memory_fits[
+    (sizeof(metal_core_part_state_t) <= 12888u) ? 1 : -1];
+
+static void metal_core_part_state_init(metal_core_part_state_t *s)
+{
+    uint32_t i;
+    if (!s) return;
+    s->phase[0] = s->phase[1] = s->phase[2] = 0;
+    s->delay_write = 0;
+    s->rendered_this_block = 0;
+    s->configured = 0;
+    s->feedback_q15 = 0;
+    for (i = 0; i < MC_FEEDBACK_DELAY_SAMPLES; i++) s->delay[i] = 0;
+    s->osc1_inc = s->osc2_inc = s->feedback_ref_inc = 0;
+    s->ratio_q16 = 1u << 16;
+    s->osc_wave = MC_OSC_SAW;
+    s->mod_wave = MC_MOD_SINE;
+    s->character = MC_FM_CHAR_METALLIC;
+    s->fm_index_q15 = s->drive_q15 = s->osc2_level_q15 = 0;
+    s->feedback_target_q15 = 0;
+}
+
+/* Called by the engine's block hook. The post hook decides whether a voice
+ * rendered; if not, it advances the same state machine silently. */
+static inline void metal_core_part_begin_block(metal_core_part_state_t *s)
+{
+    if (s) s->rendered_this_block = 0;
+}
+
+static void metal_core_part_configure(metal_core_part_state_t *s,
+                                      uint32_t osc1_inc, uint32_t osc2_inc,
+                                      uint32_t feedback_ref_inc, uint32_t ratio_q16,
+                                      uint32_t osc_wave, uint32_t mod_wave,
+                                      int32_t fm_index_q15, int32_t drive_q15,
+                                      uint32_t character, int32_t osc2_level_q15,
+                                      int32_t feedback_q15)
+{
+    if (!s) return;
+    if (ratio_q16 < (1u << 14)) ratio_q16 = 1u << 14;
+    if (ratio_q16 > (16u << 16)) ratio_q16 = 16u << 16;
+    s->osc1_inc = osc1_inc;
+    s->osc2_inc = osc2_inc;
+    s->feedback_ref_inc = feedback_ref_inc;
+    s->ratio_q16 = ratio_q16;
+    s->osc_wave = osc_wave;
+    s->mod_wave = mod_wave;
+    s->fm_index_q15 = clamp(fm_index_q15, 0, 32767);
+    s->drive_q15 = clamp(drive_q15, 0, 32767);
+    s->character = character;
+    s->osc2_level_q15 = clamp(osc2_level_q15, 0, 32767);
+    s->feedback_target_q15 = clamp(feedback_q15, 0, 26214);
+    s->configured = 1;
+}
+
+/* One sample shared by the audible renderer and silent-state advancement.
+ * A NULL output pointer means "advance phases and feedback, emit no audio". */
+static inline int32_t metal_core_part_tick(metal_core_part_state_t *s)
+{
+    uint32_t mod_inc = metal_core_ratio_increment(s->osc1_inc, s->ratio_q16);
+    uint32_t pos = s->delay_write;
+    int32_t delayed = s->delay[pos];
+    int32_t mod_step, mod, fb_step, depth, carrier_step;
+    int32_t osc1, osc2;
+    uint64_t deviation_inc;
+
+    s->feedback_q15 = metal_core_feedback_smooth_q15(
+        s->feedback_q15, s->feedback_target_q15);
+    fb_step = metal_core_feedback_modulator_step(
+        s->feedback_ref_inc, delayed, s->feedback_q15);
+    mod_step = metal_core_modulator_signed_step(mod_inc, fb_step);
+    mod = metal_core_modulator_sample_signed(s->phase[2], mod_step, s->mod_wave);
+    s->delay[pos] = mod;
+    pos++;
+    if (pos >= MC_FEEDBACK_DELAY_SAMPLES) pos = 0;
+    s->delay_write = (uint16_t)pos;
+
+    depth = metal_core_complex_fm_depth_q15(
+        s->fm_index_q15, s->drive_q15, s->character);
+    deviation_inc = ((uint64_t)s->osc1_inc * 2u * (uint32_t)depth) >> 15;
+    carrier_step = metal_core_fm_instantaneous_step(
+        s->osc1_inc, deviation_inc, mod);
+    osc1 = metal_core_osc_sample_signed(s->phase[0], carrier_step, s->osc_wave);
+    osc2 = metal_core_osc_sample(s->phase[1], s->osc2_inc, s->osc_wave);
+
+    s->phase[0] += (uint32_t)carrier_step;
+    s->phase[1] += s->osc2_inc;
+    s->phase[2] += (uint32_t)mod_step;
+    return osc1 + mulq15(osc2, s->osc2_level_q15);
+}
+
+static void metal_core_part_render(metal_core_part_state_t *s, int32_t *out,
+                                   uint32_t n, uint32_t osc1_inc,
+                                   uint32_t osc2_inc, uint32_t feedback_ref_inc,
+                                   uint32_t ratio_q16, uint32_t osc_wave,
+                                   uint32_t mod_wave, int32_t fm_index_q15,
+                                   int32_t drive_q15, uint32_t character,
+                                   int32_t osc2_level_q15, int32_t feedback_q15)
+{
+    uint32_t i;
+    if (!s || !out || !n) return;
+    if (n > CTL) n = CTL;
+    metal_core_part_configure(s, osc1_inc, osc2_inc, feedback_ref_inc,
+        ratio_q16, osc_wave, mod_wave, fm_index_q15, drive_q15, character,
+        osc2_level_q15, feedback_q15);
+    for (i = 0; i < n; i++) out[i] += metal_core_part_tick(s);
+    s->rendered_this_block = 1;
+}
+
+/* Intended engine_t.post behavior. It advances only if no active render call
+ * happened this block, covering both no-active-voice and silent-sustain gaps. */
+static void metal_core_part_advance_silent(metal_core_part_state_t *s, uint32_t n)
+{
+    uint32_t i;
+    if (!s || !s->configured || s->rendered_this_block) return;
+    if (n > CTL) n = CTL;
+    for (i = 0; i < n; i++) (void)metal_core_part_tick(s);
+}
+
