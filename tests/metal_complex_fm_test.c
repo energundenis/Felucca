@@ -8,6 +8,22 @@
 #include "../firmware/engines/src/dsp.c"
 #include "../firmware/src/eng_metal_core.c"
 
+/* Minimal host track/memory shim for the real engine_t callback adapter. */
+typedef struct track track_t;
+struct track {
+    int16_t p[64];
+    voice_t v[NVOICE];
+};
+static track_t trk[NPART];
+static union {
+    uint64_t align;
+    uint8_t b[12888];
+} adapter_mem[NPART];
+#define ENG_MEM(p) ((void *)adapter_mem[p].b)
+#define ENG_MEM_FITS(name, size) _Static_assert((size) <= 12888u, name " state over adapter memory")
+#include "../firmware/src/eng_metal_core_adapter.inc"
+
+
 #include <stdio.h>
 #include <string.h>
 
@@ -323,6 +339,63 @@ static void part_state_lifecycle(void)
     (void)i;
 }
 
+
+static void adapter_callbacks(void)
+{
+    metal_core_part_state_t *s;
+    vmod_t m;
+    int32_t out[CTL];
+    uint32_t base = pitch_inc(60 * 16), phase_before;
+    uint16_t write_before;
+
+    memset(trk, 0, sizeof trk);
+    memset(adapter_mem, 0, sizeof adapter_mem);
+    memset(out, 0, sizeof out);
+    memset(&m, 0, sizeof m);
+    m.inc = base;
+    m.pitch16 = 60 * 16;
+    m.amp0 = m.amp1 = 32767;
+    s = (metal_core_part_state_t *)ENG_MEM(0);
+
+    check("unregistered adapter exposes the actual engine_t callbacks",
+          ENG_METAL_CORE_ADAPTER.block == metal_core_adapter_block &&
+          ENG_METAL_CORE_ADAPTER.render == metal_core_adapter_render &&
+          ENG_METAL_CORE_ADAPTER.post == metal_core_adapter_post);
+    check("adapter declares one-voice monophonic cap and exact part memory",
+          ENG_METAL_CORE_ADAPTER.poly == 1 &&
+          ENG_METAL_CORE_ADAPTER.mem == sizeof(metal_core_part_state_t));
+
+    ENG_METAL_CORE_ADAPTER.block(&trk[0]);
+    check("block hook initializes zeroed host memory and resets guard",
+          s->ratio_q16 == (1u << 16) && !s->advanced_this_block);
+
+    ENG_METAL_CORE_ADAPTER.render(&trk[0], &trk[0].v[0], out, CTL, &m);
+    check("render hook advances per-part phases and delay once",
+          s->advanced_this_block && s->delay_write == CTL &&
+          s->phase[0] != 0 && s->phase[1] != 0 && s->phase[2] != 0);
+
+    phase_before = s->phase[2];
+    write_before = s->delay_write;
+    ENG_METAL_CORE_ADAPTER.post(&trk[0], out, CTL);
+    check("post hook does not double-advance after active rendering",
+          s->phase[2] == phase_before && s->delay_write == write_before);
+
+    ENG_METAL_CORE_ADAPTER.block(&trk[0]);
+    phase_before = s->phase[2];
+    write_before = s->delay_write;
+    ENG_METAL_CORE_ADAPTER.post(&trk[0], out, CTL);
+    check("post hook advances free-running state when no voice rendered",
+          s->advanced_this_block && s->phase[2] != phase_before &&
+          s->delay_write == (write_before + CTL) % MC_FEEDBACK_DELAY_SAMPLES);
+
+    ENG_METAL_CORE_ADAPTER.block(&trk[0]);
+    phase_before = s->phase[2];
+    ENG_METAL_CORE_ADAPTER.render(&trk[0], &trk[0].v[0], out, CTL, &m);
+    check("render resumes the same part state after an idle block",
+          s->phase[2] != phase_before &&
+          s->delay_write == (write_before + 2u * CTL) % MC_FEEDBACK_DELAY_SAMPLES);
+}
+
 int main(void)
 {
     signed_step();
@@ -333,6 +406,7 @@ int main(void)
     feedback_route_and_delay();
     feedback_step_bounds();
     part_state_lifecycle();
+    adapter_callbacks();
     printf(failures ? "metal-complex-fm: %d FAILED\n" : "metal-complex-fm: all passed\n", failures);
     return failures != 0;
 }
