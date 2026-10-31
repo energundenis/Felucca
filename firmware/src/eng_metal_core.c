@@ -6,9 +6,9 @@
  *   - OSC1 / OSC2 direct-audio pair;
  *   - independent wcMod source and FM CHARACTER / WEST COAST DRIVE curves;
  *   - audio-rate Complex FM carrier path, including signed-frequency BLEP;
- *   - bounded per-voice 3 ms feedback-delay storage primitive.
+ *   - bounded per-voice 3 ms feedback-delay storage and wcMod feedback route.
  *
- * AM, feedback routing into wcMod, FM trigger envelope, METAL sources,
+ * AM, FM trigger envelope, METAL sources,
  * wavefolder, main filter, LPG, and final voice gain remain unimplemented.
  * No parameter IDs, UI pages, engine registration, or persistence changes
  * have been made.
@@ -333,14 +333,15 @@ static void metal_core_complex_fm_pair_block(voice_t *v, int32_t *pre_fold, uint
 
 /* ------------------------------------------------ 3 ms per-voice FM feedback delay --- */
 
-/* The reference path uses a 3 ms wcMod feedback delay. Use the ceiling
- * sample count so the ring never undershoots 3 ms at the selected build rate.
- * Felucca-Engines supports up to 96 kHz for this memory layout. */
+/* The reference path uses a 3 ms wcMod feedback delay. The delayed wcMod
+ * waveform modulates wcMod frequency (not OSC1 frequency), with gain
+ * FM_FEEDBACK * FREQ * 3 as in the v98 Web Audio graph. */
 #define MC_FEEDBACK_DELAY_MS       3u
 #define MC_FEEDBACK_DELAY_SAMPLES  ((FS * MC_FEEDBACK_DELAY_MS + 999u) / 1000u)
 
 typedef struct {
     uint16_t write[NVOICE];
+    int32_t feedback_q15[NVOICE]; /* smoothed 0..0.8 control, one-pole ~25 ms */
     int32_t sample[NVOICE][MC_FEEDBACK_DELAY_SAMPLES];
 } metal_core_feedback_state_t;
 
@@ -358,6 +359,7 @@ static void metal_core_feedback_delay_reset(metal_core_feedback_state_t *state, 
     if (!state || voice >= NVOICE)
         return;
     state->write[voice] = 0;
+    state->feedback_q15[voice] = 0;
     for (i = 0; i < MC_FEEDBACK_DELAY_SAMPLES; i++)
         state->sample[voice][i] = 0;
 }
@@ -380,4 +382,146 @@ static inline int32_t metal_core_feedback_delay_tick(metal_core_feedback_state_t
         pos = 0;
     state->write[voice] = (uint16_t)pos;
     return delayed;
+}
+
+
+/* Convert the v98 feedback graph into a signed phase-step contribution.
+ * Web Audio: delayed wcMod sample * FM_FEEDBACK * FREQ * 3 Hz.
+ * FREQ is represented here by OSC1's phase increment, so no float or Hz
+ * conversion is needed. Both inputs are normalized Q15. */
+static inline int32_t metal_core_feedback_modulator_step(uint32_t base_inc,
+                                                          int32_t delayed_q15,
+                                                          int32_t feedback_q15)
+{
+    int64_t step;
+    int32_t feedback = clamp(feedback_q15, 0, 26214); /* v98 range: 0..0.8 */
+    int32_t delayed = clamp(delayed_q15, -32768, 32767);
+    step = ((int64_t)base_inc * 3 * feedback * delayed) >> 30;
+    if (step > 0x7FFFFFFFLL)
+        step = 0x7FFFFFFFLL;
+    else if (step < -0x7FFFFFFFLL)
+        step = -0x7FFFFFFFLL;
+    return (int32_t)step;
+}
+
+/* Approximate Web Audio setTargetAtTime(..., 25 ms) with a fixed-point
+ * one-pole smoother. Called per sample; alpha is derived from build FS. */
+static inline int32_t metal_core_feedback_smooth_q15(int32_t current, int32_t target)
+{
+    int32_t alpha = (32768 * 40 + (int32_t)FS / 2) / (int32_t)FS;
+    int32_t delta, change;
+    target = clamp(target, 0, 26214);
+    if (alpha < 1)
+        alpha = 1;
+    delta = target - current;
+    if (!delta)
+        return current;
+    change = (delta * alpha) >> 15;
+    if (!change)
+        change = delta > 0 ? 1 : -1;
+    current += change;
+    if ((delta > 0 && current > target) || (delta < 0 && current < target))
+        current = target;
+    return current;
+}
+
+/* A reverse-running wcMod needs time-reversed BLEP edges just like OSC1.
+ * Triangle and sine are continuous and need no direction-specific correction. */
+static inline int32_t metal_core_modulator_sample_signed(uint32_t phase,
+                                                          int32_t step,
+                                                          uint32_t wave)
+{
+    uint32_t inc = step < 0 ? (uint32_t)(-(int64_t)step) : (uint32_t)step;
+    if (step >= 0)
+        return metal_core_modulator_sample(phase, inc, wave);
+    if (wave == MC_MOD_SAW)
+        return ((int32_t)(phase >> 16) - 32768) +
+               blep(0xFFFFFFFFu - phase, inc);
+    if (wave == MC_MOD_SQUARE)
+        return clamp(-osc_pulse(0u - phase, inc, 0x80000000u) * 2,
+                     -32768, 32767);
+    return metal_core_modulator_sample(phase, inc, wave);
+}
+
+static inline int32_t metal_core_modulator_signed_step(uint32_t base_inc,
+                                                        int32_t feedback_step)
+{
+    int64_t step = (int64_t)base_inc + feedback_step;
+    if (step > 0x7FFFFFFFLL)
+        step = 0x7FFFFFFFLL;
+    else if (step < -0x7FFFFFFFLL)
+        step = -0x7FFFFFFFLL;
+    return (int32_t)step;
+}
+
+/* v98 Complex FM with its actual feedback topology:
+ * wcMod -> 3 ms delay -> (FM FEEDBACK * FREQ * 3) -> wcMod frequency.
+ * The delayed signal changes the modulator's phase step; the resulting
+ * wcMod waveform then modulates OSC1 through the normal FM INDEX path.
+ *
+ * State is per voice. A fresh note may clear it with
+ * metal_core_feedback_delay_reset(); legato preservation is still an
+ * engine-lifecycle decision and is not made here. */
+static void metal_core_complex_fm_feedback_pair_block(
+    voice_t *v, int32_t *pre_fold, uint32_t n,
+    uint32_t osc1_inc, uint32_t osc2_inc,
+    uint32_t mod_ratio_q16, uint32_t osc_wave, uint32_t mod_wave,
+    int32_t fm_index_q15, int32_t west_coast_drive_q15, uint32_t character,
+    int32_t osc2_level_q15, int32_t feedback_q15,
+    metal_core_feedback_state_t *state, uint32_t voice)
+{
+    uint32_t i, ph1, ph2, phm, mod_inc;
+    int32_t level, depth, feedback_current;
+    uint64_t deviation_inc;
+
+    if (!v || !pre_fold || !state || voice >= NVOICE || !n)
+        return;
+    if (n > CTL)
+        n = CTL;
+    if (mod_ratio_q16 < (1u << 14))
+        mod_ratio_q16 = 1u << 14;
+    else if (mod_ratio_q16 > (16u << 16))
+        mod_ratio_q16 = 16u << 16;
+
+    mod_inc = metal_core_ratio_increment(osc1_inc, mod_ratio_q16);
+    level = clamp(osc2_level_q15, 0, 32767);
+    depth = metal_core_complex_fm_depth_q15(fm_index_q15,
+                                             west_coast_drive_q15, character);
+    deviation_inc = ((uint64_t)osc1_inc * 2u * (uint32_t)depth) >> 15;
+    feedback_current = state->feedback_q15[voice];
+    feedback_q15 = clamp(feedback_q15, 0, 26214);
+
+    ph1 = v->ph[0];
+    ph2 = v->ph[1];
+    phm = v->ph[2];
+    for (i = 0; i < n; i++) {
+        int32_t mod_step, mod, delayed, fb_step, carrier_step;
+        int32_t osc1, osc2;
+
+        mod_step = metal_core_modulator_signed_step(mod_inc, 0);
+        mod = metal_core_modulator_sample_signed(phm, mod_step, mod_wave);
+        delayed = metal_core_feedback_delay_tick(state, voice, mod);
+        feedback_current = metal_core_feedback_smooth_q15(feedback_current,
+                                                           feedback_q15);
+        fb_step = metal_core_feedback_modulator_step(osc1_inc, delayed,
+                                                       feedback_current);
+        mod_step = metal_core_modulator_signed_step(mod_inc, fb_step);
+
+        /* Sample the current modulator phase before advancing it with the
+         * feedback-controlled step, matching the AudioParam feedback graph. */
+        osc1 = metal_core_osc_sample_signed(
+            ph1, metal_core_fm_instantaneous_step(osc1_inc, deviation_inc, mod),
+            osc_wave);
+        osc2 = metal_core_osc_sample(ph2, osc2_inc, osc_wave);
+        pre_fold[i] = osc1 + mulq15(osc2, level);
+        carrier_step = metal_core_fm_instantaneous_step(osc1_inc,
+                                                         deviation_inc, mod);
+        ph1 += (uint32_t)carrier_step;
+        ph2 += osc2_inc;
+        phm += (uint32_t)mod_step;
+    }
+    state->feedback_q15[voice] = feedback_current;
+    v->ph[0] = ph1;
+    v->ph[1] = ph2;
+    v->ph[2] = phm;
 }
