@@ -461,3 +461,11 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Build-output recording and upload of experimental build evidence both succeeded. SDK cache save was skipped because the pinned cache was restored; this is expected and not a failure.
 - This run validates the current branch commit's baseline firmware build and Host/Web regression workflow. It does **not** validate an integrated or registered ENERGUN METAL CORE render engine, physical FM-1 audio behavior, target DSP CPU/RAM budgets, packaging/recovery readiness, or device flashing.
 - No factory firmware, physical device state, or `main` branch was changed. CP1, CP2, and later implementation phases remain open according to their existing gates; this CI success does not close them by itself.
+
+## CP1.12 — V1 decision package prepared for review (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_12_V1_DECISION_PACKAGE.md` in commit `d7d0f7bbf9c755b17d3246c9aa30b2d2684da514`.
+- Consolidates already established facts and explicit recommendations for the 37-control scope, 8/16/13 parameter access split, VCA/host-envelope ownership, initial sample-rate and memory envelope, and a transactional sidecar/recovery architecture.
+- The document is a review package only. It does not treat recommendations as user approval and does not assign IDs, alter firmware, allocate flash or change device state.
+- Remaining user decision gates are the V1 scope/deferred list, access allocation, and layered VCA behavior. Remaining evidence gates include sidecar migration/backup tests, full FM-1 V1.5 dump audit before sector selection, and append-only engine-ID verification across optional builds.
+- CP1 remains open. No change to `main`, factory firmware or physical FM-1.
