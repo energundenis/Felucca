@@ -337,3 +337,12 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The v99 copy has two issues requiring explicit V1 handling: its trigger hard-codes Complex MOD ratio to 1.5 despite the independent MOD RATIO control; and FOLLOW OFF does not restore base FREQ, leaving the last followed frequency until another frequency update.
 - The original v98 file was not present in the currently searchable Library scope, so these findings are labelled v99-derived and are not claimed as direct v98 verification.
 - The CP2.5 audit remains a design gate; no pitch-selection code or host note-source metadata has been added.
+
+
+## CP2.6 — isolated FOLLOW fixed-point pitch math (2026-10-31)
+
+- Added `firmware/src/eng_metal_core_follow.h` with Q24 semitone/octave ratio tables, base-frequency clamping and Q0.32 phase-increment conversion.
+- Added `tests/metal_core_follow_test.c` and wired it into `tests/run_tests.sh`.
+- The source selector encodes the proposed behavior: FOLLOW OFF bypasses step-sequencer pitch to base FREQ; performance-origin pitch remains host-tracked.
+- The helper accepts relative NOTE/OCTAVE values. It does not yet map Felucca's absolute MIDI step notes or receive real host note-source metadata.
+- Direct v98 verification, target CPU cost and engine/render integration remain open. CI validation is pending.
