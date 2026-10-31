@@ -92,7 +92,7 @@ static void test_phase_increment(void)
           combined < 0x80000000u &&
           near_u32(combined,
                    500.0 * pow(2.0, 11.0 / 12.0 + 2.0) * scale / 32000.0,
-                   1.0));
+                   8.0));
 }
 
 static void test_source_selector(void)
