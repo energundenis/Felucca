@@ -20,6 +20,7 @@ static void check(const char *name, int ok)
 int main(void)
 {
     eng_metal_lpg_timing_t lo, hi, short_gate, short_decay, capped, zero_rate;
+    eng_metal_lpg_timing_t low_clamp, high_clamp, response_low, response_high, sr48;
     const uint32_t sr = 44100u;
     const uint32_t gate_125ms = 5513u;
 
@@ -29,6 +30,11 @@ int main(void)
     eng_metal_lpg_timing_q15(sr, 20000u, 20000u, 0, 2000u, &short_decay);
     eng_metal_lpg_timing_q15(sr, 1000000u, gate_125ms, 32767, 3000u, &capped);
     eng_metal_lpg_timing_q15(0, 1000000u, gate_125ms, 32767, 2000u, &zero_rate);
+    eng_metal_lpg_timing_q15(sr, 1u, 20000u, 0, 2000u, &low_clamp);
+    eng_metal_lpg_timing_q15(sr, 2000001u, 200000u, 32767, 2000u, &high_clamp);
+    eng_metal_lpg_timing_q15(sr, 1000000u, gate_125ms, -100, 2000u, &response_low);
+    eng_metal_lpg_timing_q15(sr, 1000000u, gate_125ms, 40000, 2000u, &response_high);
+    eng_metal_lpg_timing_q15(48000u, 20000u, 48000u, 16384, 2000u, &sr48);
 
     check("RESPONSE endpoints map attack to 1.5 ms and 7.5 ms",
           lo.attack_samples >= 65u && lo.attack_samples <= 67u &&
@@ -58,6 +64,15 @@ int main(void)
     check("zero sample rate returns a cleared schedule",
           zero_rate.attack_samples == 0u && zero_rate.tail_samples == 0u &&
           zero_rate.filter_transient_hz == 0u);
+    check("DECAY clamps to documented 20 ms..2 s range",
+          low_clamp.attack_samples == short_decay.attack_samples &&
+          low_clamp.tail_samples == short_decay.tail_samples &&
+          high_clamp.gain_decay_tau_samples == eng_metal_us_to_samples(sr, 519974u));
+    check("RESPONSE clamps to 0..1",
+          response_low.attack_samples == lo.attack_samples &&
+          response_high.attack_samples == hi.attack_samples);
+    check("48 kHz conversion rounds attack to 216 samples at midpoint",
+          sr48.attack_samples >= 215u && sr48.attack_samples <= 217u);
 
     printf("metal LPG timing: %s (%d failures)\n",
            failures ? "FAIL" : "PASS", failures);
