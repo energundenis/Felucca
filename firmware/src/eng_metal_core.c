@@ -1,10 +1,17 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * ENERGUN METAL CORE — Stage 1: isolated main oscillator subsystem.
+ * ENERGUN METAL CORE — isolated fixed-point DSP development.
  *
  * This file is not included by engines.c and is not a registered/playable
- * engine yet. The functions below are fixed-point DSP primitives, developed
- * and tested independently before parameter IDs, UI pages, or engine
- * registration are changed.
+ * engine yet. Implemented and host-tested subsystems:
+ *   - OSC1 / OSC2 direct-audio pair;
+ *   - independent wcMod source and FM CHARACTER / WEST COAST DRIVE curves;
+ *   - audio-rate Complex FM carrier path, including signed-frequency BLEP;
+ *   - bounded per-voice 3 ms feedback-delay storage primitive.
+ *
+ * AM, feedback routing into wcMod, FM trigger envelope, METAL sources,
+ * wavefolder, main filter, LPG, and final voice gain remain unimplemented.
+ * No parameter IDs, UI pages, engine registration, or persistence changes
+ * have been made.
  *
  * Integration contract:
  *   - Use Felucca's track_t / voice_t / vmod_t / engine_t and allocator.
@@ -20,11 +27,12 @@
  *   OSC 1 (wcOsc): main carrier.
  *   OSC 2 (wcOsc2): second direct-audio source mixed into the shared pre-fold
  *     input. It is NOT the Complex FM modulator.
- *   wcMod, wcMMod, and wcRingOsc are separate modulation sources and are
- *     intentionally not implemented in this first stage.
+ *   wcMod is implemented as the independent Complex FM source. wcMMod and
+ *     wcRingOsc remain separate METAL FM and Ring sources for later stages.
  *
  * FOLLOW and METAL are independent switches in the OSCILLATORS / SYNTH VOICE
- * block (not the FOLD page). Their behavior is not implemented in this stage.
+ * block (not the FOLD page). Their control mapping and routing are not yet
+ * implemented.
  *
  * Parameter IDs and persistence are deliberately not assigned here. The
  * approved scope requires the control map and storage design to be frozen
@@ -138,9 +146,9 @@ static inline uint32_t metal_core_ratio_increment(uint32_t base_inc, uint32_t ra
     return scaled > 0x7FFFFFFFu ? 0x7FFFFFFFu : (uint32_t)scaled;
 }
 
-/* Render wcMod into a Q15 scratch block. This stage creates only the
- * independent modulator signal; FM / AM routing, character/index scaling,
- * feedback, and the FM trigger envelope are deliberately separate stages. */
+/* Render wcMod into a Q15 scratch block. The source remains available as an
+ * independent primitive; the audio-rate FM renderer below consumes the same
+ * oscillator sampler directly so it can update OSC1 frequency per sample. */
 static void metal_core_modulator_block(voice_t *v, int32_t *mod_out, uint32_t n,
                                        const vmod_t *m, uint32_t ratio_q16, uint32_t wave)
 {
