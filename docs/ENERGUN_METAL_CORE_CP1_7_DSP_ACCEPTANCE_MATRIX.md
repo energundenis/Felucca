@@ -165,3 +165,17 @@ Before first DSP source implementation:
 ## 9. Decision status update — LPG Option C
 
 The LPG semantic decision is no longer open. User approval is recorded in CP1.11: `peakLpg = (0.25 + RESPONSE × 0.75) × MODULE VOLUME`, with one gain stage and unchanged RESPONSE attack / DECAY tail. The current isolated Q15 helper and host transfer tests cover only the peak math. Envelope scheduling, gate-limited decay, filter transient and audio behavior remain unimplemented and must pass LPG-02/03/06/07 before engine integration.
+
+
+## LPG schedule unit matrix — added after Option C approval
+
+| ID | Test | Stimulus | Acceptance |
+|---|---|---|---|
+| LPG-08 | RESPONSE attack timing | RESPONSE 0..1 at supported sample rates | attack time = 1.5 ms + RESPONSE × 6 ms, rounded to samples |
+| LPG-09 | Gate-limited gain tail | short/long gates, DECAY 20 ms..2 s | tail event at min(gate, DECAY); no envelope extends host voice lifetime |
+| LPG-10 | Gain decay time constant | RESPONSE / DECAY corners | max(6 ms, DECAY × (0.08 + RESPONSE × 0.18)) |
+| LPG-11 | LPG filter transient | cutoff and RESPONSE corners | transient cutoff = min(12 kHz, base cutoff × (1.25 + RESPONSE × 3.75)); return to max(100 Hz, base cutoff) |
+| LPG-12 | LPG filter return schedule | short/long gate, DECAY and RESPONSE | return at min(gate, DECAY × 0.22); time constant max(12 ms, DECAY × (0.08 + RESPONSE × 0.12)) |
+| LPG-13 | Sample-rate conversion | 44.1/48 kHz and edge rates | timing remains within one sample of rounded reference schedule |
+
+The isolated timing helper currently computes these targets and sample counts. It does not yet execute a per-sample envelope, filter coefficient update, or render audio. The corresponding host test is `tests/metal_core_lpg_timing_test.c`.
