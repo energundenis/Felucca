@@ -321,3 +321,55 @@ static void metal_core_complex_fm_pair_block(voice_t *v, int32_t *pre_fold, uint
     v->ph[1] = ph2;
     v->ph[2] = phm;
 }
+
+
+/* ------------------------------------------------ 3 ms per-voice FM feedback delay --- */
+
+/* The reference path uses a 3 ms wcMod feedback delay. Use the ceiling
+ * sample count so the ring never undershoots 3 ms at the selected build rate.
+ * Felucca-Engines supports up to 96 kHz for this memory layout. */
+#define MC_FEEDBACK_DELAY_MS       3u
+#define MC_FEEDBACK_DELAY_SAMPLES  ((FS * MC_FEEDBACK_DELAY_MS + 999u) / 1000u)
+
+typedef struct {
+    uint16_t write[NVOICE];
+    int32_t sample[NVOICE][MC_FEEDBACK_DELAY_SAMPLES];
+} metal_core_feedback_state_t;
+
+/* The 96 kHz layout is 9,232 bytes for eight voices, below Felucca's
+ * 12,888-byte per-part engine-memory budget. Deliberately fail compilation
+ * above that supported memory envelope rather than silently overflowing it. */
+typedef char metal_core_feedback_memory_fits[
+    (sizeof(metal_core_feedback_state_t) <= 12888u) ? 1 : -1];
+
+/* Reset one voice's delay history on a fresh voice start. The caller must
+ * decide whether a legato retrigger should preserve or clear this state. */
+static void metal_core_feedback_delay_reset(metal_core_feedback_state_t *state, uint32_t voice)
+{
+    uint32_t i;
+    if (!state || voice >= NVOICE)
+        return;
+    state->write[voice] = 0;
+    for (i = 0; i < MC_FEEDBACK_DELAY_SAMPLES; i++)
+        state->sample[voice][i] = 0;
+}
+
+/* One-sample delay primitive. Returns the oldest sample, stores the new input,
+ * and advances the ring. Feedback gain/routing remain external so this helper
+ * cannot accidentally introduce an unbounded feedback loop by itself. */
+static inline int32_t metal_core_feedback_delay_tick(metal_core_feedback_state_t *state,
+                                                      uint32_t voice, int32_t input)
+{
+    uint32_t pos;
+    int32_t delayed;
+    if (!state || voice >= NVOICE)
+        return 0;
+    pos = state->write[voice];
+    delayed = state->sample[voice][pos];
+    state->sample[voice][pos] = input;
+    pos++;
+    if (pos >= MC_FEEDBACK_DELAY_SAMPLES)
+        pos = 0;
+    state->write[voice] = (uint16_t)pos;
+    return delayed;
+}
