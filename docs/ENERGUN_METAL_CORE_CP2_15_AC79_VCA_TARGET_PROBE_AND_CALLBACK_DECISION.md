@@ -56,12 +56,12 @@ The `amp()` route remains useful for an envelope whose shape is intentionally co
 
 ## 5. Remaining CP2 gates
 
-- [ ] Inspect the target probe object/disassembly from a successful CI run; record whether the 64-bit multiply is native or lowered to helper calls.
+- [x] Inspect the target probe object/disassembly from successful CI run 41225293878; the 36-byte AC79 ABI assertion passed, and the sample update contains one wide multiply instruction with no separate arithmetic helper symbol. See CP2.16 audit.
 - [ ] Measure actual AC79 cycle cost with a target-side benchmark or a defensible target timing harness; disassembly/instruction counts alone are not cycle measurements.
 - [ ] Confirm target state placement/alignment and total per-part memory once the voice-state container is designed.
 - [ ] Add integration-level tests for note-on, note-off, Gate, retrigger, block-boundary completion, and additive output.
 - [ ] Keep manual-mode VCA mapping open until the performance/sequencer contract is agreed.
 
-## 6. Safety and validation boundary
+## 5.1 Target probe inspection result (CP2.16, 2026-10-31)\n\n- Run 41225293878 completed successfully on source SHA `cf9e6cba31f3795780cfb8114c5f9b6a8a7d126a`; artifact 13052121394 was downloaded and inspected.\n- The object is ELF32-pi32v2; `sizeof(eng_metal_vca_t)` is 36 bytes. `eng_metal_vca_process` occupies 184 bytes in this object. The sample update emits one unsigned wide multiply/accumulate instruction into a register pair; no separate multiply helper is present in the symbol table.\n- The 32-sample wrapper calls the sample processor in a 32-iteration loop. This is code-generation evidence, not a cycle benchmark or target execution.\n- The full CI run passed; the isolated VCA suite reported 20 checks and 0 failures.\n- Full details and baseline memory/build figures: [CP2.16 AC79 code-generation audit](ENERGUN_METAL_CORE_CP2_16_AC79_VCA_CODEGEN_AUDIT.md).\n- The target object inspection gate is closed. Cycle timing, state placement, integration tests and manual/performance Gate mapping remain open.\n\n## 6. Safety and validation boundary
 
 No change to `engines.c`, engine IDs, parameter IDs, UI, persistent storage, flash layout, firmware package, or device state was made. No firmware was flashed. The target probe is a standalone object compiled by CI and included as evidence; it is not linked into the firmware image.
