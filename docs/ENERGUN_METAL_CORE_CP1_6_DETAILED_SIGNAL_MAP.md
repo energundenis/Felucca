@@ -98,3 +98,8 @@ The v98 detailed signal graph and the major gain/tap positions are now documente
 5. Complete sidecar/recovery design and full device-dump audit before Flash allocation.
 
 No parameter IDs, DSP code, engine registration, ABI, project storage, sidecar, Flash, firmware package or physical device state changed.
+
+
+## 7. V1 decision update — LPG MODULE VOLUME (2026-10-31)
+
+Section 3 documents the original v98 topology and behavior. For ENERGUN V1, the user approved Option C: scale the RESPONSE-derived trigger peak by MODULE VOLUME, retaining the single LPG gain stage, RESPONSE attack and DECAY tail. This is a deliberate correction to the v98 control collision, not a claim of literal v98 parity. The LPG gain remains before the internal VCA; host voice lifetime remains authoritative.
