@@ -210,7 +210,7 @@ Architecture decision: engine-owned VCA, `ownenv=1`; no host ADSR × internal VC
 | VCA-08 | Retrigger during Attack | New trigger before Attack completes | Current level held; stale events cancelled; no discontinuity or stale target |
 | VCA-09 | Retrigger during Decay/Sustain | New trigger during Decay and steady Sustain | Current level held; new peak/decay schedule applied without click |
 | VCA-10 | Retrigger during Release / ratchets | Trigger while Release is active; repeated subdivisions | Current level held and envelope retriggered; no unexpected silence or peak jump |
-| VCA-11 | Short Gate / long Attack ordering | Gate shorter than max(5 ms, Attack) | Explicit compatibility rule selected and tested; no accidental post-release re-opening |
+| VCA-11 | Short Gate / long Attack ordering | METAL OFF; Gate shorter than max(5 ms, Attack); Gate-off during Attack and before Decay start | CP1.16 Option B: Release starts at Gate-off from the instantaneous level; pending Decay is cancelled/suppressed; envelope never rises after Release begins; retrigger during Release holds current level; no discontinuity beyond fixed-point tolerance |
 | VCA-12 | Zero Sustain | SUSTAIN=0 with short/long Gate | Target remains the V98 floor 0.0001; no stuck voice |
 | VCA-13 | Manual mode | Sequencer mode OFF; WC ON/OFF; LEVEL min/default/max | Constant LEVEL behavior matches V98; sequencer-triggered envelope is not accidentally applied |
 | VCA-14 | Sequencer mode | Sequencer mode ON; note/rest/probability/ratchet patterns | VCA is silent between triggers and follows the per-step contour |
@@ -223,3 +223,6 @@ Architecture decision: engine-owned VCA, `ownenv=1`; no host ADSR × internal VC
 | VCA-21 | Regression reference | Fixed vectors for all segment boundaries and retrigger cases | Deterministic output; reference error is measured and recorded, not inferred by listening alone |
 
 Implementation target: isolated module and host test first; candidate files `firmware/src/eng_metal_core_vca.h` and `tests/metal_core_vca_test.c` are proposals only and have not been created. The implementation must state whether it uses sample-domain processing in `render()` or the once-per-control-tick `amp()` hook with the host's `amp0 → amp1` ramp. Do not use both amplitude paths.
+
+
+CP1.16 decision: the user selected Option B. This is a specification decision, not a test result. VCA-11 must prove that a Decay event scheduled after Gate-off cannot reopen the VCA. See docs/ENERGUN_METAL_CORE_CP1_16_SHORT_GATE_VCA_DECISION.md.
