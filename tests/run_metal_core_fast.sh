@@ -16,7 +16,7 @@ compile_test() {
     source="$2"
     shift 2
     echo "== Compile $name"
-    "$CC" -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/$name" "$source" "$@"
+    "$CC" -O2 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o "$OUT/$name" "$source" "$@"
 }
 run_test() {
     name="$1"
