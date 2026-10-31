@@ -374,8 +374,7 @@ static inline int32_t metal_core_feedback_delay_peek(const metal_core_feedback_s
 }
 
 /* One-sample delay primitive. Returns the oldest sample, stores the new input,
- * and advances the ring. Feedback gain/routing remain external so this helper
- * cannot accidentally introduce an unbounded feedback loop by itself. */
+ * and advances the ring. The caller owns the bounded feedback gain and routing. */
 static inline int32_t metal_core_feedback_delay_tick(metal_core_feedback_state_t *state,
                                                       uint32_t voice, int32_t input)
 {
