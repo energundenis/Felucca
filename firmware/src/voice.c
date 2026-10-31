@@ -735,21 +735,21 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         if (!v->active)
             continue;
         {
-            if (e->ownenv && v->stage != 4u) {       /* engine owns the envelope; host ADSR must not end it */
-                v->env = 1 << 24;
-                env = 32767;
-            } else {
-                env = env_tick(t, v);                   /* stage 4 still enforces the host's shared-voice steal fade */
-            }
-            if (e->ownenv && v->active) {               /* the engine's envelopes (FM6): they end the voice */
-                if (e->done(t, v)) {
+            if (e->ownenv) {
+                if (v->stage == 4u)                    /* shared-voice steal fade remains host-owned */
+                    env = env_tick(t, v);
+                else {                                  /* bypass host ADSR: it cannot end this voice */
+                    v->env = 1 << 24;
+                    env = 32767;
+                }
+                if (v->active && e->done(t, v)) {       /* the engine's envelopes (FM6) end the voice */
                     v->active = v->gate = 0;
                     v->stage = 0;
                     v->env = v->env_out = 0;
                     continue;
                 }
-                v->env = 1 << 24;                       /* (the ADSR's release never ends it) */
-                env = 32767;
+            } else {
+                env = env_tick(t, v);
             }
             if (e->amp)                                 /* the engine's own amplitude curve */
                 env = e->amp(t, v, env);
