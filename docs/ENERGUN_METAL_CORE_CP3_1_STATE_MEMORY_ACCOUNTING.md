@@ -72,7 +72,7 @@ Adding these provisional states to the prior 72-byte lower-bound voice record gi
 - 24 bytes: Complex FM-index envelope candidate;
 - **112 bytes per voice / 896 bytes per part for eight voice slots.**
 
-Combined with the 3 ms int32 feedback rings, the expanded known subtotal is:
+Combined with the 3 ms int32 feedback rings, the expanded *candidate subtotal* is:
 
 | Sample rate | Provisional voice records | Feedback rings | Expanded subtotal | Remaining in 12,888-byte pool |
 |---:|---:|---:|---:|---:|
@@ -96,11 +96,11 @@ The following cannot yet be honestly assigned exact bytes because the target alg
 
 Do not hide these in the remaining headroom or count them as zero. The current expanded subtotal is a conservative state inventory candidate, not the complete engine memory requirement.
 
-## 7. Known subtotal and headroom
+## 7. Earlier lower-bound subtotal and headroom
 
-Combining only the 72-byte provisional record and the 3 ms int32 delay rings:
+Combining only the 72-byte provisional record and the 3 ms int32 delay rings (excluding the candidate filter and FM-envelope records):
 
-| Sample rate | Voice records | Delay rings | Known subtotal | Remaining in 12,888-byte pool |
+| Sample rate | Voice records | Delay rings | Lower-bound subtotal | Remaining in 12,888-byte pool |
 |---:|---:|---:|---:|---:|
 | 44.1 kHz | 576 | 4,256 | 4,832 | 8,056 |
 | 48 kHz | 576 | 4,608 | 5,184 | 7,704 |
