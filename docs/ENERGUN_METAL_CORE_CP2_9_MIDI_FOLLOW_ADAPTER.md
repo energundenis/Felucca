@@ -61,3 +61,21 @@ A follow-up audit identified two limits that must not be mistaken for validated 
 2. Felucca's final `vmod_t` pitch increment includes glide, track tune, pitch bend, LFO pitch, envelope pitch and modulation-matrix pitch/fine. Selecting a bare base-FREQ increment when FOLLOW is OFF would also discard those independent pitch controls. The host pitch delta must be separated from the note-origin pitch and reapplied to the selected Metal Core base/step frequency.
 
 These are integration blockers. CP2.9 remains a bounded prototype adapter, not a complete MIDI-range or pitch-control solution.
+
+## Validation evidence — CI run 41208854407
+
+Workflow: https://github.com/energundenis/Felucca/actions/runs/41208854407
+Validated source commit: `2b3d1484e7b69c7d0df81ff438e5a895cf01c91f`
+Result: `success`
+
+- Linux x86-64 firmware build: success.
+- Felucca host and web regression: `ALL HOST TESTS PASSED`.
+- All 11 FOLLOW note-source provenance cases passed, including POLY, MONO/LEGATO fallback, same-pitch retrigger, real sequencer step playback, keyboard/MIDI, stopped step preview, arpeggiator and engine-switch queue.
+- Metal oscillator, LPG peak, LPG timing, LPG envelope and FOLLOW isolated suites: PASS (0 failures).
+- The workflow did not flash hardware.
+
+CP2.8 is validated at the tested source commit. CP2.9's bounded MIDI adapter arithmetic and tests are validated, but its documented -2..+2 octave clamp remains a known functional limitation; this does not establish full MIDI 0..127 pitch coverage.
+
+## Follow-on integration status
+
+CP2.11 introduces an alternate host-increment ratio method that can map pitch directly from Felucca's host pitch increments and avoid relying on the bounded absolute-MIDI adapter in the eventual render path. CP2.11 is under its own CI validation; full-range tests and target integration are still pending.

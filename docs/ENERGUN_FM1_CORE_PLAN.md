@@ -395,3 +395,11 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added isolated host tests for all three selection modes, +10% host pitch offset, invalid inputs and Nyquist clamp.
 - Added `docs/ENERGUN_METAL_CORE_CP2_11_HOST_PITCH_DELTA_MATH.md`.
 - CI validation pending. Helper is not connected to engine render; target pitch-table/sample-rate adapter and full MIDI range still need verification.
+
+
+## CP2.8 / CP2.9 validation update (2026-10-31)
+
+- CI run `41208854407`, source commit `2b3d1484e7b69c7d0df81ff438e5a895cf01c91f`: firmware build and complete host/web regression succeeded; log reports `ALL HOST TESTS PASSED`.
+- CP2.8: all 11 note-source provenance cases passed. Host-side provenance implementation is validated; render integration remains pending.
+- CP2.9: isolated FOLLOW and MIDI adapter tests passed with zero failures. Bounded arithmetic prototype is validated only. The adapter's -2..+2 octave clamp remains a known limitation, so full MIDI 0..127 mapping is not yet validated.
+- CP2.11 host pitch-delta helper has a separate CI run `41210288637` in progress at commit `5cba63fd7b9877896daaa1f32a2a4b9010071dce`.
