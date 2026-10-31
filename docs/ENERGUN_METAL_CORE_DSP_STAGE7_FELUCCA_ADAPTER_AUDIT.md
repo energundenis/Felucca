@@ -1,0 +1,79 @@
+# ENERGUN METAL CORE — DSP stage 7: Felucca callback adapter audit
+
+Date: 2026-10-31
+Branch: `metal-core-dsp-stage1-osc`
+Status: an unregistered callback adapter prototype now targets Felucca's actual `engine_t` interface. Host tests use the pinned engine header and a minimal track/memory shim. This is not a full firmware build.
+
+## 1. Source-grounded host contract
+
+Pinned Felucca-Engines header:
+`firmware/engines/src/felucca_engine.h`, submodule commit `d0260074ce100a47675814b7f38d61f11176c926`.
+
+The actual interface provides:
+- `block(track_t *)`: once per block and part, before voices, including when no voice sounds;
+- `render(track_t *, voice_t *, int32_t *, uint32_t, const vmod_t *)`: adds up to CTL samples to the part output;
+- `post(track_t *, int32_t *, uint32_t)`: after voices, on the summed part output, including when no voice sounds; return value indicates whether an audible engine tail remains;
+- `mem`: bytes in the shared per-part engine memory region.
+
+The host `engines.c` owns `ENG_MEM_PART`, `ENG_MEM(p)`, `ENG_MEM_FITS`, and zeroes an engine's memory region when a different memory-using engine claims that part. The pool is zero-initialized at boot.
+
+The host `voice.c` calls `block` before the voice loop and `post` after the voice loop. It also has a silent-sustain path that can skip an individual voice's render callback while still reaching `post`.
+
+The host `fx.c` calls `track_render` for every part in each mix block. If there are no sounding voices and no effect tail, `mix_part` returns without sending the silent buffer to the mix. Therefore the adapter's `post` advances internal phases but returns 0: continuous internal state does not create an audible tail or force silent part mixing.
+
+## 2. Adapter prototype
+
+Files:
+- `firmware/src/eng_metal_core.c`
+- `firmware/src/eng_metal_core_adapter.inc`
+- `firmware/src/engines.c` includes both files after FM6.
+
+The adapter:
+- obtains one `metal_core_part_state_t` from `ENG_MEM(t - trk)`;
+- declares exact `mem = sizeof(metal_core_part_state_t)` and `ENG_MEM_FITS`;
+- uses `block` to initialize the host-zeroed region on first use and reset the per-block advancement guard;
+- uses `render` to advance and emit the shared per-part DSP state;
+- uses `post` to advance the same state only if no render happened;
+- returns 0 from `post` because there is no audible effect tail;
+- declares `poly = 1` for the monophonic V1 adapter.
+
+The adapter descriptor `ENG_METAL_CORE_ADAPTER` is deliberately not inserted into `ENGINES[]`. No engine index, preset, editor protocol, parameter mapping, or UI has changed.
+
+Temporary oscillator settings in the adapter are compile/test scaffolding only. They do not define the approved E0..E7 map and must be replaced after parameter semantics and audio calibration are approved.
+
+## 3. Host tests
+
+`tests/metal_complex_fm_test.c` now includes the actual pinned `engine_t` header, the core, and the adapter with a minimal host track/memory shim. It checks:
+- callback pointers and descriptor memory/poly fields;
+- first-block initialization from zeroed host memory;
+- active render advances phases and delay once;
+- post does not double-advance after active render;
+- post advances the state when no voice rendered;
+- render resumes the same state after an idle block.
+
+The previous state-machine test now explicitly zeroes its test structs before calling the initialization helper. Production initialization relies on Felucca's documented zeroed per-part pool; it no longer clears the whole feedback ring in the first audio callback.
+
+## 4. Build boundary
+
+What is tested:
+- C compilation of the adapter against the actual `engine_t` interface;
+- callback sequencing through host tests;
+- fixed-point DSP regressions at 44.1 and 96 kHz.
+
+What is not tested:
+- the complete `engines.c` / `felucca.c` firmware translation unit in the JieLi target toolchain;
+- full firmware image/package build;
+- target CPU and RAM measurements;
+- actual FM-1 hardware or audio output.
+
+Felucca's documented full build needs the JieLi pi32v2 toolchain, AC79 SDK and other prerequisites; those are not available through this host-only CI workflow. The source include in `engines.c` is therefore an integration placement, not evidence of a successful target build.
+
+No engine registration, flashing, SysEx, device access, flash write, erase or restore has occurred.
+
+## 5. Next gate
+
+1. Confirm this adapter's host CI run passes.
+2. Add a compile-only harness for the complete engine source include order if feasible without requiring the target SDK.
+3. Audit note lifecycle and host mode behavior for the one-voice cap, including retrigger and engine switch.
+4. Resolve the v98 FOLLOW/MOD RATIO discrepancy and freeze parameter semantics.
+5. Only then prepare a separate reviewable integration change. Keep `ENGINES[]` registration and UI changes gated behind explicit review.
