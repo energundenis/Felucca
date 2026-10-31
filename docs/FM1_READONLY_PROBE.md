@@ -9,9 +9,10 @@ This is the first computer-side integration step for ENERGUN GENERATIVE SEQUENCE
 `tools/fm1_readonly_probe.py` sends only:
 - `INFO` (1);
 - `TRACK` (27) with no arguments, to read current selection and track state;
+- `TRACK_DUMP` (29) with a track index, to read all track parameters (including ROOT, SCALE, QUANT, LENGTH and GATE);
 - `TRACK_STEP` (30) with track and step indices, to read step data.
 
-The tool has an explicit command allowlist. It does not send `SET`, `STEP_SET`, `TRACK_PARAM`, `MOTION`, project save/load, backup restore, sample writes, or firmware operations. It does not change the selected track.
+The tool checks the INFO version first and stops after INFO unless it identifies a Felucca build. The tool has an explicit command allowlist. It does not send `SET`, `STEP_SET`, `TRACK_PARAM`, `MOTION`, project save/load, backup restore, sample writes, or firmware operations. It does not change the selected track.
 
 This is a read-only diagnostic tool. It is not a generator uploader and does not yet write patterns to the FM-1.
 
