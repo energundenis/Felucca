@@ -331,7 +331,7 @@ static void metal_core_complex_fm_pair_block(voice_t *v, int32_t *pre_fold, uint
 }
 
 
-/* ------------------------------------------------ 3 ms per-voice FM feedback delay --- */
+/* ------------------------------------------------ 3 ms feedback test harness --- */
 
 /* The reference path uses a 3 ms wcMod feedback delay. The delayed wcMod
  * waveform modulates wcMod frequency (not OSC1 frequency), with gain
@@ -345,14 +345,12 @@ typedef struct {
     int32_t sample[NVOICE][MC_FEEDBACK_DELAY_SAMPLES];
 } metal_core_feedback_state_t;
 
-/* The 96 kHz layout is 9,232 bytes for eight voices, below Felucca's
- * 12,888-byte per-part engine-memory budget. Deliberately fail compilation
- * above that supported memory envelope rather than silently overflowing it. */
+/* Multi-voice test harness only; this array is NOT the planned V1 part state.
+ * V1 uses the compact single-ring metal_core_part_state_t below. */
 typedef char metal_core_feedback_memory_fits[
     (sizeof(metal_core_feedback_state_t) <= 12888u) ? 1 : -1];
 
-/* Reset one voice's delay history on a fresh voice start. The caller must
- * decide whether a legato retrigger should preserve or clear this state. */
+/* Test-harness helper: reset one isolated voice's delay. Not a V1 note-on hook. */
 static void metal_core_feedback_delay_reset(metal_core_feedback_state_t *state, uint32_t voice)
 {
     uint32_t i;
