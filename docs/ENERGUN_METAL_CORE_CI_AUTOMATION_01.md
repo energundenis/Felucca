@@ -8,7 +8,7 @@ The fast lane checks out pinned submodules, generates the repository headers wit
 
 Both the fast lane and full baseline share the same pip download cache key, reducing repeated Python dependency downloads across workflows. It uploads a test log artifact for 14 days. It intentionally does not build the full firmware, compile the full Metal Core engine for AC79, register a production engine, alter persistence, access hardware, or flash the device.
 
-The existing `.github/workflows/energun-fm1-baseline.yml` remains the full integration gate for standard firmware build, isolated AC79 target probes, and complete host/web regression. The fast lane supplements rather than replaces it.
+The existing `.github/workflows/energun-fm1-baseline.yml` remains the full integration gate for standard firmware build, isolated AC79 target probes, and complete host/web regression. The baseline also compiles isolated VCA and feedback-delay arithmetic probes with the pinned AC79 pi32v2 compiler and archives their disassembly/symbol tables; this is code-generation inspection, not target execution or a full-engine build. The fast lane supplements rather than replaces it.
 
 The runner uses the same hardware include paths as `tests/run_tests.sh` and the same generated headers as the full build. It fetches recursive pinned submodules because the existing table generator imports the engine submodule, and the host tests include Felucca BSP headers.
 
