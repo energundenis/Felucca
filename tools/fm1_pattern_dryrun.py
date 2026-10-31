@@ -138,7 +138,8 @@ def build_dry_run(data: dict[str, Any], track: int, accent_mode: str) -> dict[st
         },
         "warnings": [
             "DRY RUN ONLY: no MIDI ports are opened and no SysEx is transmitted.",
-            "The 64-frame plan clears unused steps to REST; review the full target-track before-image before any future write.",
+            "The 64-frame plan clears unused steps and drum-lane hit masks; target must be a note-based synth track, never DRUM or SLICE.",
+            "Review the full target-track before-image, engine identity and existing motion records before any future write.",
             "P_SLEN, P_ROOT and P_SCALE are symbolic labels here; a future bridge must resolve IDs via INFO/DESC.",
             "The existing track quantizer must be read and checked before a future write.",
             "The accent mapping is a choice: velocity mode preserves V0.3 velocity but not the device accent flag; flag mode sets SF_ACCENT and forces velocity 127.",
