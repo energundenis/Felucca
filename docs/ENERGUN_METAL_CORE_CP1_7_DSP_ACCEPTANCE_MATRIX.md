@@ -82,7 +82,7 @@ A layer cannot substitute for a later layer.
 | LPG-06 | LPG × VCA interaction | independent envelope extremes | bounded multiplication, no clicks at gate/release transitions |
 | LPG-07 | retrigger/legato | repeated note, mono legato, release/retrigger | internal envelopes follow host lifecycle contract and do not hang voices |
 
-**Open semantic blocker:** CP1.5 source audit found the v98 LPG knob and per-trigger envelope writing the same gain AudioParam; LPG design 02 describes MODULE VOLUME as an independent gain. This conflict must be resolved from the exact source and an explicit approved behavior decision before LPG-03 can have a final expected waveform. Do not silently choose one interpretation.
+**Resolved source fact; V1 behavior still awaits approval:** exact v98 source trace confirms MODULE VOLUME writes the same gain AudioParam as the per-trigger envelope. `wcTrig()` overwrites the knob's base value with the RESPONSE-derived peak, so MODULE VOLUME is not an independent per-step output multiplier. LPG-03 must test the explicitly approved V1 choice: faithful override, independent post-envelope gain, or envelope-peak scaling. See `docs/ENERGUN_METAL_CORE_CP1_8_LPG_VOLUME_SOURCE_TRACE.md`.
 
 ## 4. Whole-engine and host integration matrix
 
