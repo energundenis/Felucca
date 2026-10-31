@@ -163,7 +163,7 @@ static void feedback_zero_exact(void)
     for (block = 0; block < 12; block++) {
         metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
             MC_OSC_SAW, MC_MOD_SINE, 24000, 32767, MC_FM_CHAR_METALLIC, 12000);
-        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base, base,
             201195u, MC_OSC_SAW, MC_MOD_SINE, 24000, 32767,
             MC_FM_CHAR_METALLIC, 12000, 0, &state, 0);
         for (i = 0; i < CTL; i++) if (ref[i] != got[i]) same = 0;
@@ -191,7 +191,7 @@ static void feedback_route_and_delay(void)
     for (block = 0; block < full_blocks; block++) {
         metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
             MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC, 16384);
-        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base, base,
             201195u, MC_OSC_SAW, MC_MOD_SINE, 26000, 32767,
             MC_FM_CHAR_METALLIC, 16384, 26214, &state, 0);
         for (i = 0; i < CTL; i++) if (ref[i] != got[i]) pre_delay_same = 0;
@@ -201,7 +201,7 @@ static void feedback_route_and_delay(void)
 
     metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
         MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC, 16384);
-    metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+    metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base, base,
         201195u, MC_OSC_SAW, MC_MOD_SINE, 26000, 32767,
         MC_FM_CHAR_METALLIC, 16384, 26214, &state, 0);
     for (i = 0; i < partial; i++) if (ref[i] != got[i]) boundary_same = 0;
@@ -210,7 +210,7 @@ static void feedback_route_and_delay(void)
     for (block = 0; block < 80; block++) {
         metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
             MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC, 16384);
-        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base, base,
             201195u, MC_OSC_SAW, MC_MOD_SINE, 26000, 32767,
             MC_FM_CHAR_METALLIC, 16384, 26214, &state, 0);
         for (i = 0; i < CTL; i++)
