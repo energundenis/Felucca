@@ -56,10 +56,10 @@ Checks:
 - feedback gain uses panel FREQ independently of FOLLOW note pitch;
 - pre-fold output remains within the tested oscillator headroom.
 
-GitHub Actions run `41157510223` passed all checks at 44.1 kHz and 96 kHz:
-https://github.com/energundenis/Felucca/actions/runs/41157510223
+GitHub Actions run `41157732492` passed all checks at 44.1 kHz and 96 kHz after the panel-FREQ API refinement:
+https://github.com/energundenis/Felucca/actions/runs/41157732492
 
-A subsequent regression run is required after the panel-FREQ API refinement and lifecycle audit updates.
+The earlier run `41157510223` also passed the pre-refinement route implementation. The latest run includes the separate panel-FREQ reference input and the regression proving feedback scaling remains independent of FOLLOW note pitch.
 
 ## 5. Explicit limits
 
