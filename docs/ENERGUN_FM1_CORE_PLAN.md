@@ -403,3 +403,11 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - CP2.8: all 11 note-source provenance cases passed. Host-side provenance implementation is validated; render integration remains pending.
 - CP2.9: isolated FOLLOW and MIDI adapter tests passed with zero failures. Bounded arithmetic prototype is validated only. The adapter's -2..+2 octave clamp remains a known limitation, so full MIDI 0..127 mapping is not yet validated.
 - CP2.11 host pitch-delta helper has a separate CI run `41210288637` in progress at commit `5cba63fd7b9877896daaa1f32a2a4b9010071dce`.
+
+
+## CP2.11 test correction and MIDI range extension (2026-10-31)
+
+- Corrected the Q24 ratio test's expected value to use round-to-nearest, matching the helper's documented arithmetic.
+- Added representative MIDI 0 and MIDI 127 host-increment ratio tests to prove the proposed CP2.11 path does not apply CP2.9's -2..+2 octave clamp.
+- Removed an unused Nyquist temporary; the Q0.32 Nyquist ceiling remains the fixed `0x80000000` phase increment.
+- CI for the amended CP2.11 implementation is pending.

@@ -182,7 +182,7 @@ static inline uint32_t eng_metal_follow_host_phase_inc(uint32_t base_inc,
                                                         uint32_t final_inc)
 {
     uint32_t denominator, ratio;
-    uint64_t scaled, nyquist;
+    uint64_t scaled;
 
     if (!sample_rate)
         return 0u;
@@ -193,11 +193,9 @@ static inline uint32_t eng_metal_follow_host_phase_inc(uint32_t base_inc,
         return 0u;
 
     scaled = ((uint64_t)base_inc * ratio + (1ull << 23)) >> 24;
-    nyquist = (uint64_t)sample_rate << 31;
     /* Q0.32 phase increment at Nyquist is exactly 0x80000000. */
     if (scaled > 0x80000000ull)
         scaled = 0x80000000ull;
-    (void)nyquist;
     return (uint32_t)scaled;
 }
 

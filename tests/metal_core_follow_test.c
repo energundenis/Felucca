@@ -119,7 +119,7 @@ static void test_host_pitch_delta(void)
 
     check("host increment ratio preserves a 10% pitch offset",
           eng_metal_follow_inc_ratio_q24(note, final) ==
-              (uint32_t)(((uint64_t)final << 24) / note));
+              (uint32_t)((((uint64_t)final << 24) + (note / 2u)) / note));
     check("zero host reference increment is rejected",
           eng_metal_follow_inc_ratio_q24(0u, final) == 0u);
 
@@ -137,6 +137,17 @@ static void test_host_pitch_delta(void)
                                            reference, note, final);
     check("performance source remains host-pitched when FOLLOW is OFF",
           got == 1650000u);
+
+
+    got = eng_metal_follow_host_phase_inc(base, 48000u, 1, 1,
+                                           reference, 31250u, 31250u);
+    check("MIDI 0 endpoint maps below C4 without octave clamp",
+          got == 31250u);
+
+    got = eng_metal_follow_host_phase_inc(base, 48000u, 1, 1,
+                                           reference, 48000000u, 48000000u);
+    check("MIDI 127 endpoint maps above C4 without octave clamp",
+          got == 48000000u);
 
     check("zero sample rate produces no phase increment",
           eng_metal_follow_host_phase_inc(base, 0u, 1, 1,

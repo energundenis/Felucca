@@ -79,3 +79,7 @@ CP2.8 is validated at the tested source commit. CP2.9's bounded MIDI adapter ari
 ## Follow-on integration status
 
 CP2.11 introduces an alternate host-increment ratio method that can map pitch directly from Felucca's host pitch increments and avoid relying on the bounded absolute-MIDI adapter in the eventual render path. CP2.11 is under its own CI validation; full-range tests and target integration are still pending.
+
+## CP2.11 host-increment path — range coverage added
+
+The CP2.11 helper and its tests now include representative full-range endpoints (MIDI 0 and MIDI 127) using the host phase-increment ratio, without applying the CP2.9 NOTE OCTAVE clamp. This is a separate proposed render path; it does not change or erase the CP2.9 adapter's bounded behavior. CI validation for the updated CP2.11 tests is pending.

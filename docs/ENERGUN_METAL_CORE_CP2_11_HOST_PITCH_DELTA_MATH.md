@@ -40,7 +40,11 @@ Added:
 
 No floating point or dynamic allocation is used by the helper. Division is at control/block rate, not per sample.
 
-## 5. Limits
+## 5. Full MIDI range
+
+The host-increment method does not use the CP2.9 NOTE/OCTAVE clamp. It derives the note ratio directly from Felucca's final host increment relative to the C4 reference, so the MIDI endpoints can be represented without reducing them to the -2..+2 octave adapter range. Host tests now include representative MIDI 0 (1/32 of C4) and MIDI 127 (approximately 48× C4) ratios. This validates the ratio path mathematically only; the exact target pitch-table values and audio Nyquist behavior still require render/target verification.
+
+## 6. Limits
 
 - This is an isolated math primitive, not connected to `eng_metal_core.c`, the host callback or an oscillator.
 - The host adapter still needs a verified way to calculate `reference_inc` and `note_inc` using the exact target sample-rate and Felucca pitch tables.
@@ -48,6 +52,6 @@ No floating point or dynamic allocation is used by the helper. Division is at co
 - A target CPU measurement and render-level tests are required before integration.
 - The current CP2.9 octave clamp is not silently removed by this helper; it remains documented as a separate adapter limitation pending replacement/verification.
 
-## 6. Scope boundary
+## 7. Scope boundary
 
 No engine registration, parameter ID, UI, preset/storage layout, package, factory image or device state changed.
