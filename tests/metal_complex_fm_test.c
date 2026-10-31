@@ -11,6 +11,13 @@
 #include <stdio.h>
 #include <string.h>
 
+static int near_i32(int32_t a, int32_t b, int32_t tol)
+{
+    int32_t d = a - b;
+    if (d < 0) d = -d;
+    return d <= tol;
+}
+
 static int failures;
 
 static void check(const char *name, int ok)
@@ -37,6 +44,10 @@ static void signed_step(void)
     check("signed SAW uses bounded BLEP width",
           metal_core_osc_sample_signed(0x34567890u, -((int32_t)base), MC_OSC_SAW) ==
           metal_core_osc_sample(0x34567890u, base, MC_OSC_SAW));
+    check("reverse SAW BLEP smooths phase zero", 
+          near_i32(metal_core_osc_sample_signed(0u, -((int32_t)base), MC_OSC_SAW), 0, 2));
+    check("reverse SAW BLEP smooths phase wrap", 
+          near_i32(metal_core_osc_sample_signed(0xFFFFFFFFu, -((int32_t)base), MC_OSC_SAW), 0, 2));
 }
 
 static void bypass_exact(void)
