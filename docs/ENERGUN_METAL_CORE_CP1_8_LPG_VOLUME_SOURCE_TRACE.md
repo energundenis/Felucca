@@ -74,3 +74,17 @@ This is a recommendation, not approval or implementation.
 - Source locations: parameter declaration in `P`; knob creation in the LOW-PASS GATE module; audio node creation and connection in `wcInit`; knob dispatch in `wcUpdateParam`; envelope scheduling in `wcTrig`; `wcHold` helper.
 - No parameter IDs, engine ABI, DSP source, UI, project/preset storage, sidecar, Flash allocation, package or device state changed.
 - CP1.8 closes the source ambiguity but leaves the user-facing V1 behavior choice open.
+
+
+## 7. Approved V1 behavior — Option C (2026-10-31)
+
+The user approved **Option C — envelope-scaled LPG peak**.
+
+- Preserve one LPG gain stage.
+- Compute the trigger peak as `(0.25 + RESPONSE × 0.75) × MODULE VOLUME`.
+- MODULE VOLUME scales the per-trigger peak; it is not a post-envelope gain node.
+- RESPONSE continues to define the peak contour and opening attack; DECAY continues to define the tail.
+- This intentionally departs from the v98 shared-AudioParam overwrite behavior.
+- Isolated Q15 helper: `firmware/src/eng_metal_core_math.h`, function `eng_metal_lpg_peak_q15()`.
+- Host test: `tests/metal_core_lpg_test.c`; runner integration is part of CP2.2.
+- The helper is not connected to `eng_metal_core.c` and does not make the engine playable or change registration, IDs, UI, storage, package, or device state.
