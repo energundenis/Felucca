@@ -2,8 +2,8 @@
  * ENERGUN METAL CORE — host-only fractional feedback delay candidate.
  *
  * This file is a test candidate, not production DSP and not included by the
- * firmware engine. 44.1 kHz × 3 ms = 132.3 samples. Read-before-write allows
- * a 133-sample ring with linear interpolation between n-132 and n-133.
+ * firmware engine. audio.c sets DAC_TICKS=544 at 24 MHz, giving 44,117.647 Hz;
+ * 3 ms = 132.35294 samples. Read-before-write uses a 133-sample ring.
  */
 #ifndef TEST_METAL_CORE_FEEDBACK_DELAY_CANDIDATE_H
 #define TEST_METAL_CORE_FEEDBACK_DELAY_CANDIDATE_H
@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #define TEST_METAL_FB_RING_SAMPLES 133u
-#define TEST_METAL_FB_FRAC_Q15 9830u /* round(0.3 * 32768) */
+#define TEST_METAL_FB_FRAC_Q15 11565u /* round((132.35294 - 132) * 32768) */
 
 typedef struct {
     int32_t sample[TEST_METAL_FB_RING_SAMPLES];
@@ -27,7 +27,7 @@ static inline void test_metal_feedback_delay_reset(test_metal_feedback_delay_t *
     d->write_index = 0;
 }
 
-/* Read the 132.3-sample delayed value before writing the current sample. */
+/* Read the 132.35294-sample delayed value before writing the current sample. */
 static inline int32_t test_metal_feedback_delay_read(
     const test_metal_feedback_delay_t *d)
 {
