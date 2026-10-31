@@ -1,7 +1,7 @@
 # ENERGUN METAL CORE — FOLLOW / MOD RATIO decision 01
 
 Date: 2026-10-31
-Status: open decision; no behavior selected or implemented.
+Status: APPROVED — Option A selected by the user on 2026-10-31. Strict v98 behavior is the V1 reference.
 
 ## 1. Audited v98 behavior
 
@@ -37,19 +37,23 @@ Trade-off: MOD RATIO is effectively overridden by FOLLOW note triggers.
 Pros: predictable ratio control while playing sequenced notes.
 Trade-off: changes the v98 reference behavior and may change the established METAL CORE character.
 
-## 3. Current recommendation
+## 3. Approved V1 decision
 
-Do not silently choose either behavior during integration.
+**Option A is approved.** Preserve the v98 behavior exactly:
+- FOLLOW OFF: wcMod = panel FREQ × MOD RATIO.
+- FOLLOW ON: wcMod = tracked note frequency × 1.5.
+- MOD RATIO is overridden while FOLLOW is active.
+- Feedback scaling remains referenced to panel FREQ, not tracked note pitch.
 
-If strict v98 sound compatibility is the priority, choose Option A. If the priority is a meaningful MOD RATIO control during FOLLOW performance, choose Option B and treat it as an intentional V1 sound change requiring listening tests.
+Option B is not part of V1. Any later change to make MOD RATIO effective under FOLLOW would be a separate sound-design revision and would require a new explicit decision and listening tests.
 
-## 4. Implementation gate
+## 4. Implementation constraints after approval
 
-Until a choice is approved:
-- keep the audited fixed 1.5 FOLLOW behavior documented;
-- keep panel-FREQ feedback reference independent from tracked pitch;
-- do not freeze the E0..E7 parameter semantics;
-- do not register METAL CORE in `ENGINES[]`;
-- do not assign final EDIT labels, defaults, ranges or curves for MOD RATIO.
+- Implement FOLLOW ON as a fixed 1.5 ratio from the tracked note frequency.
+- Implement FOLLOW OFF as panel FREQ × user MOD RATIO.
+- Keep feedback scaling based on panel FREQ in both modes.
+- Do not allow MOD RATIO to alter the FOLLOW ON ratio.
+- The current adapter's temporary FOLLOW-ON probe now uses 1.5 (Q16 value 98304) and has a regression assertion. The adapter's panel-FREQ input is still a fixed test placeholder, not a real control mapping.
+- Final EDIT labels, defaults, ranges, and curves still require separate parameter-map approval before engine registration.
 
 No firmware image, device query, SysEx, flash write, or hardware change is involved in this decision.
