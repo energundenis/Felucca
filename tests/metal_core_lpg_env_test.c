@@ -76,6 +76,18 @@ int main(void)
           value >= previous && value - previous < 1000 &&
           env.phase == ENG_METAL_LPG_ENV_ATTACK);
 
+    /* A retrigger during decay must hold the decaying value and rise smoothly. */
+    for (i = 0; i < 1000u; ++i)
+        eng_metal_lpg_env_process(&env);
+    for (i = 0; i < 100u; ++i)
+        eng_metal_lpg_env_process(&env);
+    previous = env.level_q15;
+    eng_metal_lpg_env_trigger(&env, 26000, &timing);
+    value = eng_metal_lpg_env_process(&env);
+    check("retrigger during decay holds level and rises without a reset",
+          value >= previous && value - previous < 1000 &&
+          env.phase == ENG_METAL_LPG_ENV_ATTACK);
+
     /* Zero-length gate enters decay immediately and never sticks in attack. */
     timing.tail_samples = 0u;
     eng_metal_lpg_env_trigger(&env, 32767, &timing);
@@ -84,6 +96,7 @@ int main(void)
           env.target_q15 == ENG_METAL_LPG_ENV_FLOOR);
 
     eng_metal_lpg_env_reset(&env);
+    timing.tail_samples = 1000u;
     eng_metal_lpg_env_trigger(&env, 50000, &timing);
     check("trigger clamps peak to Q15 full scale",
           env.target_q15 == ENG_METAL_Q15_ONE);
