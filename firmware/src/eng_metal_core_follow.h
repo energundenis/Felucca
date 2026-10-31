@@ -78,7 +78,7 @@ static inline uint32_t eng_metal_follow_phase_inc(uint32_t base_freq_hz,
                                                    int32_t octave_tenths)
 {
     uint32_t ratio;
-    uint64_t base_inc, result;
+    uint64_t numerator, result;
 
     if (!sample_rate)
         return 0u;
@@ -91,8 +91,10 @@ static inline uint32_t eng_metal_follow_phase_inc(uint32_t base_freq_hz,
     if (base_freq_hz > ENG_METAL_FOLLOW_FREQ_MAX_HZ)
         base_freq_hz = ENG_METAL_FOLLOW_FREQ_MAX_HZ;
 
-    base_inc = ((uint64_t)base_freq_hz << 32) / sample_rate;
-    result = (base_inc * ratio + (1ull << 23)) >> 24;
+    /* ratio is Q24; multiplying by 2^8 gives the Q32 phase numerator.
+     * Divide only once to avoid amplifying an earlier base-increment truncation. */
+    numerator = (uint64_t)base_freq_hz * ratio * 256u;
+    result = (numerator + sample_rate / 2u) / sample_rate;
     return result > UINT32_MAX ? UINT32_MAX : (uint32_t)result;
 }
 

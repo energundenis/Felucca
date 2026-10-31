@@ -79,7 +79,7 @@ static void test_phase_increment(void)
     uint32_t base = eng_metal_follow_phase_inc(160u, 44100u, -1, 0);
     uint32_t octave = eng_metal_follow_phase_inc(160u, 44100u, -1, 10);
     uint32_t note = eng_metal_follow_phase_inc(160u, 44100u, 7, 0);
-    uint32_t combined = eng_metal_follow_phase_inc(160u, 32000u, 11, 20);
+    uint32_t combined = eng_metal_follow_phase_inc(500u, 32000u, 11, 20);
     double scale = 4294967296.0;
 
     check("base FREQ converts to a Q0.32 phase increment",
@@ -91,8 +91,8 @@ static void test_phase_increment(void)
     check("maximum base-note mapping stays below Nyquist at 32 kHz",
           combined < 0x80000000u &&
           near_u32(combined,
-                   160.0 * pow(2.0, 11.0 / 12.0 + 2.0) * scale / 32000.0,
-                   3.0));
+                   500.0 * pow(2.0, 11.0 / 12.0 + 2.0) * scale / 32000.0,
+                   1.0));
 }
 
 static void test_source_selector(void)
