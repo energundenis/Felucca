@@ -4,14 +4,6 @@ on:
   push:
     branches:
       - energun-metal-core
-    paths:
-      - ".github/workflows/energun-fm1-baseline.yml"
-      - "firmware/**"
-      - "tools/**"
-      - "tests/**"
-      - "build.sh"
-      - "BUILDING.md"
-      - ".gitmodules"
   pull_request:
     branches:
       - energun-metal-core
