@@ -148,7 +148,7 @@ Each fixture records source revision, sample rate, block size, event sequence, p
 
 Before first DSP source implementation:
 1. Approve the 37-control inventory and final 8/16/13 access allocation.
-2. Resolve LPG MODULE VOLUME semantics.
+2. Implement and validate the approved LPG MODULE VOLUME Option C peak calculation and envelope behavior.
 3. Freeze exact fixed-point formats, oscillator table/phase conventions, filter topology and fold transfer approximations.
 4. Define deterministic test vectors and numerical tolerances.
 5. Confirm per-part and per-voice memory fit.
@@ -160,3 +160,8 @@ Before first DSP source implementation:
 - Added bounded Q15 helper `firmware/src/eng_metal_core_math.h` with input clamping and rounded multiply.
 - Added host-only transfer tests in `tests/metal_core_lpg_test.c`: RESPONSE endpoints/midpoint, volume mute/half-scale/monotonicity, contour ordering, and out-of-range clamping.
 - This validates peak calculation only, not envelope scheduling, filter response, decay timing, audio output, target CPU, or engine render.
+
+
+## 9. Decision status update — LPG Option C
+
+The LPG semantic decision is no longer open. User approval is recorded in CP1.11: `peakLpg = (0.25 + RESPONSE × 0.75) × MODULE VOLUME`, with one gain stage and unchanged RESPONSE attack / DECAY tail. The current isolated Q15 helper and host transfer tests cover only the peak math. Envelope scheduling, gate-limited decay, filter transient and audio behavior remain unimplemented and must pass LPG-02/03/06/07 before engine integration.
