@@ -172,3 +172,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Deferred RING2, SPREAD pending routing proof, custom LFO/RANDOM/SLEW, full patch bay, and prototype DRONE/SEQ / WEST COAST ON controls (map to Felucca host lifecycle/enable).
 - Host ADSR reuse remains conditional; P_LEVEL and P_DETUNE retain host semantics and are not substitutes for internal module controls.
 - No IDs, editor pages, sidecar, flash addresses, firmware code, package, or hardware state changed. CP1 remains open pending inventory/scope approval, reference gain/default calibration, host ADSR parity, and storage design.
+
+
+## CP1.4 — parameter access and persistence proposal (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_4_PARAMETER_ACCESS_STORAGE_PROPOSAL.md` (commit `3521cf69cc0308b61700e24d1a0f883660519928`).
+- Audited the pinned `felucca_engine.h`: engine ABI exposes only `edit[8]` and one optional descriptor hook for those eight values; additional controls need common parameter pages or a deliberate private-value UI extension.
+- Audited `params.c`: static four-slot pages resolve common IDs through TP[] and E0..E7 through engine descriptors. The modulation matrix exposes only E1..E8.
+- Found a required motion change: common P_MC IDs inserted before E0 will not be covered by current `motion_param()`'s `id >= P_E0` rule. Add explicit P_MC range and tests if these are to support parameter locks.
+- Proposed (not assigned) E0..E7 for FREQ, FM INDEX, METAL RATIO, WEST COAST DRIVE, FOLD, CUTOFF, RESONANCE, LPG DECAY; 16 common continuous P_MC controls; and a private sidecar bank of 9 or 13 values depending on host ADSR parity.
+- Existing user-preset storage has 144 packed value bytes but retains the `<128` parameter-ID ceiling. FUN10 has insufficient free bytes for any new complete common per-track parameter. Existing backup object list has no Metal Core sidecar object.
+- Identified the required private UI/API extension; do not put persistent controls in `engine_t.mem`, which is volatile DSP state.
+- No IDs, source code, ABI, project format, backup protocol, sidecar, flash allocation or device state changed. CP1 remains open for sound-default calibration, ADSR parity, scope approval and sidecar/recovery design.
