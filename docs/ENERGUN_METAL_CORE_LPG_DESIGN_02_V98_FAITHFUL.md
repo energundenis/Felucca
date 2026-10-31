@@ -63,7 +63,7 @@ No DSP, parameter IDs, UI changes, or firmware flashing is included in this desi
 
 ## 6. CP1.8 source-trace correction
 
-The exact v98 source trace confirms that MODULE VOLUME is stored and its knob handler writes the LPG gain node, but each sequencer trigger subsequently overwrites the same AudioParam with `0.25 + RESPONSE × 0.75` and the LPG decay envelope. It therefore does not behave as an independent output gain during normal step playback. The V1 behavior is intentionally left undecided among exact bug compatibility, an independent post-envelope gain, or scaling the envelope peak. See `docs/ENERGUN_METAL_CORE_CP1_8_LPG_VOLUME_SOURCE_TRACE.md`; do not implement an interpretation without approval.
+The exact v98 source trace confirms that MODULE VOLUME is stored and its knob handler writes the LPG gain node, but each sequencer trigger subsequently overwrites the same AudioParam with `0.25 + RESPONSE × 0.75` and the LPG decay envelope. It therefore does not behave as an independent output gain during normal step playback. The v98 behavior is documented here for reference only. V1 behavior is approved as Option C: `peakLpg = (0.25 + RESPONSE × 0.75) × MODULE VOLUME`, with one gain stage and unchanged RESPONSE attack / DECAY tail. This deliberately corrects the shared-gain overwrite collision.
 
 
 ## 7. Approved V1 correction — LPG MODULE VOLUME Option C
@@ -72,4 +72,4 @@ The user approved Option C for V1. The peak at each trigger is:
 
 `peakLpg = (0.25 + RESPONSE × 0.75) × MODULE VOLUME`
 
-MODULE VOLUME scales the envelope peak; it does not add a separate post-envelope stage. RESPONSE attack and DECAY tail remain independent and unchanged. This intentionally differs from the v98 shared-gain overwrite defect. The isolated Q15 helper and host test are documented in CP1.8 and CP1.7; neither is yet connected to the engine render callback.
+MODULE VOLUME scales the envelope peak; it does not add a separate post-envelope stage. RESPONSE attack and DECAY tail remain independent and unchanged. This intentionally differs from the v98 shared-gain overwrite defect. The isolated Q15 helper and host test are documented in CP1.8 and CP1.7; neither is yet connected to the engine render callback. Envelope timing and gate-limited decay remain separate implementation tasks.
