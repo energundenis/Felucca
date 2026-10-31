@@ -51,3 +51,10 @@ MIDI/sequencer note-off currently changes `voice_t.gate` and `voice_t.stage` in 
 ## Disposition
 
 CP3.0 source contract audit is complete. It does not register METAL CORE, change parameter IDs, alter storage formats, modify the audio graph, or write/flash a device. The next safe coding increment is a test-only adapter against the real Felucca track/voice structures and per-part memory, followed by isolated integration of the already-tested OSC/FM/FOLD/LPG/VCA primitives. Production registration remains gated.
+
+## Real-track adapter probe — added after the source audit
+
+- Added `tests/metal_core_vca_real_track_adapter_test.c`, which includes the actual `firmware/src/core.h` and uses Felucca's real `track_t`, `voice_t`, `vmod_t`, `voice_source[]`, and a four-part aligned test memory pool.
+- Added the probe to `tests/run_tests.sh` as `CP3.0 adapter against real Felucca track_t`.
+- This is still a test-only descriptor; `engines.c` and the production engine table are unchanged.
+- Verification is pending on the exact current branch HEAD. Do not mark this probe passed until CI logs show the new test compiled and printed `PASS (0 failures)`.
