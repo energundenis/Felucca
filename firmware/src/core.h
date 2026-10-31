@@ -152,7 +152,7 @@ static int drum_from_perc(uint32_t engine, int16_t *e)
 
 /* ------------------------------------------------- voices, engines --- */
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
-enum { NOTE_SRC_PERFORMANCE, NOTE_SRC_SEQUENCER }; /* host-only pitch provenance; preview uses SEQUENCER */
+enum { NOTE_SRC_PERFORMANCE = 0u, NOTE_SRC_SEQUENCER = 1u, NOTE_SRC_MASK = 1u, NOTE_META_ACCENT = 2u }; /* bit 0: origin; bit 1: explicit step Accent */
 /* voice_t, vmod_t, preset_t, engine_t: felucca_engine.h (above) */
 
 /* ------------------------------------------------- tracks, the song --- */
