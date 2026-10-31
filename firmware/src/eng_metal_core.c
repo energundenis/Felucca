@@ -261,7 +261,14 @@ static inline int32_t metal_core_fm_instantaneous_step(uint32_t base_inc,
 static inline int32_t metal_core_osc_sample_signed(uint32_t phase, int32_t step, uint32_t wave)
 {
     uint32_t inc = step < 0 ? (uint32_t)(-(int64_t)step) : (uint32_t)step;
-    return metal_core_osc_sample(phase, inc, wave);
+    if (step >= 0 || wave != MC_OSC_SAW)
+        return metal_core_osc_sample(phase, inc, wave);
+
+    /* Reverse traversal needs a time-reversed BLEP correction. Reusing the
+     * forward correction at |step| creates an asymmetric discontinuity when
+     * FM pulls the instantaneous carrier frequency through zero. */
+    return ((int32_t)(phase >> 16) - 32768) +
+           blep(0xFFFFFFFFu - phase, inc);
 }
 
 /* Full v98 Complex FM -> OSC1 path plus the independent OSC2 direct-audio
