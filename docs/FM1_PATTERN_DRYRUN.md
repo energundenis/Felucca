@@ -11,7 +11,7 @@ Choose **velocity** to preserve the V0.3 accent velocity values, or **flag** to 
 ## Dry-run behavior
 
 - Validates the JSON schema, all step indices, pitch calculation, root, scale, and gate values.
-- Builds 64 candidate TRACK_STEP (30) frames. Steps beyond the requested 8 / 16 / 32 length become REST, so old data cannot leak back if the pattern is lengthened later.
+- Builds 64 candidate TRACK_STEP (30) frames. Steps beyond the requested 8 / 16 / 32 length become REST, so old data cannot leak back if the pattern is lengthened later. The candidate also clears drum-lane hit masks; use only a note-based synth track, never DRUM / SLICE.
 - Produces a symbolic parameter plan for P_SLEN, P_ROOT and P_SCALE.
 - Reports per-step Gate values and a median candidate, but deliberately does not create a P_SGATE write or MOTION / Parameter Lock message.
 - Does not open MIDI ports, send SysEx, or access the FM-1.
