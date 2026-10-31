@@ -545,3 +545,14 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Hot path uses one 64-bit multiply per sample and no float/division/allocation. Theoretical 8-voice/44.1 kHz rate is 352,800 64-bit multiplies/s; this is not a CPU benchmark.
 - Next: add size assertions/diagnostics to host and target build where supported, inspect AC79 generated code, benchmark worst-case render load, then compare render() versus amp() integration. No engine registration or device write is authorized by this audit.
 - CI run 41221213282 completed successfully: firmware baseline build, host regression, web regression and isolated VCA tests passed; VCA reported 0 failures. This does not establish target rendering or hardware validation.
+
+
+## CP2.15 — AC79 VCA target probe and callback comparison (2026-10-31)
+
+- Added `tests/metal_core_vca_target_probe.c` with a compile-time target ABI assertion (`sizeof(eng_metal_vca_t) == 36`) and noinline one-sample / 32-sample probe functions.
+- Updated `.github/workflows/energun-fm1-baseline.yml` to compile the probe with the pinned JieLi `pi32v2` Clang target and include object, disassembly and symbol table in the CI artifact.
+- Added `docs/ENERGUN_METAL_CORE_CP2_15_AC79_VCA_TARGET_PROBE_AND_CALLBACK_DECISION.md`.
+- Source comparison: `engine_t.amp()` is called once per control tick and its Q15 output is linearly ramped across the block; this is not curve-identical to V98's sample-time one-pole VCA. Preferred V1 integration point is therefore sample-domain processing inside the engine `render()`, after LPG gain, with `ownenv=1` and engine-owned per-voice state. This remains a preferred architecture, not integrated code.
+- The exact MIDI/sequencer Gate, retrigger/ratchet, manual-mode, and block-boundary lifecycle mappings remain open.
+- No engine registration, UI, parameter IDs, storage, flash layout, firmware image changes, or device writes. The target compile probe is not linked into the firmware.
+- CP2.15 target compile result is pending its triggered CI run. No target cycle benchmark is claimed.
