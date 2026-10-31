@@ -263,3 +263,12 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Mapped the five independent v98 oscillator phase sources and the waveform roles. No need to add a new public oscillator API or float math to the target.
 - Flagged polyBLEP division cost and high-rate FM increment bounds for target worst-case measurement; triangle aliasing and sample-rate table consistency need explicit tests.
 - Defined isolated oscillator test cases; no engine source, tests, IDs, UI, storage, firmware package, Flash or device state changed.
+
+
+## CP2.1 — isolated oscillator primitive test harness (2026-10-31)
+
+- Added `tests/metal_core_osc_test.c` (commit `784c38381fde90d5a4d4d47351ad56f39d146a00`, include correction `e9e7cb2a58402982d568c039130e2b870f17ab39`).
+- Added it to `tests/run_tests.sh` (commit `cfdaec17a76b3ce1457dc928c8361825b342e5b8`).
+- Host tests cover sine and triangle bounds/full scale/DC, polyBLEP saw and 50% pulse bounds/DC, A4 pitch increment, octave ratio and independent phase accumulators.
+- This exercises existing Felucca fixed-point primitives only. It does not implement or register the Metal Core engine and does not claim target aliasing/audio quality.
+- Validation is pending in GitHub Actions run `41162325731` for current HEAD `cfdaec17a76b3ce1457dc928c8361825b342e5b8`; do not mark the harness passed until that run completes.
