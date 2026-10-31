@@ -513,3 +513,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Source/API trace is complete; VCA fixed-point/sample-domain implementation, short-gate ordering decision, retrigger/lifecycle tests, memory/CPU measurement and render integration remain open.
 - No firmware implementation, engine registration, parameter IDs, storage/Flash changes, package, factory firmware, physical device state or `main` branch changed.
 - Added 21 planned VCA acceptance tests (VCA-01..VCA-21) to [DSP acceptance matrix](ENERGUN_METAL_CORE_CP1_7_DSP_ACCEPTANCE_MATRIX.md), commit `7455bb9579ef8610fc703d509f36c3a8f26b203e`. These are test requirements, not completed test results.
+
+
+## CP1.16 — VCA short-Gate / long-Attack rule accepted (2026-10-31)
+
+- User selected **Option B**: preserve the V98 VCA character but prevent a delayed Decay event from reopening the VCA after Release begins.
+- If Gate-off occurs during Attack or before the scheduled Decay start, Release begins immediately from the instantaneous current VCA level; any later Decay event is cancelled/suppressed.
+- Retrigger during Release retains cancel-and-hold behavior and starts a new contour from the current level.
+- Decision record: [CP1.16 short-Gate VCA decision](ENERGUN_METAL_CORE_CP1_16_SHORT_GATE_VCA_DECISION.md).
+- Updated CP1.15 source specification and VCA-11 in the DSP acceptance matrix.
+- This closes the short-Gate specification decision only. VCA implementation, deterministic tests, CPU/RAM measurement and render integration remain pending. No firmware code, engine registration, UI, storage, Flash, package, factory firmware, physical FM-1 or main branch changed.
