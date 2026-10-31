@@ -298,3 +298,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added `tests/metal_core_lpg_timing_test.c` and integrated it into `tests/run_tests.sh`.
 - The test is host-only and checks schedule math; it does not execute audio-rate envelopes or filter updates, produce reference renders, measure target CPU, or register the engine.
 - CI validation is pending. Do not mark CP2.3 passed until the latest CI run completes successfully.
+
+
+## CP2.4 — isolated sample-by-sample LPG gain envelope (2026-10-31)
+
+- Added `firmware/src/eng_metal_core_lpg.h`, a fixed-point Q15 envelope state machine with a Q30 one-pole coefficient.
+- Supports attack toward the approved Option C peak, gate-limited transition to the near-zero floor, exponential-style decay, idle/silence completion, and retrigger from the current held level.
+- Coefficient division occurs only at trigger time; the per-sample routine performs no allocation, floating-point operation, table lookup, or division. It uses a 64-bit intermediate for the Q30 multiply; target CPU/instruction cost remains to be measured.
+- Added `tests/metal_core_lpg_env_test.c` and wired it into `tests/run_tests.sh`. Tests cover attack monotonicity/time constant, gate event, decay, idle, retrigger hold, zero gate, peak clamp and null safety.
+- This is a host-testable isolated DSP primitive. It does not implement the LPG filter, host note lifecycle, or complete engine render; it is not included in `engines.c` and does not change engine registration, parameter IDs, UI, storage, package or device state.
+- CI is pending for the current branch revision. Do not mark CP2.4 complete until the relevant CI run succeeds and target cost review is performed.
