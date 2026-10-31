@@ -88,3 +88,16 @@ The user approved **Option C — envelope-scaled LPG peak**.
 - Isolated Q15 helper: `firmware/src/eng_metal_core_math.h`, function `eng_metal_lpg_peak_q15()`.
 - Host test: `tests/metal_core_lpg_test.c`; runner integration is included in the current CI validation.
 - The helper is not connected to `eng_metal_core.c` and does not make the engine playable or change registration, IDs, UI, storage, package, or device state.
+
+
+## 8. LPG timing model — isolated implementation (2026-10-31)
+
+Added to `firmware/src/eng_metal_core_math.h`:
+- RESPONSE attack time: 1.5 ms + RESPONSE × 6 ms.
+- Gain tail event: min(gate, DECAY).
+- Gain decay time constant: max(6 ms, DECAY × (0.08 + RESPONSE × 0.18)).
+- LPG filter transient cutoff: min(12 kHz, base cutoff × (1.25 + RESPONSE × 3.75)); return target max(100 Hz, base cutoff).
+- Filter return event: min(gate, DECAY × 0.22).
+- Filter return time constant: max(12 ms, DECAY × (0.08 + RESPONSE × 0.12)).
+
+All event times are converted to integer sample counts with rounding. The host test `tests/metal_core_lpg_timing_test.c` covers endpoints, minimum time constants, gate limiting, filter cutoff scaling/cap and zero sample rate. This is a deterministic scheduling-math model only: no audio envelope/filter loop, target cost, or engine render is implemented.
