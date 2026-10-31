@@ -347,7 +347,7 @@ static void adapter_callbacks(void)
     metal_core_part_state_t *s;
     vmod_t m;
     int32_t out[CTL];
-    uint32_t base = pitch_inc(60 * 16), phase_before;
+    uint32_t base = pitch_inc(60 * 16), phase_before, panel_ref;
     uint16_t write_before;
 
     memset(trk, 0, sizeof trk);
@@ -375,6 +375,7 @@ static void adapter_callbacks(void)
     check("render hook advances per-part phases and delay once",
           s->advanced_this_block && s->delay_write == CTL &&
           s->phase[0] != 0 && s->phase[1] != 0 && s->phase[2] != 0);
+    panel_ref = s->feedback_ref_inc;
 
     phase_before = s->phase[2];
     write_before = s->delay_write;
@@ -392,10 +393,13 @@ static void adapter_callbacks(void)
 
     ENG_METAL_CORE_ADAPTER.block(&trk[0]);
     phase_before = s->phase[2];
+    m.inc = pitch_inc(67 * 16); /* a FOLLOW-tracked note pitch change */
     ENG_METAL_CORE_ADAPTER.render(&trk[0], &trk[0].v[0], out, CTL, &m);
     check("render resumes the same part state after an idle block",
           s->phase[2] != phase_before &&
           s->delay_write == (write_before + 2u * CTL) % MC_FEEDBACK_DELAY_SAMPLES);
+    check("feedback reference remains panel-FREQ based across tracked pitch changes",
+          s->feedback_ref_inc == panel_ref);
 }
 
 int main(void)
