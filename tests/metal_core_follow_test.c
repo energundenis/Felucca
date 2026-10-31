@@ -109,6 +109,48 @@ static void test_source_selector(void)
           eng_metal_follow_select_inc(0, 0, base, note) == note);
 }
 
+static void test_host_pitch_delta(void)
+{
+    const uint32_t base = 1000000u;
+    const uint32_t reference = 2000000u; /* MIDI C4 */
+    const uint32_t note = 3000000u;      /* target step note */
+    const uint32_t final = 3300000u;     /* +10% host pitch effects */
+    uint32_t got;
+
+    check("host increment ratio preserves a 10% pitch offset",
+          eng_metal_follow_inc_ratio_q24(note, final) ==
+              (uint32_t)(((uint64_t)final << 24) / note));
+    check("zero host reference increment is rejected",
+          eng_metal_follow_inc_ratio_q24(0u, final) == 0u);
+
+    got = eng_metal_follow_host_phase_inc(base, 48000u, 0, 1,
+                                           reference, note, final);
+    check("sequencer FOLLOW OFF uses base FREQ with host pitch delta",
+          got == 1100000u);
+
+    got = eng_metal_follow_host_phase_inc(base, 48000u, 1, 1,
+                                           reference, note, final);
+    check("sequencer FOLLOW ON uses absolute host pitch relative to C4",
+          got == 1650000u);
+
+    got = eng_metal_follow_host_phase_inc(base, 48000u, 0, 0,
+                                           reference, note, final);
+    check("performance source remains host-pitched when FOLLOW is OFF",
+          got == 1650000u);
+
+    check("zero sample rate produces no phase increment",
+          eng_metal_follow_host_phase_inc(base, 0u, 1, 1,
+                                          reference, note, final) == 0u);
+    check("missing selected host reference produces no phase increment",
+          eng_metal_follow_host_phase_inc(base, 48000u, 0, 1,
+                                          reference, 0u, final) == 0u);
+
+    got = eng_metal_follow_host_phase_inc(0x70000000u, 48000u, 1, 0,
+                                           reference, note, final);
+    check("host-derived pitch is clamped at Nyquist",
+          got == 0x80000000u);
+}
+
 static void test_absolute_midi_adapter(void)
 {
     int32_t note = -99, octave = -99;
@@ -150,6 +192,7 @@ int main(void)
     test_phase_increment();
     test_source_selector();
     test_absolute_midi_adapter();
+    test_host_pitch_delta();
     printf("metal FOLLOW: %s (%d failures)\n",
            failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;

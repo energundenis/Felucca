@@ -385,3 +385,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added `docs/ENERGUN_METAL_CORE_CP2_10_HOST_FOLLOW_PITCH_CONTRACT.md` and appended limitations to CP2.9 documentation.
 - Documentation-only audit. No engine callback, DSP render, registration, UI, parameter IDs, storage, package or device state changed.
 - CI for implementation HEAD `2b3d1484e7b69c7d0df81ff438e5a895cf01c91f` remains in progress; CP2.8/CP2.9 are not validated yet.
+
+
+## CP2.11 — host pitch-delta fixed-point math (2026-10-31)
+
+- Added `eng_metal_follow_inc_ratio_q24()` to derive a Q24 ratio from two same-rate Q0.32 host phase increments; this preserves all pitch effects already combined by Felucca rather than reimplementing pitch bend/tune/glide/modulation.
+- Added `eng_metal_follow_host_phase_inc()`: PERFORMANCE and SEQUENCER+FOLLOW ON use final host pitch relative to C4; SEQUENCER+FOLLOW OFF uses final host pitch relative to the target step note, retaining glide and independent pitch effects while removing the absolute step note.
+- Added Nyquist saturation at Q0.32 `0x80000000`, invalid-reference and zero-rate handling.
+- Added isolated host tests for all three selection modes, +10% host pitch offset, invalid inputs and Nyquist clamp.
+- Added `docs/ENERGUN_METAL_CORE_CP2_11_HOST_PITCH_DELTA_MATH.md`.
+- CI validation pending. Helper is not connected to engine render; target pitch-table/sample-rate adapter and full MIDI range still need verification.

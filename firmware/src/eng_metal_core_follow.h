@@ -141,4 +141,64 @@ static inline int eng_metal_follow_from_midi(uint32_t midi_note,
     return 1;
 }
 
+/* Convert a host pitch increment into a Q24 ratio. Both increments are Q0.32
+ * cycles/sample at the same sample rate. This captures pitch bend, tune,
+ * glide, LFO, envelope, fine pitch and modulation-matrix effects already
+ * applied by Felucca. Zero reference is rejected.
+ */
+static inline uint32_t eng_metal_follow_inc_ratio_q24(uint32_t reference_inc,
+                                                       uint32_t final_inc)
+{
+    uint64_t numerator, ratio;
+
+    if (!reference_inc)
+        return 0u;
+    numerator = ((uint64_t)final_inc << 24) + (reference_inc / 2u);
+    ratio = numerator / reference_inc;
+    return ratio > UINT32_MAX ? UINT32_MAX : (uint32_t)ratio;
+}
+
+/* Select the pitch basis while retaining all independent host pitch effects.
+ *
+ * PERFORMANCE: final host pitch relative to MIDI C4 reference.
+ * SEQUENCER + FOLLOW ON: same absolute note mapping relative to C4.
+ * SEQUENCER + FOLLOW OFF: final host pitch relative to the target step note,
+ *                         so glide/tune/bend/modulation remain active.
+ *
+ * base_inc is the Metal Core base-FREQ phase increment (Q0.32).
+ * note_inc is pitch_inc(v->note * 16); final_inc is the final vmod_t.inc
+ * after host glide, tune, bend, LFO, envelope and modulation matrix.
+ * All three host increments must use the same sample rate.
+ *
+ * The result is clamped at Nyquist to prevent phase increments above 0.5
+ * cycles/sample from wrapping into an aliased lower frequency.
+ */
+static inline uint32_t eng_metal_follow_host_phase_inc(uint32_t base_inc,
+                                                        uint32_t sample_rate,
+                                                        int follow_on,
+                                                        int sequencer_source,
+                                                        uint32_t reference_inc,
+                                                        uint32_t note_inc,
+                                                        uint32_t final_inc)
+{
+    uint32_t denominator, ratio;
+    uint64_t scaled, nyquist;
+
+    if (!sample_rate)
+        return 0u;
+
+    denominator = (sequencer_source && !follow_on) ? note_inc : reference_inc;
+    ratio = eng_metal_follow_inc_ratio_q24(denominator, final_inc);
+    if (!ratio)
+        return 0u;
+
+    scaled = ((uint64_t)base_inc * ratio + (1ull << 23)) >> 24;
+    nyquist = (uint64_t)sample_rate << 31;
+    /* Q0.32 phase increment at Nyquist is exactly 0x80000000. */
+    if (scaled > 0x80000000ull)
+        scaled = 0x80000000ull;
+    (void)nyquist;
+    return (uint32_t)scaled;
+}
+
 #endif
