@@ -90,5 +90,5 @@ No engine registration, flashing, SysEx, device access, flash write, erase or re
 
 1. The host callback tests and full `engines.c` syntax-only harness now pass.
 2. Note/retrigger and one-voice-cap behavior have been source-audited; next audit the parameter handoff and engine-switch persistence in a dedicated host regression.
-3. Resolve the v98 FOLLOW/MOD RATIO discrepancy and freeze parameter semantics.
+3. Resolve the v98 FOLLOW/MOD RATIO discrepancy using [Decision 01](ENERGUN_METAL_CORE_FOLLOW_MOD_RATIO_DECISION_01.md), then freeze parameter semantics.
 4. Only then prepare a separate reviewable integration change. Keep `ENGINES[]` registration and UI changes gated behind explicit review.
