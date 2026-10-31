@@ -360,6 +360,7 @@ static void adapter_callbacks(void)
     s = (metal_core_part_state_t *)ENG_MEM(0);
 
     check("unregistered adapter exposes the actual engine_t callbacks",
+          ENG_METAL_CORE_ADAPTER.note_on == metal_core_adapter_note_on &&
           ENG_METAL_CORE_ADAPTER.block == metal_core_adapter_block &&
           ENG_METAL_CORE_ADAPTER.render == metal_core_adapter_render &&
           ENG_METAL_CORE_ADAPTER.post == metal_core_adapter_post);
@@ -376,6 +377,12 @@ static void adapter_callbacks(void)
           s->advanced_this_block && s->delay_write == CTL &&
           s->phase[0] != 0 && s->phase[1] != 0 && s->phase[2] != 0);
     panel_ref = s->feedback_ref_inc;
+
+    phase_before = s->phase[2];
+    write_before = s->delay_write;
+    ENG_METAL_CORE_ADAPTER.note_on(&trk[0], &trk[0].v[0]);
+    check("note_on callback preserves per-part phases and feedback delay on retrigger",
+          s->phase[2] == phase_before && s->delay_write == write_before);
 
     phase_before = s->phase[2];
     write_before = s->delay_write;
