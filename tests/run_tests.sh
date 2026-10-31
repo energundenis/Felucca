@@ -468,6 +468,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/fm6_test" tests/fm6_test.c -lm
     mkdir -p build/fm6_demo
     run "FM6: algorithms, envelopes, retrigger, DC, clipping, macros, patch formats, voices, cost, demos" "$OUT/fm6_test" build/fm6_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_osc_test" tests/metal_core_osc_test.c -lm
+    run "ENERGUN METAL CORE: reusable fixed-point oscillator primitives (host-only)" "$OUT/metal_core_osc_test"
     # SLICE is in the standard build (firmware/src/core.h): its test always runs (after #22 by andreahaku)
     if grep -q '^#define SLC_BREAK_BPM ' build/gen/felucca_samples.h; then
         mkdir -p build/slice_demo
