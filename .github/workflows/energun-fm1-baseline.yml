@@ -134,6 +134,27 @@ jobs:
       - name: Build unmodified Felucca firmware
         run: ./build.sh
 
+      - name: Compile ENERGUN VCA with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wno-unused-function -Ifirmware/src \
+            -c tests/metal_core_vca_target_probe.c \
+            -o build/metal-core-vca-target/vca_probe.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/vca_probe.o \
+            > build/metal-core-vca-target/vca_probe.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/vca_probe.o \
+            > build/metal-core-vca-target/vca_probe.symbols
+          grep -q "eng_metal_vca_target_probe_process" build/metal-core-vca-target/vca_probe.dis
+          grep -q "eng_metal_vca_target_probe_block32" build/metal-core-vca-target/vca_probe.dis
+          {
+            echo "## ENERGUN VCA target code generation"
+            echo "AC79 pi32v2 compile-only probe passed; sizeof(eng_metal_vca_t) is statically asserted as 36 bytes."
+            echo 'Disassembly and symbol table are included in the workflow artifact.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run Felucca host and web regression tests
         run: tests/run_tests.sh
 
@@ -168,5 +189,6 @@ jobs:
             build/loader/ota.bin
             build/felucca.fwsc
             build/release-*/SHA256SUMS
+            build/metal-core-vca-target/*
           if-no-files-found: ignore
           retention-days: 14
