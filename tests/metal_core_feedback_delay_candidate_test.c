@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Host-only tests for the provisional 3 ms / 44.1 kHz feedback delay.
+ * Host-only tests for the provisional 3 ms / FM-1 I2S feedback delay.
  */
 #include <stdint.h>
 #include <stdio.h>
@@ -96,11 +96,11 @@ int main(void)
     }
     CHECK(out132 > 0, "fractional delay first tap must be nonzero");
     CHECK(out133 > 0, "fractional delay second tap must be nonzero");
-    CHECK(out132 > out133, "0.7 near tap must exceed 0.3 far tap");
-    CHECK(out132 > 187800000 && out132 < 188000000,
-          "first tap must approximate 0.7 of the impulse");
-    CHECK(out133 > 80400000 && out133 < 80700000,
-          "second tap must approximate 0.3 of the impulse");
+    CHECK(out132 > out133, "near tap must exceed far tap for a 0.35294-sample fraction");
+    CHECK(out132 > 173600000 && out132 < 173800000,
+          "first tap must approximate 0.64706 of the impulse");
+    CHECK(out133 > 94700000 && out133 < 94800000,
+          "second tap must approximate 0.35294 of the impulse");
 
     /* Reset must erase old feedback energy and restore the cursor. */
     test_metal_feedback_delay_reset(&a);
