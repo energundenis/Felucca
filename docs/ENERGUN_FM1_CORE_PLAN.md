@@ -634,3 +634,17 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - This change transports Accent metadata at the host layer; it does not yet connect the METAL CORE engine (still unregistered) to read/apply it in its production `note_on()`/VCA path. No full DSP render integration, UI, parameter IDs, storage/Flash, package or device state changed.
 - No device writes/flashing; factory firmware and `main` remain untouched.
 - Next gate: finish the exact-HEAD CI; then implement a VCA-only host integration harness that consumes the explicit metadata and Gate events before integrating the complete METAL CORE DSP chain.
+
+
+## CP2.23 — VCA-only Felucca host integration harness (2026-11-01)
+
+- Added the isolated VCA-only harness and AC79 combined VCA + host-amplitude-ramp target probe. The harness is not registered in `engines.c` and is not a playable production engine.
+- Exact implementation HEAD: `ed8a35421aa185306659c35636bcd7200ca8228e`; GitHub Actions run [41242563432](https://github.com/energundenis/Felucca/actions/runs/41242563432) completed successfully.
+- Harness result: `PASS (0 failures)`. It verified eight independent VCA states (36 bytes each; 288 bytes total per part), aligned memory, host voice lookup, additive render, host amp ramp, explicit Accent metadata, block-boundary Gate-off, retrigger hold, Release, idle and `done()` retirement.
+- Full host/web regression passed: 98 golden renders unchanged, 0 health failures, 0 voice/routing failures, 0 primary CPU entries over budget, 0 crashes; web tests passed. The existing target render-loop static budget script also passed with existing thresholds; no thresholds were raised.
+- AC79 pi32v2 emitted the combined VCA + host-ramp sample and 32-sample block probe. This is compile/disassembly evidence, not cycle-accurate runtime measurement.
+- Resource boundary: 288 bytes is only the isolated VCA payload. The complete METAL CORE state still needs whole-engine memory accounting. The existing target-budget script does not yet include METAL CORE's new VCA or full DSP chain. The second-core-disabled host run has no instruction counter, so its CPU budget is not checked.
+- No production engine registration, parameter/UI/storage changes, physical-device write, firmware flash, factory firmware modification, or change to `main` occurred.
+- **Disposition: CP2.23 closed for the isolated VCA-only harness.** This does not close CP3 or claim hardware validation.
+- Added [CP3 integration readiness plan](ENERGUN_METAL_CORE_CP3_INTEGRATION_READINESS_PLAN.md). CP3 starts with contract/state freeze, then isolated fixed-point DSP integration, and only later production registration after the V1 parameter/storage map is resolved.
+
