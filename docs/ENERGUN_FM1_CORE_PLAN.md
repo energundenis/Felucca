@@ -137,3 +137,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Verified from the run's job steps: recursive checkout, Python/Node setup, Pillow/fontTools installation, JieLi pi32v2 toolchain installation, AC79 SDK checkout, and `./build.sh` all completed successfully.
 - The regression step `tests/run_tests.sh` was still in progress at the last check. The run is not yet a fully passing baseline; do not mark CP0.5 complete until the run concludes successfully.
 - The parent tree gitlinks at the workflow source commit resolve exactly to `firmware/engines` = `d0260074ce100a47675814b7f38d61f11176c926` and `firmware/bsp` = `5942e68b89ab9ccd23f2c541d712ca38fe635f11`. Recursive checkout completed successfully, which confirms the workflow obtained the pinned submodules for this run.
+
+
+## CP1.1 — Felucca audio integration audit (2026-10-31)
+
+- Added source-backed audit: `docs/ENERGUN_METAL_CORE_CP1_1_AUDIO_INTEGRATION_AUDIT.md` (commit `9eadd809aae03a4ff9781404abf7fe5e5fac7fc5`).
+- Confirmed host contract: shared voice allocator, mono initial Metal Core voice, `render()` adds to mix, 32-sample bounded blocks, host stereo/effects, per-part `engine_t.mem`, per-voice documented state slots.
+- Confirmed V1 envelope starting point: `ownenv=0`; host ADSR is not curve-identical to v98. Keep voice ADSR, LPG decay, FM-index envelope and METAL decay independent.
+- Confirmed `P_LEVEL` is final track mixer gain and `P_DETUNE` is host UNISON spread; neither replaces Metal Core internal controls.
+- Parameter/storage gate: 35 independent V1 controls in current inventory; only 8 existing E values plus at most 16 additional common IDs, while current FUN10 has insufficient room for even one new complete common parameter. Sidecar and candidate flash sectors remain unapproved pending full user-device dump and storage/backup/restore tests.
+- Engine registration remains pending; IDs are append-only and optional SLICE/ADPCM builds must be preserved.
+- Corrected stale FOLLOW/METAL scaffold comment to OSCILLATORS / SYNTH VOICE (not FOLD), comment-only commit `d6452c1935c96e7c51048e7eb506898dd88277ce`.
+- CP1.1 is an audit milestone only; no DSP algorithm, parameter ID, engine registration, storage format, runtime UI, or hardware state changed.
