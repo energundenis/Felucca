@@ -263,3 +263,16 @@ This is **host-only candidate evidence**, not production DSP approval:
 - the voice retrigger/reset policy remains a host-contract candidate pending lifecycle adapter tests.
 
 Do not include this test helper in the firmware image or claim the AC79 target compiler has verified it.
+
+
+## 16. Test-only lifecycle discriminator probe (2026-11-01)
+
+Extended `metal_core_feedback_delay_candidate_test.c` to include the actual `eng_metal_core_vca.h` phase constants and a small test-only `note_on` policy adapter:
+
+- prior VCA ATTACK: preserve ring cursor and contents;
+- prior VCA RELEASE: preserve ring cursor and contents (released voice is still sounding);
+- prior VCA IDLE: clear ring before the fresh note.
+
+The test compiled and passed locally; it is now part of both the full host suite and the fast 11-test lane. This supports the candidate use of the previous VCA phase as an engine-owned lifecycle discriminator, since `voice_start()` overwrites host `active/stage` before calling `note_on()`.
+
+This is still an adapter test, not a production callback. It does not prove every mono/legato/voice-steal transition or the protected v98 graph's node lifetime. Those remain acceptance tests for the real integration stage.
