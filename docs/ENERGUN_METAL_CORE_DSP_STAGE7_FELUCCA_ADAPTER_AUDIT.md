@@ -39,7 +39,7 @@ The adapter:
 
 The adapter descriptor `ENG_METAL_CORE_ADAPTER` is deliberately not inserted into `ENGINES[]`. No engine index, preset, editor protocol, parameter mapping, or UI has changed.
 
-Temporary oscillator settings in the adapter are compile/test scaffolding only. They do not define the approved E0..E7 map and must be replaced after parameter semantics and audio calibration are approved.
+Temporary oscillator settings in the adapter are compile/test scaffolding only. The feedback reference is a fixed panel-FREQ placeholder independent of the note's tracked pitch, so the adapter does not regress the audited v98 feedback scaling. This is not a user-adjustable panel parameter and does not resolve the FOLLOW/MOD RATIO discrepancy. These settings do not define the approved E0..E7 map and must be replaced after parameter semantics and audio calibration are approved.
 
 ## 3. Host tests
 
@@ -49,7 +49,8 @@ Temporary oscillator settings in the adapter are compile/test scaffolding only. 
 - active render advances phases and delay once;
 - post does not double-advance after active render;
 - post advances the state when no voice rendered;
-- render resumes the same state after an idle block.
+- render resumes the same state after an idle block;
+- feedback reference remains independent of a changed FOLLOW-tracked note pitch.
 
 The previous state-machine test now explicitly zeroes its test structs before calling the initialization helper. Production initialization relies on Felucca's documented zeroed per-part pool; it no longer clears the whole feedback ring in the first audio callback.
 
