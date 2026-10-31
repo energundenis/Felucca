@@ -543,7 +543,7 @@ static void metal_core_complex_fm_feedback_pair_block(
 typedef struct {
     uint32_t phase[3];                 /* OSC1, OSC2, wcMod */
     uint16_t delay_write;
-    uint8_t rendered_this_block;
+    uint8_t advanced_this_block;
     uint8_t configured;
     int32_t feedback_q15;              /* smoothed control */
     int32_t delay[MC_FEEDBACK_DELAY_SAMPLES];
@@ -561,7 +561,7 @@ static void metal_core_part_state_init(metal_core_part_state_t *s)
     if (!s) return;
     s->phase[0] = s->phase[1] = s->phase[2] = 0;
     s->delay_write = 0;
-    s->rendered_this_block = 0;
+    s->advanced_this_block = 0;
     s->configured = 0;
     s->feedback_q15 = 0;
     for (i = 0; i < MC_FEEDBACK_DELAY_SAMPLES; i++) s->delay[i] = 0;
@@ -578,7 +578,7 @@ static void metal_core_part_state_init(metal_core_part_state_t *s)
  * rendered; if not, it advances the same state machine silently. */
 static inline void metal_core_part_begin_block(metal_core_part_state_t *s)
 {
-    if (s) s->rendered_this_block = 0;
+    if (s) s->advanced_this_block = 0;
 }
 
 static void metal_core_part_configure(metal_core_part_state_t *s,
@@ -657,16 +657,18 @@ static void metal_core_part_render(metal_core_part_state_t *s, int32_t *out,
         ratio_q16, osc_wave, mod_wave, fm_index_q15, drive_q15, character,
         osc2_level_q15, feedback_q15);
     for (i = 0; i < n; i++) out[i] += metal_core_part_tick(s);
-    s->rendered_this_block = 1;
+    s->advanced_this_block = 1;
 }
 
 /* Intended engine_t.post behavior. It advances only if no active render call
- * happened this block, covering both no-active-voice and silent-sustain gaps. */
+ * happened this block, covering both no-active-voice and silent-sustain gaps.
+ * Mark the block consumed so a duplicate hook call cannot double-advance. */
 static void metal_core_part_advance_silent(metal_core_part_state_t *s, uint32_t n)
 {
     uint32_t i;
-    if (!s || !s->configured || s->rendered_this_block) return;
+    if (!s || !s->configured || s->advanced_this_block) return;
     if (n > CTL) n = CTL;
     for (i = 0; i < n; i++) (void)metal_core_part_tick(s);
+    s->advanced_this_block = 1;
 }
 
