@@ -29,6 +29,7 @@ Files:
 - `firmware/src/engines.c` includes both files after FM6.
 
 The adapter:
+- supplies a required no-op `note_on` callback: Felucca's `voice_start()` calls `e->note_on(t, v)` unconditionally, so NULL is not valid; the no-op deliberately leaves per-part phases and delay history untouched on retrigger;
 - obtains one `metal_core_part_state_t` from `ENG_MEM(t - trk)`;
 - declares exact `mem = sizeof(metal_core_part_state_t)` and `ENG_MEM_FITS`;
 - uses `block` to initialize the host-zeroed region on first use and reset the per-block advancement guard;
@@ -59,7 +60,7 @@ The previous state-machine test now explicitly zeroes its test structs before ca
 What is tested:
 - C compilation of the adapter against the actual `engine_t` interface;
 - syntax-only compilation of the real `firmware/src/engines.c` translation unit, using Felucca's actual include order, pinned engine submodule, host preamble (`libc.c`, `core.h`) and generated host tables/sample/FM6 headers;
-- callback sequencing through host tests;
+- callback sequencing through host tests, including the required non-resetting `note_on` hook;
 - fixed-point DSP regressions at 44.1 and 96 kHz.
 
 What is not tested:
