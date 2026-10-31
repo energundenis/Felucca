@@ -592,3 +592,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added 14 engine-level VCA integration tests covering note lifecycle, retrigger, short Gate, done boundary, stage-4 steal, LFO/fade multiplication, additive output, state indexing, memory, engine switching, voice budget and target cost.
 - CP2.18 is a design/source-audit milestone only. No engine callbacks, registration, DSP render chain, parameter IDs, UI, storage/Flash, firmware package or device state changed. The engine remains unregistered; no device flashing. `main` and factory firmware remain untouched.
 - Next implementation gate: resolve the three behavior blockers, add explicit host Gate-off support to the isolated VCA with tests, then build a VCA-only host integration harness before combining it with the full METAL CORE DSP chain.
+
+## CP2.19 — full VCA envelope for live performance and sequencer (2026-10-31)
+
+- User explicitly selected the full-envelope behavior for FM-1 live/manual performance: every MIDI Note On starts the internal Attack → Decay → Sustain contour; MIDI Note Off starts Release from the current level. Constant-LEVEL manual-mode bypass is not part of the FM-1 product behavior.
+- The integrated sequencer uses the same VCA contour; sequencer step Gate controls Release. Retriggers hold the current level and restart the contour without a reset-to-zero discontinuity. The Gate source differs by note origin, not the envelope shape.
+- Decision record: [CP2.19 VCA performance-mode decision](ENERGUN_METAL_CORE_CP2_19_VCA_PERFORMANCE_MODE_DECISION.md), commit 704fb78502c97c6e6a3a6f8b56fb6130d36adaf9.
+- CP2.18 integration-preparation document updated to apply this decision; commit 823a4da611f640f2fb1e8d9b75a81c635684b0b2.
+- Remaining blockers: explicit Accent provenance (do not infer sequencer ACCENT from expressive MIDI velocity) and Gate event timing (current host API observes Gate at render-block entry; sample-accurate sub-block Note Off needs an API extension).
+- This is a behavior/specification decision only. No production VCA callbacks, render chain, engine registration, UI, parameter map, persistence/Flash, firmware package or device state changed. No flashing; main and factory firmware remain untouched.
+- Next step: add/test explicit Gate-off support and a VCA-only host integration harness for both MIDI and sequencer sources, while preserving target-budget thresholds.
