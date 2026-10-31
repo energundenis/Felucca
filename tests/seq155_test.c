@@ -602,9 +602,88 @@ static int test_double_half(void)
     return bad;
 }
 
+static int note_source_provenance(void)
+{
+    int bad = 0, found;
+    uint32_t i;
+    track_t *t;
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    trk_note_on(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 60u) {
+            found = t->voice_source[i] == NOTE_SRC_PERFORMANCE;
+            break;
+        }
+    bad += check("FOLLOW provenance: live/performance note marks its poly voice", found);
+
+    trk_note_on(t, 67u, 100u, NOTE_SRC_SEQUENCER);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 67u) {
+            found = t->voice_source[i] == NOTE_SRC_SEQUENCER;
+            break;
+        }
+    bad += check("FOLLOW provenance: sequencer note marks its own poly voice", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_LEGATO;
+    trk_note_on(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
+    trk_note_on(t, 64u, 100u, NOTE_SRC_SEQUENCER);
+    bad += check("FOLLOW provenance: MONO stack keeps source beside each held note",
+                 t->nmono == 2u &&
+                 t->mono_source[0] == NOTE_SRC_PERFORMANCE &&
+                 t->mono_source[1] == NOTE_SRC_SEQUENCER);
+    trk_note_off(t, 64u);
+    bad += check("FOLLOW provenance: LEGATO fallback restores the older performance source",
+                 t->v[0].note == 60u &&
+                 t->voice_source[0] == NOTE_SRC_PERFORMANCE);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->step[0] = (step_t){{72u}, 1u, ST_NOTE, 0u, 100u};
+    seq_step(t, &t->step[0], 0u, div_samples(2), SEQ_ROLLED);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 72u) {
+            found = t->voice_source[i] == NOTE_SRC_SEQUENCER;
+            break;
+        }
+    bad += check("FOLLOW provenance: real seq_step path marks pattern note as sequencer", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    input_on(t, 55u, 96u);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 55u) {
+            found = t->voice_source[i] == NOTE_SRC_PERFORMANCE;
+            break;
+        }
+    bad += check("FOLLOW provenance: input_on keyboard/MIDI path marks performance note", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->xf_on = 1u;
+    trk_note_on(t, 81u, 90u, NOTE_SRC_SEQUENCER);
+    found = t->xp_n == 1u && t->xp_note[0] == (uint8_t)(81u | 0x80u);
+    bad += check("FOLLOW provenance: engine-switch queue stores source with pending note", found);
+    trk_note_off(t, 81u);
+    bad += check("FOLLOW provenance: queued note-off compares pitch without source bit", t->xp_n == 0u);
+
+    return bad;
+}
+
 int main(void)
 {
-    int bad = conditions() + cond_locks_rolls() + cond_song() + cond_nudge() + cond_ui() + fill_key() + cond_store() + test_euclid() + test_double_half();
+    int bad = conditions() + cond_locks_rolls() + cond_song() + cond_nudge() + cond_ui() + fill_key() + cond_store() + test_euclid() + test_double_half() + note_source_provenance();
     printf("%s\n", bad ? "SEQ 1.5.5 TEST FAILED" : "seq 1.5.5 tests passed");
     return bad != 0;
 }

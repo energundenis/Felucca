@@ -152,6 +152,7 @@ static int drum_from_perc(uint32_t engine, int16_t *e)
 
 /* ------------------------------------------------- voices, engines --- */
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
+enum { NOTE_SRC_PERFORMANCE, NOTE_SRC_SEQUENCER }; /* host-only pitch provenance; preview uses SEQUENCER */
 /* voice_t, vmod_t, preset_t, engine_t: felucca_engine.h (above) */
 
 /* ------------------------------------------------- tracks, the song --- */
@@ -261,6 +262,7 @@ typedef struct track {
     uint8_t eng_req;             /* engine the UI asked for (the ISR switches at a block start) */
     uint8_t user;                /* user preset slot + 1 the sound came from (UI), 0 = none */
     voice_t v[NVOICE];
+    uint8_t voice_source[NVOICE]; /* pitch provenance per active voice; voice_t ABI stays unchanged */
     /* LFO */
     uint32_t lfo_ph;
     int32_t lfo_val;             /* Q15 */
@@ -304,6 +306,7 @@ typedef struct track {
     step_t rh_bak;
     /* mono */
     uint8_t mono_stack[8];
+    uint8_t mono_source[8];       /* source paired with mono_stack[] for LEGATO fallback */
     uint8_t nmono;
     uint8_t mono_note;           /* note the MONO / LEGATO / UNISON voice(s) play, 0 = none */
     uint8_t rr;                  /* POLY ROTATE: next voice to try */

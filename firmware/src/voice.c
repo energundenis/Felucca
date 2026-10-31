@@ -288,7 +288,7 @@ static void glide_set(track_t *t, voice_t *v, int glide)
     }
 }
 
-static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int glide)
+static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int glide, uint32_t source)
 {
     const engine_t *e = ENGINES[t->engine];
     int sounding = v->active && v->stage != 0;
@@ -312,6 +312,7 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
         v->side = t->sp_alt;                            /* SPREAD: left, right, left .. (UNISON: mono_play); a */
         t->sp_alt ^= 1u;                                /* sounding voice keeps its side (no jump) */
     }                                                   /* sounding: the attack starts from the current level */
+    t->voice_source[v - t->v] = (uint8_t)source;
     e->note_on(t, v);
     if (sounding && !e->sampled) {                     /* retrigger / steal: keep phases and filter */
         v->ph[0] = ph0;                                 /* states (resetting them clicks) */
@@ -334,7 +335,7 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
 
 /* MONO / LEGATO / UNISON: one note on one voice (eight for UNISON, or the
  * engine's voice cap, spread by DETUNE over the same width) */
-static void mono_play(track_t *t, uint32_t note, uint32_t vel, int retrig, int glide)
+static void mono_play(track_t *t, uint32_t note, uint32_t vel, int retrig, int glide, uint32_t source)
 {
     uint32_t mode = (uint32_t)t->p[P_VOICE], nv = mode == V_UNISON ? trk_nvoice(t) : 1u, i;
     for (i = 0; i < nv; i++) {
@@ -347,7 +348,7 @@ static void mono_play(track_t *t, uint32_t note, uint32_t vel, int retrig, int g
             if ((!v->active || v->stage == 4u) && !voice_room(t, i > 0))
                 continue;                                   /* no room for this extra UNISON voice */
             /* level: about the same sum for 8 or 4 voices at random phases */
-            voice_start(t, v, note, nv >= NVOICE ? vel * 36u / 100u : nv > 1u ? vel / 2u : vel, glide);
+            voice_start(t, v, note, nv >= NVOICE ? vel * 36u / 100u : nv > 1u ? vel / 2u : vel, glide, source);
             v->side = (uint8_t)(i & 1u);                    /* SPREAD: the detuned voices alternate */
             if (nv > 1u && i && !ENGINES[t->engine]->sampled) {   /* random start phases: */
                 static uint32_t seed = 0x1234567u;          /* in phase they stack, evenly spread they cancel */
@@ -355,6 +356,7 @@ static void mono_play(track_t *t, uint32_t note, uint32_t vel, int retrig, int g
                 v->ph[0] += seed;
             }
         } else {                                            /* legato: new pitch, same envelope */
+            t->voice_source[v - t->v] = (uint8_t)source;
             v->note = (uint8_t)note;
             v->pitch16 = (int32_t)note * 16;
             v->mvel = t->m_vel;
@@ -383,27 +385,39 @@ static uint32_t mono_pick(const track_t *t)
     return n;
 }
 
+static uint32_t mono_source_for(const track_t *t, uint32_t note)
+{
+    uint32_t i;
+    for (i = 0; i < t->nmono; i++)
+        if (t->mono_stack[i] == note)
+            return t->mono_source[i];
+    return NOTE_SRC_PERFORMANCE;
+}
+
 static void mono_remove(track_t *t, uint32_t note)
 {
     uint32_t j, k = 0;
     for (j = 0; j < t->nmono; j++)
-        if (t->mono_stack[j] != note)
-            t->mono_stack[k++] = t->mono_stack[j];
+        if (t->mono_stack[j] != note) {
+            t->mono_stack[k] = t->mono_stack[j];
+            t->mono_source[k] = t->mono_source[j];
+            k++;
+        }
     t->nmono = (uint8_t)k;
 }
 
-static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
+static void trk_note_on(track_t *t, uint32_t note, uint32_t vel, uint32_t source)
 {
     uint32_t any = 0, i, mode = trk_vmode(t);
     if (t->p[P_MUTE])
         return;
     if (t->xf_on || t->eng_req != t->engine) {          /* engine switch under way: after the fade */
-        for (i = 0; i < t->xp_n && t->xp_note[i] != note; i++)
+        for (i = 0; i < t->xp_n && (t->xp_note[i] & 0x7Fu) != note; i++)
             ;
         if (i == t->xp_n && t->xp_n < 4u)
             t->xp_n++;
         i = i < t->xp_n ? i : t->xp_n - 1u;             /* (full: the last one is replaced) */
-        t->xp_note[i] = (uint8_t)note;
+        t->xp_note[i] = (uint8_t)((note & 0x7Fu) | ((source & 1u) << 7));
         t->xp_vel[i] = (uint8_t)vel;
         return;
     }
@@ -420,7 +434,7 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
         t->nmono = 0;                                   /* no stale mono stack after a mode change */
         t->mono_note = 0;
         v->fine = 0;
-        voice_start(t, v, note, vel, t->p[P_GLIDE] != 0 && !ENGINES[t->engine]->oneshot);
+        voice_start(t, v, note, vel, t->p[P_GLIDE] != 0 && !ENGINES[t->engine]->oneshot, source);
         return;
     }
     {
@@ -428,14 +442,16 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
         mono_remove(t, note);
         if (t->nmono >= 8u)
             mono_remove(t, t->mono_stack[0]);
-        t->mono_stack[t->nmono++] = (uint8_t)note;
+        t->mono_stack[t->nmono] = (uint8_t)note;
+        t->mono_source[t->nmono] = (uint8_t)source;
+        t->nmono++;
         want = mono_pick(t);
         if (sounding && want == t->mono_note)
             return;                                     /* LOW / HIGH priority: this key does not win */
         if (mode == V_MONO)                             /* MONO: always retrigger, glide when GLIDE is set */
-            mono_play(t, want, vel, 1, t->p[P_GLIDE] != 0 || t->slide_glide);
+            mono_play(t, want, vel, 1, t->p[P_GLIDE] != 0 || t->slide_glide, mono_source_for(t, want));
         else                                            /* LEGATO / UNISON: glide only between held notes */
-            mono_play(t, want, vel, !sounding, sounding && (t->p[P_GLIDE] != 0 || t->slide_glide));
+            mono_play(t, want, vel, !sounding, sounding && (t->p[P_GLIDE] != 0 || t->slide_glide), mono_source_for(t, want));
     }
 }
 
@@ -443,7 +459,7 @@ static void trk_note_off(track_t *t, uint32_t note)
 {
     uint32_t i, k = 0, mode = trk_vmode(t);
     for (i = 0; i < t->xp_n; i++)                       /* not sounding yet (engine switch): forget it */
-        if (t->xp_note[i] != note) {
+        if ((t->xp_note[i] & 0x7Fu) != note) {
             t->xp_note[k] = t->xp_note[i];
             t->xp_vel[k++] = t->xp_vel[i];
         }
@@ -454,7 +470,7 @@ static void trk_note_off(track_t *t, uint32_t note)
         if (t->mono_note == note) {
             uint32_t next = mono_pick(t);
             if (next) {                                 /* fall back to a held note, legato */
-                mono_play(t, next, t->v[0].vel, 0, t->p[P_GLIDE] != 0);
+                mono_play(t, next, t->v[0].vel, 0, t->p[P_GLIDE] != 0, mono_source_for(t, next));
             } else {
                 for (i = 0; i < nv; i++)
                     if (t->v[i].gate) {
@@ -521,7 +537,7 @@ static void engine_block(track_t *t)
             uint32_t n = t->xp_n;
             t->xp_n = 0;
             for (i = 0; i < n; i++)
-                trk_note_on(t, t->xp_note[i], t->xp_vel[i]);
+                trk_note_on(t, t->xp_note[i] & 0x7Fu, t->xp_vel[i], t->xp_note[i] >> 7);
         }
     }
     eng_mem_claim(t);                                   /* (an engine set directly: power-on, a test) */
