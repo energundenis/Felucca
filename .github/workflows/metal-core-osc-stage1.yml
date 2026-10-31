@@ -1,0 +1,32 @@
+name: METAL CORE OSC stage 1
+
+on:
+  push:
+    branches:
+      - metal-core-dsp-stage1-osc
+  pull_request:
+    branches:
+      - metal-core-dsp-stage1-osc
+  workflow_dispatch:
+
+jobs:
+  fixed-point-osc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Felucca and pinned submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Generate Felucca engine tables
+        run: |
+          mkdir -p build/gen
+          python3 firmware/engines/tools/gen_engine_tables.py build/gen/felucca_tables.h
+      - name: Compile isolated METAL CORE OSC test
+        run: |
+          cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_osc_test tests/metal_osc_test.c
+      - name: Run OSC tests
+        run: build/metal_osc_test
