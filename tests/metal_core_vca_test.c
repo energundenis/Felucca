@@ -4,6 +4,7 @@
  */
 #include "../firmware/src/eng_metal_core_vca.h"
 
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -55,6 +56,7 @@ static void test_attack_decay_sustain_release(void)
     eng_metal_vca_t vca;
     uint32_t i;
     int32_t value;
+    double reference;
 
     eng_metal_vca_reset(&vca);
     check("reset is silent, idle and done",
@@ -66,8 +68,9 @@ static void test_attack_decay_sustain_release(void)
                           13230u, 150000u, 8820u);
     for (i = 0; i < 220u; ++i)
         value = eng_metal_vca_process(&vca);
-    check("Attack rises monotonically to approximately 63 percent at one tau",
-          value >= 31000 && value <= 32000 &&
+    reference = 50000.0 * (1.0 - exp(-1.0));
+    check("Attack matches high-precision one-pole reference after one tau",
+          fabs((double)value - reference) <= 60.0 &&
           vca.phase == ENG_METAL_VCA_ATTACK);
 
     for (; i < 441u; ++i)
