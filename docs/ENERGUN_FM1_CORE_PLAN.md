@@ -619,3 +619,18 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Audit record: [CP2.21 Accent provenance transport audit](ENERGUN_METAL_CORE_CP2_21_ACCENT_PROVENANCE_AUDIT.md), commit `8d1801c4c81b88932481b7effd47710cb83bceb0`.
 - Before implementation, test poly isolation, mono/legato fallback, unison, retrigger, engine-switch queue, note-off removal, sequencer ratchets/ties/preview, ordinary MIDI velocity 127, and unchanged `track_t` size/alignment. No `voice_t` ABI, project/Flash format, parameter/UI or device changes are proposed.
 - CP2.21 is source audit/design only. Accent transport is not yet implemented or approved; no production VCA integration or engine registration. No flashing; `main` and factory firmware untouched.
+
+
+## CP2.22 — explicit Accent metadata transport implementation (2026-10-31)
+
+- Implemented explicit Accent provenance transport in the existing host note metadata path on `energun-metal-core`, without changing the `voice_t` ABI:
+  - `NOTE_META_ACCENT` is a dedicated metadata bit distinct from the performance/sequencer source bit.
+  - Synth sequencer `SF_ACCENT` and per-lane `step_t.acc` are carried independently of the 7-bit note velocity.
+  - Voice allocation stores the metadata in the existing per-voice source field; mono/legato fallback restores the previous note's metadata.
+  - Pending engine-switch notes preserve Accent in the unused high bit of the queued velocity byte while retaining the lower 7-bit velocity.
+- Added host regression coverage in `tests/seq155_test.c` for ordinary MIDI velocity 127 without Accent, explicit synth-step Accent, per-lane Accent, LEGATO fallback, UNISON propagation, queued Note Off removal, and engine-switch queue round-trip with independent velocity.
+- Implementation commit under test: `9c947adf37d0ff83c25423f60cb7b289dfc6723d`.
+- Current verification: GitHub Actions run [41236490105](https://github.com/energundenis/Felucca/actions/runs/41236490105), attempt 2, targets the exact implementation HEAD `9c947adf37d0ff83c25423f60cb7b289dfc6723d`. At the time this entry was written, the run was still `in_progress`; therefore the new Accent tests, complete host/web regression and target CPU budget are **not yet confirmed**. Do not mark this milestone passed until that run completes successfully and its logs show the new test cases executed.
+- This change transports Accent metadata at the host layer; it does not yet connect the METAL CORE engine (still unregistered) to read/apply it in its production `note_on()`/VCA path. No full DSP render integration, UI, parameter IDs, storage/Flash, package or device state changed.
+- No device writes/flashing; factory firmware and `main` remain untouched.
+- Next gate: finish the exact-HEAD CI; then implement a VCA-only host integration harness that consumes the explicit metadata and Gate events before integrating the complete METAL CORE DSP chain.
