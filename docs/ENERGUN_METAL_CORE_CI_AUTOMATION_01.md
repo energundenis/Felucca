@@ -4,7 +4,7 @@ The dedicated workflow `.github/workflows/energun-metal-core-fast.yml` runs on p
 
 Runner: `tests/run_metal_core_fast.sh`.
 
-The fast lane checks out pinned submodules, generates the repository headers with the existing build generator, then compiles and executes ten focused host tests covering oscillator primitives, LPG, VCA, CP2.23 harness, CP3.0 real-track adapter, CP3.1 memory accounting, and FOLLOW.
+The fast lane checks out pinned submodules, generates the repository headers with the existing build generator, then compiles and executes eleven focused host tests covering oscillator primitives, LPG, VCA, CP2.23 harness, CP3.0 real-track adapter, CP3.1 memory accounting, fractional feedback-delay lifecycle and closed-loop stability (0..0.8 gain), and FOLLOW.
 
 It uploads a test log artifact for 14 days. It intentionally does not build the full firmware, compile the full Metal Core engine for AC79, register a production engine, alter persistence, access hardware, or flash the device.
 
