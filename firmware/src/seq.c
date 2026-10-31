@@ -971,7 +971,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     uint32_t len = t->p[P_SLEN] ? (uint32_t)t->p[P_SLEN] : 1u;
     uint32_t next_tie = seq_steps(t)[(idx + 1u) % len].time == ST_TIE;
     uint32_t hits = step_ratchet(s);
-    uint8_t nn[4 + NLANE], vv[4 + NLANE];           /* the notes it plays: its notes, then its hits */
+    uint8_t nn[4 + NLANE], vv[4 + NLANE], na[4 + NLANE]; /* note, velocity and explicit Accent metadata */
     uint32_t m = 0, sk = 0;
     /* QNT SEQ: the step's notes (not the lane hits) snap to the scale as they play; never on a drum kit, the slices
      * or another engine that maps the keys itself. SEQ+T (#218): moved by TRN first, as the keys are. seq_notes keeps
@@ -1013,13 +1013,15 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
         }
         nn[m] = (uint8_t)x;
         vv[m] = (uint8_t)vel;
+        na[m] = (uint8_t)((s->flags & SF_ACCENT) != 0u);
         sk |= ((skip >> i) & 1u) << m;
         m++;
     }
     for (i = 0; i < NLANE; i++)
         if ((s->hit >> i) & 1u) {
             nn[m] = DRUM_LANE_NOTE[i];
-            vv[m] = (uint8_t)((s->acc >> i) & 1u ? 127u : vel);
+            na[m] = (uint8_t)((s->acc >> i) & 1u);
+            vv[m] = (uint8_t)(na[m] ? 127u : vel);
             sk |= ((skip >> (8u + i)) & 1u) << m;
             m++;
         }
@@ -1028,7 +1030,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
         seq_release(t);
     for (i = 0; i < m; i++)
         if (!((sk >> i) & 1u))
-            trk_note_on_source(t, nn[i], vv[i], NOTE_SRC_SEQUENCER);
+            trk_note_on_source(t, nn[i], vv[i], NOTE_SRC_SEQUENCER | (na[i] ? NOTE_META_ACCENT : 0u));
     if (slide_in)                                   /* release what is not held over */
         for (i = 0; i < t->seq_n; i++) {
             for (j = 0; j < m && nn[j] != t->seq_notes[i]; j++)
