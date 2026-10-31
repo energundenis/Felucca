@@ -68,7 +68,7 @@ static uint32_t metal_core_adapter_post(track_t *t, int32_t *out, uint32_t n)
 }
 
 /* Compile-time integration probe only. Not present in ENGINES[] and not selectable. */
-static const engine_t ENG_METAL_CORE_ADAPTER = {
+static const engine_t ENG_METAL_CORE_ADAPTER __attribute__((unused)) = {
     .name = "METAL CORE ADAPTER TEST",
     .poly = 1,
     .render = metal_core_adapter_render,
