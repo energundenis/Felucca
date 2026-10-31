@@ -272,3 +272,12 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Host tests cover sine and triangle bounds/full scale/DC, polyBLEP saw and 50% pulse bounds/DC, A4 pitch increment, octave ratio and independent phase accumulators.
 - This exercises existing Felucca fixed-point primitives only. It does not implement or register the Metal Core engine and does not claim target aliasing/audio quality.
 - Validation is pending in GitHub Actions run `41162325731` for current HEAD `cfdaec17a76b3ce1457dc928c8361825b342e5b8`; do not mark the harness passed until that run completes.
+
+
+## CP1.11 — LPG MODULE VOLUME behavior approved (2026-10-31)
+
+- User explicitly approved Option C: per-trigger peak = `(0.25 + RESPONSE × 0.75) × MODULE VOLUME`.
+- Preserves one LPG gain stage, RESPONSE attack contour, and DECAY tail; corrects the v98 shared-AudioParam collision without adding a post-envelope gain node.
+- Added isolated bounded Q15 helper `firmware/src/eng_metal_core_math.h` and host test `tests/metal_core_lpg_test.c`; wired the test into `tests/run_tests.sh`.
+- This is math-level implementation only. It is not connected to `eng_metal_core.c`, does not register the engine, and does not change IDs, UI, persistence, package or device state.
+- CP1.11 decision is recorded; host-test and CI validation remain pending until the workflow completes.
