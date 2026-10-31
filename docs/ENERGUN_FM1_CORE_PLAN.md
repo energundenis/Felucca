@@ -184,3 +184,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Existing user-preset storage has 144 packed value bytes but retains the `<128` parameter-ID ceiling. FUN10 has insufficient free bytes for any new complete common per-track parameter. Existing backup object list has no Metal Core sidecar object.
 - Identified the required private UI/API extension; do not put persistent controls in `engine_t.mem`, which is volatile DSP state.
 - No IDs, source code, ABI, project format, backup protocol, sidecar, flash allocation or device state changed. CP1 remains open for sound-default calibration, ADSR parity, scope approval and sidecar/recovery design.
+
+
+## CP1.5 — v98 behavior verification (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_5_V98_BEHAVIOR_VERIFICATION.md` (commit `c98ba7be8e4cacb4eda6893429d084e6ffca84ef`).
+- Resolved WEST COAST VOLUME: steady-state reference is `P.wcVol × 5`; initialization and knob handlers briefly write ×12, but the recurring animation-frame loop overwrites this. V1 must have one writer and use the stable behavior as the reference target.
+- Resolved FM CHARACTER: parameter object initializes METALLIC (2); static markup initially displays CLASSIC (1), then `wcComplexSync()` updates the UI to METALLIC during audio initialization. V1 canonical default = METALLIC.
+- Found LPG MODULE VOLUME shares the same gain node as the per-trigger LPG envelope. It is a stored value but not an independent post-envelope output stage; preserve shared-node semantics or approve a deliberate redesign.
+- Host ADSR reuse is not approved: v98 normal and METAL trigger schedules, VCA peak/velocity/accent scaling and sixteenth-note gate are distinct from the host voice-lifecycle ADSR. Keep v98 normal ADSR + VCA peak as internal controls for now; private bank remains 13 values.
+- No parameter IDs, ABI, project/storage format, sidecar, flash, firmware package or device state changed. CP1 remains open pending scope approval, LPG behavior decision, signal map and safe sidecar/recovery design.
