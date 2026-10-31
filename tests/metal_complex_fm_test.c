@@ -243,6 +243,86 @@ static void feedback_step_bounds(void)
     }
 }
 
+
+static void part_state_lifecycle(void)
+{
+    metal_core_part_state_t active, split;
+    int32_t aout[CTL], bout[CTL], discard[CTL];
+    uint32_t base = pitch_inc(60 * 16), i;
+    int same, duplicate_guard;
+    memset(aout, 0, sizeof aout);
+    memset(bout, 0, sizeof bout);
+    memset(discard, 0, sizeof discard);
+    metal_core_part_state_init(&active);
+    metal_core_part_state_init(&split);
+
+    metal_core_part_begin_block(&active);
+    metal_core_part_begin_block(&split);
+    metal_core_part_render(&active, aout, CTL, base, base, base, 201195u,
+        MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC,
+        16384, 26214);
+    metal_core_part_render(&split, bout, CTL, base, base, base, 201195u,
+        MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC,
+        16384, 26214);
+    same = memcmp(&active, &split, sizeof active) == 0 &&
+           memcmp(aout, bout, sizeof aout) == 0;
+    check("per-part state starts with identical active rendering", same);
+
+    metal_core_part_begin_block(&active);
+    metal_core_part_begin_block(&split);
+    metal_core_part_render(&active, discard, CTL, base, base, base, 201195u,
+        MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC,
+        16384, 26214);
+    metal_core_part_advance_silent(&split, CTL);
+    same = memcmp(&active, &split, sizeof active) == 0;
+    check("silent gap advances exactly the same shared oscillator/feedback state", same);
+
+    {
+        metal_core_part_state_t snapshot = split;
+        metal_core_part_advance_silent(&split, CTL);
+        duplicate_guard = memcmp(&snapshot, &split, sizeof split) == 0;
+    }
+    check("duplicate post/block advancement cannot double-advance one block",
+          duplicate_guard);
+
+    memset(aout, 0, sizeof aout);
+    memset(bout, 0, sizeof bout);
+    metal_core_part_begin_block(&active);
+    metal_core_part_begin_block(&split);
+    metal_core_part_render(&active, aout, CTL, base, base, base, 201195u,
+        MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC,
+        16384, 26214);
+    metal_core_part_render(&split, bout, CTL, base, base, base, 201195u,
+        MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC,
+        16384, 26214);
+    check("reactivation after silent gap resumes phase and feedback history exactly",
+          memcmp(&active, &split, sizeof active) == 0 &&
+          memcmp(aout, bout, sizeof aout) == 0);
+
+    /* A note retrigger changes pitch/control values but never clears phases or delay. */
+    {
+        uint32_t phase_before[3], write_before = split.delay_write;
+        memcpy(phase_before, split.phase, sizeof phase_before);
+        metal_core_part_begin_block(&split);
+        metal_core_part_render(&split, bout, CTL, pitch_inc(67 * 16),
+            pitch_inc(67 * 16), base, 201195u, MC_OSC_SAW, MC_MOD_SINE,
+            26000, 32767, MC_FM_CHAR_METALLIC, 16384, 26214);
+        check("legato/retrigger pitch update preserves phase and delay position",
+              split.phase[0] != phase_before[0] &&
+              split.phase[1] != phase_before[1] &&
+              split.phase[2] != phase_before[2] &&
+              split.delay_write == (write_before + CTL) % MC_FEEDBACK_DELAY_SAMPLES);
+    }
+
+    check("monophonic per-part DSP state fits engine memory with margin",
+          sizeof(metal_core_part_state_t) < 2000u &&
+          sizeof(metal_core_part_state_t) <= 12888u);
+    check("per-part state remains independent of NVOICE delay banks",
+          sizeof(metal_core_part_state_t) <
+          sizeof(metal_core_feedback_state_t) / 2u);
+    (void)i;
+}
+
 int main(void)
 {
     signed_step();
@@ -252,6 +332,7 @@ int main(void)
     feedback_zero_exact();
     feedback_route_and_delay();
     feedback_step_bounds();
+    part_state_lifecycle();
     printf(failures ? "metal-complex-fm: %d FAILED\n" : "metal-complex-fm: all passed\n", failures);
     return failures != 0;
 }
