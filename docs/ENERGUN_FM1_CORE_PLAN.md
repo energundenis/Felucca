@@ -128,3 +128,12 @@ Sound-engine direction: ENERGUN METAL CORE V1
 ## Working rule
 
 Do not mark a checkbox complete based on an intended design, a source comment, or a test from another branch. Mark it complete only when the relevant code is present on `energun-metal-core` and the stated evidence is available. Update this document in the same milestone commit as the implementation it describes.
+
+
+## Remote baseline CI — first execution (2026-10-31)
+
+- Workflow: `.github/workflows/energun-fm1-baseline.yml`
+- Run: [41160334654](https://github.com/energundenis/Felucca/actions/runs/41160334654), triggered by push on `energun-metal-core`, source commit `fa0da918e1b13bb1034f85df65b6da18ae93ec9a`.
+- Verified from the run's job steps: recursive checkout, Python/Node setup, Pillow/fontTools installation, JieLi pi32v2 toolchain installation, AC79 SDK checkout, and `./build.sh` all completed successfully.
+- The regression step `tests/run_tests.sh` was still in progress at the last check. The run is not yet a fully passing baseline; do not mark CP0.5 complete until the run concludes successfully.
+- The parent tree gitlinks at the workflow source commit resolve exactly to `firmware/engines` = `d0260074ce100a47675814b7f38d61f11176c926` and `firmware/bsp` = `5942e68b89ab9ccd23f2c541d712ca38fe635f11`. Recursive checkout completed successfully, which confirms the workflow obtained the pinned submodules for this run.
