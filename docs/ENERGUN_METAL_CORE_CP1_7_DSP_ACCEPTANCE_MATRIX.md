@@ -226,3 +226,12 @@ Implementation target: isolated module and host test first; candidate files `fir
 
 
 CP1.16 decision: the user selected Option B. This is a specification decision, not a test result. VCA-11 must prove that a Decay event scheduled after Gate-off cannot reopen the VCA. See docs/ENERGUN_METAL_CORE_CP1_16_SHORT_GATE_VCA_DECISION.md.
+
+
+## CP2.13 — isolated VCA implementation status
+
+- First host-only sample-domain model: `firmware/src/eng_metal_core_vca.h`.
+- Host regression source: `tests/metal_core_vca_test.c`; included by `tests/run_tests.sh`.
+- The model covers fixed-point target scaling, Attack/Decay/Sustain/Release, retrigger hold, zero Gate, and CP1.16 Release priority.
+- The VCA-01..VCA-21 matrix remains the acceptance target; adding a test source does not mark every case as passed.
+- Current implementation status: added, awaiting CI execution/evidence. No target render integration or device validation.
