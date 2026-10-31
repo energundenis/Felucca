@@ -89,15 +89,22 @@ Acceptance gates:
 
 The CP2.17 result `mix_part=3431 / 3549` leaves 118 static-cost units of headroom in that specific baseline measurement. This is a narrow margin, not permission to spend it without measurement. The isolated VCA compile probe is not a linked render benchmark.
 
-## 6. Integration blockers that must be resolved before wiring note_on
+## 6. Product behavior decision and remaining integration blockers
 
-The source audit identifies three behavior decisions that must not be guessed:
+The user resolved the performance/manual-versus-sequencer behavior question in CP2.19 (see `docs/ENERGUN_METAL_CORE_CP2_19_VCA_PERFORMANCE_MODE_DECISION.md`):
 
-1. **Performance/manual mode versus sequencer mode.** V98 sequencer mode uses a sixteenth-note Gate duration derived from BPM; V98 manual mode holds a constant LEVEL rather than running the sequencer VCA contour. FM-1 performance notes and the integrated sequencer need an explicit mapping to those modes.
-2. **Accent provenance.** The host exposes `v->vel` and `v->mvel`, but does not provide a dedicated `accent` boolean in the current render callback. A velocity threshold is not equivalent to an explicit sequencer ACCENT flag and would misclassify expressive MIDI velocity. Add a safe source for accent (e.g. a per-voice tag with defined lifecycle) or obtain an explicit product decision to derive Accent from velocity.
-3. **Gate timing.** Current callback provides Gate state at render-block entry, not the exact sample offset of a note-off inside a block. The first integration slice can release at the first sample of the next render block; sample-accurate event offsets require a host/API extension and its own CPU/regression review.
+- Every live/manual FM-1 MIDI note uses the full internal VCA Attack → Decay → Sustain contour; MIDI Note Off starts Release from the current level.
+- Integrated sequencer notes use the same contour; sequencer step Gate controls Release.
+- Retrigger holds the current level and starts a fresh contour without a reset-to-zero discontinuity.
+- There is no constant-LEVEL manual-mode bypass in the FM-1 product behavior.
+- Host ADSR remains bypassed; host LFO-to-AMP and engine-switch fade remain independent multiplicative controls.
 
-Until these are resolved, do not connect the VCA to `note_on` and do not claim V98 parity for live MIDI or sequencer playback.
+Two integration blockers remain unresolved and must not be guessed:
+
+1. **Accent provenance.** The host exposes `v->vel` and `v->mvel`, but does not provide a dedicated `accent` boolean in the current render callback. A velocity threshold is not equivalent to an explicit sequencer ACCENT flag and would misclassify expressive MIDI velocity. Add a safe source for accent (e.g. a per-voice tag with defined lifecycle) or obtain an explicit product decision to derive Accent from velocity.
+2. **Gate timing.** Current callback provides Gate state at render-block entry, not the exact sample offset of a note-off inside a block. The first integration slice can release at the first sample of the next render block; sample-accurate event offsets require a host/API extension and its own CPU/regression review. Sequencer Gate and ratchet event semantics also need an explicit integration contract.
+
+Until Accent provenance and Gate event handling are specified and tested, do not connect the VCA to production `note_on` and do not claim full V98 parity for live MIDI or sequencer playback.
 
 ## 7. Integration test plan
 
@@ -122,7 +129,7 @@ Add a dedicated METAL CORE engine host test, not only isolated VCA unit tests:
 
 ## 8. Planned implementation order
 
-1. Resolve the three behavior blockers in Section 6.
+1. Implement the CP2.19 full-envelope behavior for both live MIDI and sequencer; resolve Accent provenance and Gate-event timing in Section 6.
 2. Add a small, host-testable per-part VCA state accessor / callback harness; verify index and memory behavior before real engine wiring.
 3. Add explicit Gate-off support to the isolated VCA model and tests; preserve the existing fixed-countdown API tests.
 4. Build a minimal VCA-only engine integration harness with a constant source signal, proving additive render, host ramp multiplication and done lifecycle.
