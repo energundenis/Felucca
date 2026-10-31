@@ -207,3 +207,33 @@ Do not clear the ring or preserve it across all note-ons by assumption. First in
 5. Recalculate exact memory and target render cost using the selected delay representation.
 
 This section adds no DSP implementation and does not close CP3.1.
+
+
+## 14. Felucca voice-reuse source trace — feedback lifecycle candidate (2026-11-01)
+
+Inspected `firmware/src/voice.c` on this branch, especially `voice_alloc()`, `voice_start()` and `env_tick()`.
+
+Confirmed host behavior:
+- `voice_start()` snapshots `sounding = v->active && v->stage != 0` before it changes the voice to the new note's active/attack state.
+- It calls the engine's `note_on()`, then, for a sounding non-sampled voice, restores all three host phase words and the `voice_t.s[]` slots selected by `engine_t.keep`.
+- The source comment explicitly describes this as “retrigger / steal: keep phases and filter” because resetting those states clicks.
+- A voice whose envelope reaches its completed state is set to `active=0`, `stage=0`; a later allocation is therefore a fresh note rather than a sounding retrigger.
+- Engine-owned `ENG_MEM` state is not part of the host snapshot/restore operation.
+
+This makes the feedback-ring lifecycle more specific than the earlier open question. Candidate contract for a per-voice Complex FM feedback ring:
+1. **Sounding retrigger / in-place steal:** preserve ring samples and cursor, just as the host preserves oscillator phases and selected filter state. Resetting the ring here would violate the host's explicit continuity intent and may click.
+2. **Fresh note in an inactive voice slot:** clear the ring and reset its cursor before starting the new contour, preventing feedback energy from a previous occupant leaking into the new note.
+3. **Completed voice:** once the engine reports VCA idle through `done()`, the ring may remain allocated but is logically stale; the next fresh `note_on()` must clear it before audio processing.
+4. **Engine switch:** `eng_mem_claim()` clears the part's shared memory region when ownership changes, so no old engine feedback state is carried into METAL CORE.
+
+Implementation detail candidate: the VCA's explicit `phase == ENG_METAL_VCA_IDLE` can distinguish a completed/fresh slot from a still-sounding envelope at `note_on()`, because the host overwrites `voice_t.active/stage` before invoking the callback. This must be proven in a test-only note-on lifecycle adapter; do not infer the old host stage from the already-updated `voice_t`.
+
+Remaining caveat: this host trace establishes the continuity expectation for a sounding voice, but does not inspect the protected v98 reference's exact node allocation / oscillator start lifecycle. Before freezing the candidate as final v98 equivalence, compare the original reference's per-voice node construction and trigger handling. Keep the behavior marked as a host-contract candidate until that check and its tests pass.
+
+### Required lifecycle regression
+
+- Start a voice, write nonzero feedback samples, then retrigger while its VCA is non-idle: ring cursor and samples remain unchanged.
+- Reuse the same slot after VCA reaches IDLE: ring samples and cursor are cleared before first new render.
+- Steal/retrigger a released-but-not-yet-idle voice: preserve state and avoid a discontinuity.
+- Run two voice slots concurrently: clearing one slot must not affect the other.
+- Engine switch / part memory claim: all ring state starts zeroed.
