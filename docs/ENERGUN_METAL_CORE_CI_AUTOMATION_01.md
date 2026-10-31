@@ -6,7 +6,7 @@ Runner: `tests/run_metal_core_fast.sh`.
 
 The fast lane checks out pinned submodules, generates the repository headers with the existing build generator, then compiles and executes eleven focused host tests covering oscillator primitives, LPG, VCA, CP2.23 harness, CP3.0 real-track adapter, CP3.1 memory accounting, fractional feedback-delay lifecycle and closed-loop stability (0..0.8 gain), and FOLLOW.
 
-It uploads a test log artifact for 14 days. It intentionally does not build the full firmware, compile the full Metal Core engine for AC79, register a production engine, alter persistence, access hardware, or flash the device.
+Both the fast lane and full baseline share the same pip download cache key, reducing repeated Python dependency downloads across workflows. It uploads a test log artifact for 14 days. It intentionally does not build the full firmware, compile the full Metal Core engine for AC79, register a production engine, alter persistence, access hardware, or flash the device.
 
 The existing `.github/workflows/energun-fm1-baseline.yml` remains the full integration gate for standard firmware build, isolated AC79 target probes, and complete host/web regression. The fast lane supplements rather than replaces it.
 
