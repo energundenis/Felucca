@@ -111,4 +111,34 @@ static inline uint32_t eng_metal_follow_select_inc(int follow_on,
     return sequencer_source && !follow_on ? base_inc : note_inc;
 }
 
+/* Convert Felucca's absolute MIDI note to the reference-copy NOTE / NOTE OCTAVE pair.
+ * The host keyboard convention defines MIDI 60 as C4. That note is the zero-offset
+ * anchor for the reference-copy's relative FREQ mapping; P_ROOT is a scale setting,
+ * not this pitch anchor. Out-of-range octaves are clamped to the helper's -2..+2 range.
+ * Returns 0 for invalid MIDI input or null outputs.
+ */
+static inline int eng_metal_follow_from_midi(uint32_t midi_note,
+                                              int32_t *note,
+                                              int32_t *octave_tenths)
+{
+    int32_t relative, octave, semitone;
+
+    if (midi_note > 127u || !note || !octave_tenths)
+        return 0;
+
+    relative = (int32_t)midi_note - 60;
+    /* Floor division is required so negative MIDI offsets map to NOTE 0..11. */
+    octave = relative >= 0 ? relative / 12 : -((-relative + 11) / 12);
+    semitone = relative - octave * 12;
+
+    if (octave < ENG_METAL_FOLLOW_OCTAVE_TENTHS_MIN / 10)
+        octave = ENG_METAL_FOLLOW_OCTAVE_TENTHS_MIN / 10;
+    if (octave > ENG_METAL_FOLLOW_OCTAVE_TENTHS_MAX / 10)
+        octave = ENG_METAL_FOLLOW_OCTAVE_TENTHS_MAX / 10;
+
+    *note = semitone;
+    *octave_tenths = octave * 10;
+    return 1;
+}
+
 #endif

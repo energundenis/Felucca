@@ -355,3 +355,22 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Confirmed a transient track flag alone is insufficient: engine-switch notes are queued, MONO/LEGATO can change pitch without calling engine note_on, and held-note fallback can restore a note of a different origin.
 - Proposed host-owned per-voice and per-held-note source metadata, with pending engine-switch source queued alongside note/velocity. Shared `voice_t` ABI remains unchanged.
 - CP2.7 is a design audit only. CP2.6 CI is still pending; no FOLLOW integration is connected to the render callback.
+
+
+## CP2.8 — host note-source provenance implementation (2026-10-31)
+
+- Added host-owned `voice_source[NVOICE]` and paired `mono_source[]` metadata; shared `voice_t` ABI and Felucca-Engines submodule remain unchanged.
+- Added source-aware `trk_note_on_source()` while retaining the original three-argument `trk_note_on()` as a performance-source compatibility wrapper for existing host/test call sites.
+- Sequencer step playback and stopped-transport step preview are marked SEQUENCER; keyboard/MIDI and arpeggiator remain PERFORMANCE.
+- Preserved source through fresh voice allocation, mono/legato pitch changes, held-note fallback, same-pitch source replacement, and the pending engine-switch queue.
+- Added host tests for POLY, LEGATO fallback, same-pitch retrigger, real `seq_step()`, keyboard/MIDI input, stopped step preview, arpeggiator, and queued note cancellation.
+- CI validation is pending; CP2.8 is not yet considered validated and does not connect FOLLOW to the render callback.
+
+## CP2.9 — absolute MIDI to relative FOLLOW mapping (2026-10-31)
+
+- Added `eng_metal_follow_from_midi()` to convert the host's final absolute MIDI note into the v99-derived NOTE 0..11 plus NOTE OCTAVE pair.
+- The V1 integration convention uses Felucca's keyboard C4 anchor (MIDI 60): C4 maps to base FREQ, C5 to +1 octave, B3 to B at -1 octave. This is an explicit host adapter convention, not direct v98 source verification; Felucca's `P_ROOT` remains a scale setting and is not repurposed.
+- Negative MIDI offsets use floor division; octave is clamped to the isolated helper's -2..+2 range. Added host tests for C4, C#4, B4, C5, B3, C3, both clamps and invalid inputs.
+- Added `docs/ENERGUN_METAL_CORE_CP2_9_MIDI_FOLLOW_ADAPTER.md`.
+- No engine render integration, engine registration, parameter ID, UI, storage format, firmware package, factory image or device state changed. Full CI validation pending.
+

@@ -109,12 +109,47 @@ static void test_source_selector(void)
           eng_metal_follow_select_inc(0, 0, base, note) == note);
 }
 
+static void test_absolute_midi_adapter(void)
+{
+    int32_t note = -99, octave = -99;
+
+    check("MIDI C4 (60) maps to NOTE C / zero octave",
+          eng_metal_follow_from_midi(60u, &note, &octave) &&
+          note == 0 && octave == 0);
+    check("MIDI C#4 (61) maps to one semitone above base FREQ",
+          eng_metal_follow_from_midi(61u, &note, &octave) &&
+          note == 1 && octave == 0);
+    check("MIDI B4 (71) maps to NOTE B / zero octave",
+          eng_metal_follow_from_midi(71u, &note, &octave) &&
+          note == 11 && octave == 0);
+    check("MIDI C5 (72) maps to NOTE C / +1 octave",
+          eng_metal_follow_from_midi(72u, &note, &octave) &&
+          note == 0 && octave == 10);
+    check("MIDI B3 (59) uses floor mapping to NOTE B / -1 octave",
+          eng_metal_follow_from_midi(59u, &note, &octave) &&
+          note == 11 && octave == -10);
+    check("MIDI C3 (48) maps to NOTE C / -1 octave",
+          eng_metal_follow_from_midi(48u, &note, &octave) &&
+          note == 0 && octave == -10);
+    check("MIDI below reference octave clamps to -2 octaves",
+          eng_metal_follow_from_midi(0u, &note, &octave) &&
+          note == 0 && octave == -20);
+    check("MIDI above reference octave clamps to +2 octaves",
+          eng_metal_follow_from_midi(127u, &note, &octave) &&
+          note == 7 && octave == 20);
+    check("invalid MIDI note and null output pointers are rejected",
+          !eng_metal_follow_from_midi(128u, &note, &octave) &&
+          !eng_metal_follow_from_midi(60u, 0, &octave) &&
+          !eng_metal_follow_from_midi(60u, &note, 0));
+}
+
 int main(void)
 {
     test_ratio_table();
     test_bounds_and_invalid_inputs();
     test_phase_increment();
     test_source_selector();
+    test_absolute_midi_adapter();
     printf("metal FOLLOW: %s (%d failures)\n",
            failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
