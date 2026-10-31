@@ -52,3 +52,12 @@ The host note-source metadata and this math helper are not yet connected to `eng
 - Run the full target build and host regression at the resulting branch HEAD, including the CP2.8 source-provenance tests and new adapter tests.
 - Add render-level FOLLOW ON/OFF, pitch bend/tune interaction, voice lifecycle, and all oscillator destination tests before engine integration.
 - Do not mark Phase 2 complete, register the engine, package firmware, or flash the FM-1 on the strength of these isolated tests.
+
+## Review note — full MIDI range and pitch modulation remain open (2026-10-31)
+
+A follow-up audit identified two limits that must not be mistaken for validated behavior:
+
+1. `eng_metal_follow_from_midi()` clamps the octave to -2..+2. Thus it does not preserve the full MIDI 0..127 pitch range relative to C4: notes below C2 or above C6 are octave-clamped. Existing endpoint tests prove deterministic clamping only; they do not prove correct full-range MIDI tracking. Before runtime integration, either expand the supported ratio range with measured Nyquist handling, or define an explicit out-of-range fallback/rejection. Do not silently treat the clamped result as the original MIDI pitch.
+2. Felucca's final `vmod_t` pitch increment includes glide, track tune, pitch bend, LFO pitch, envelope pitch and modulation-matrix pitch/fine. Selecting a bare base-FREQ increment when FOLLOW is OFF would also discard those independent pitch controls. The host pitch delta must be separated from the note-origin pitch and reapplied to the selected Metal Core base/step frequency.
+
+These are integration blockers. CP2.9 remains a bounded prototype adapter, not a complete MIDI-range or pitch-control solution.

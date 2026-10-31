@@ -374,3 +374,14 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added `docs/ENERGUN_METAL_CORE_CP2_9_MIDI_FOLLOW_ADAPTER.md`.
 - No engine render integration, engine registration, parameter ID, UI, storage format, firmware package, factory image or device state changed. Full CI validation pending.
 
+
+
+## CP2.10 — host-to-engine FOLLOW pitch contract audit (2026-10-31)
+
+- Inspected the real host render path in `voice.c` and `mod.c`. Engine render receives `track_t *t`, `voice_t *v`, and final `vmod_t *m` after glide, tune, pitch bend, LFO pitch, envelope pitch, fine pitch and modulation-matrix pitch.
+- Host note provenance is available per voice in `t->voice_source[v - t->v]`; no shared `voice_t` ABI change is required.
+- Critical design constraint: FOLLOW selection must not discard independent host pitch offsets. A simple choice between bare base-FREQ increment and final host `m.inc` is insufficient; the host pitch delta must be preserved and applied to the selected base/step pitch.
+- Review found CP2.9's current -2..+2 octave clamp does not preserve MIDI notes outside C2..C6 relative to C4. Existing MIDI endpoint tests prove deterministic clamp behavior only, not full-range pitch tracking. A full-range table or explicit out-of-range fallback is required before render integration.
+- Added `docs/ENERGUN_METAL_CORE_CP2_10_HOST_FOLLOW_PITCH_CONTRACT.md` and appended limitations to CP2.9 documentation.
+- Documentation-only audit. No engine callback, DSP render, registration, UI, parameter IDs, storage, package or device state changed.
+- CI for implementation HEAD `2b3d1484e7b69c7d0df81ff438e5a895cf01c91f` remains in progress; CP2.8/CP2.9 are not validated yet.
