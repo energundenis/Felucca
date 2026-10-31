@@ -33,8 +33,8 @@ static void waveform_set(void)
     check("SINE positive peak", metal_core_modulator_sample(0x40000000u, inc, MC_MOD_SINE) > 32750);
     check("TRIANGLE positive peak", metal_core_modulator_sample(0x80000000u, inc, MC_MOD_TRIANGLE) == 32767);
     check("SAW quarter-cycle level", near_i32(metal_core_modulator_sample(0x40000000u, inc, MC_MOD_SAW), -16384, 2));
-    check("SQUARE positive half-cycle", metal_core_modulator_sample(0x80000000u, inc, MC_MOD_SQUARE) > 32760);
-    check("SQUARE negative half-cycle", metal_core_modulator_sample(0u, inc, MC_MOD_SQUARE) < -32760);
+    check("SQUARE positive half-cycle", metal_core_modulator_sample(0xA0000000u, inc, MC_MOD_SQUARE) > 32760);
+    check("SQUARE negative half-cycle", metal_core_modulator_sample(0x20000000u, inc, MC_MOD_SQUARE) < -32760);
     check("unknown waveform falls back to SINE",
           metal_core_modulator_sample(0x40000000u, inc, 99u) ==
           metal_core_modulator_sample(0x40000000u, inc, MC_MOD_SINE));
