@@ -376,6 +376,8 @@ static void adapter_callbacks(void)
     check("render hook advances per-part phases and delay once",
           s->advanced_this_block && s->delay_write == CTL &&
           s->phase[0] != 0 && s->phase[1] != 0 && s->phase[2] != 0);
+    check("FOLLOW adapter fixes MOD RATIO at v98 1.5 regardless of panel ratio",
+          s->ratio_q16 == 98304u);
     panel_ref = s->feedback_ref_inc;
 
     phase_before = s->phase[2];
