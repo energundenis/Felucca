@@ -131,7 +131,7 @@ Add a dedicated METAL CORE engine host test, not only isolated VCA unit tests:
 
 1. Implement the CP2.19 full-envelope behavior for both live MIDI and sequencer; resolve Accent provenance and Gate-event timing in Section 6.
 2. Add a small, host-testable per-part VCA state accessor / callback harness; verify index and memory behavior before real engine wiring.
-3. Add explicit Gate-off support to the isolated VCA model and tests; preserve the existing fixed-countdown API tests.
+3. Add and test explicit Gate-off support in the isolated VCA model (implemented in CP2.20); preserve the existing fixed-countdown API tests.
 4. Build a minimal VCA-only engine integration harness with a constant source signal, proving additive render, host ramp multiplication and done lifecycle.
 5. Only then combine VCA with the METAL CORE oscillator/FM/fold/LPG render chain.
 6. Register the engine append-only only after the complete DSP, parameter map, memory, CPU and regression gates are satisfied.
