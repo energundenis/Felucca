@@ -394,9 +394,9 @@ static inline int32_t metal_core_feedback_delay_tick(metal_core_feedback_state_t
 
 
 /* Convert the v98 feedback graph into a signed phase-step contribution.
- * Web Audio: delayed wcMod sample * FM_FEEDBACK * FREQ * 3 Hz.
- * FREQ is represented here by OSC1's phase increment, so no float or Hz
- * conversion is needed. Both inputs are normalized Q15. */
+ * Web Audio: delayed wcMod sample * FM_FEEDBACK * panel FREQ * 3 Hz.
+ * feedback_ref_inc represents panel FREQ even when FOLLOW tracks another note.
+ * Both modulation inputs are normalized Q15. */
 static inline int32_t metal_core_feedback_modulator_step(uint32_t feedback_ref_inc,
                                                           int32_t delayed_q15,
                                                           int32_t feedback_q15)
@@ -404,7 +404,7 @@ static inline int32_t metal_core_feedback_modulator_step(uint32_t feedback_ref_i
     int64_t step;
     int32_t feedback = clamp(feedback_q15, 0, 26214); /* v98 range: 0..0.8 */
     int32_t delayed = clamp(delayed_q15, -32768, 32767);
-    step = ((int64_t)base_inc * 3 * feedback * delayed) >> 30;
+    step = ((int64_t)feedback_ref_inc * 3 * feedback * delayed) >> 30;
     if (step > 0x7FFFFFFFLL)
         step = 0x7FFFFFFFLL;
     else if (step < -0x7FFFFFFFLL)
@@ -467,9 +467,9 @@ static inline int32_t metal_core_modulator_signed_step(uint32_t base_inc,
  * The delayed signal changes the modulator's phase step; the resulting
  * wcMod waveform then modulates OSC1 through the normal FM INDEX path.
  *
- * State is per voice. A fresh note may clear it with
- * metal_core_feedback_delay_reset(); legato preservation is still an
- * engine-lifecycle decision and is not made here. */
+ * State is per voice. v98 leaves oscillator phase and delay history running
+ * across sequencer retriggers; call reset only when initializing/resetting
+ * the DSP voice state, never on each note-on. */
 static void metal_core_complex_fm_feedback_pair_block(
     voice_t *v, int32_t *pre_fold, uint32_t n,
     uint32_t osc1_inc, uint32_t osc2_inc, uint32_t feedback_ref_inc,
