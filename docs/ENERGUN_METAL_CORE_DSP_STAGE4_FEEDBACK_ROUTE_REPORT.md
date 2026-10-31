@@ -2,7 +2,7 @@
 
 Date: 2026-10-31
 Branch: `metal-core-dsp-stage1-osc`
-Status: isolated fixed-point feedback route implemented; host CI validation in progress. Not registered as an engine and not placed into `engine_t.mem`.
+Status: isolated fixed-point feedback route implemented and host-tested at 44.1 and 96 kHz. Not registered as an engine and not placed into `engine_t.mem`.
 
 ## 1. Source-grounded v98 topology
 
@@ -16,15 +16,25 @@ The direct FM path is separate:
 
 Therefore feedback changes the instantaneous frequency of the **modulator wcMod**, not OSC1 directly. The modified wcMod waveform then reaches OSC1 through the normal FM INDEX path.
 
+The feedback gain is based on the panel's `P.wcFreq`, not the current FOLLOW-tracked note frequency. The fixed-point route therefore receives a separate `feedback_ref_inc`; the carrier pitch can change under FOLLOW without changing the v98 feedback-gain reference.
+
 The v98 feedback control range is 0..0.8. Its gain changes use `setTargetAtTime(..., 0.025)`; the fixed-point implementation uses a per-sample one-pole approximation of a 25 ms transition.
 
-## 2. Implementation
+## 2. Note-trigger lifecycle evidence
+
+In v98, `wcInit()` creates and starts `wcMod` once. `wcTrig()` changes oscillator frequencies with `setTargetAtTime`, but does not recreate the oscillator or reset its phase. The 3 ms DelayNode is also created once and remains connected. Thus the reference does **not** clear the feedback delay on each sequencer note trigger; the delay history and oscillator phase continue across retriggers.
+
+The fixed-point delay reset is therefore an initialization/reset primitive, not a note-on action. The exact host voice-reuse and part-reset lifecycle still needs to be mapped during engine integration.
+
+One separate v98 behavior requires parameter-mapping review: on FOLLOW note triggers, `wcTrig()` sets `wcMod.frequency` to `f * 1.5`, whereas initialization and the MOD RATIO control use `P.wcFreq * P.wcModRatio`. This hard-coded trigger ratio is preserved here as an audit finding, not silently normalized into a new assumption.
+
+## 3. Implementation
 
 File: `firmware/src/eng_metal_core.c`
 
 Added:
 - per-voice smoothed feedback amount in `metal_core_feedback_state_t`;
-- signed feedback phase-step calculation from the v98 gain equation;
+- signed feedback phase-step calculation from the v98 gain equation and panel-FREQ reference;
 - bounded signed wcMod phase increment, including negative frequency;
 - direction-aware reverse BLEP handling for reverse-running wcMod SAW and SQUARE;
 - a delay peek so the delayed sample determines the current wcMod phase step before the current modulator sample is generated;
@@ -32,7 +42,7 @@ Added:
 
 The old no-feedback renderer remains unchanged. A zero-feedback regression compares output and all oscillator phases against the no-feedback renderer.
 
-## 3. Tests
+## 4. Tests and CI
 
 File: `tests/metal_complex_fm_test.c`
 
@@ -43,15 +53,17 @@ Checks:
 - feedback changes wcMod phase after the delay;
 - feedback amount remains in the v98 0..0.8 range;
 - positive and negative feedback signs and signed phase-step bounds;
+- feedback gain uses panel FREQ independently of FOLLOW note pitch;
 - pre-fold output remains within the tested oscillator headroom.
 
-CI compiles and runs the feedback-route test at both 44.1 kHz and 96 kHz.
+GitHub Actions run `41157510223` passed all checks at 44.1 kHz and 96 kHz:
+https://github.com/energundenis/Felucca/actions/runs/41157510223
 
-## 4. Explicit limits
+A subsequent regression run is required after the panel-FREQ API refinement and lifecycle audit updates.
+
+## 5. Explicit limits
 
 - Standalone DSP only; `eng_metal_core.c` remains excluded from `engines.c`.
 - No `engine_t.mem` integration, engine registration, UI, parameter IDs, persistence, or firmware image build.
-- Note retrigger and legato reset policy is not frozen.
-- The per-part memory layout is not yet allocated; the helper's standalone size assertion is not a full engine-state budget proof.
 - No physical FM-1 query, SysEx, write, erase, restore, or flash operation was performed.
 - Factory firmware V1.5 remains untouched.
