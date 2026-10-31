@@ -15,6 +15,7 @@
 #define TEST_ENG_MEM_PART_MAX 13344u
 #define TEST_NOTE_META_ACCENT 2u
 #define TEST_SOURCE_SAMPLE 12000
+#define TEST_CTL 32u /* Felucca engine render quantum. */
 
 typedef union {
     uint64_t align;
@@ -147,14 +148,14 @@ static void render_voice(track_t *t, uint32_t i, int32_t *out,
     memset(&m, 0, sizeof(m));
     m.amp0 = amp0;
     m.amp1 = amp1;
-    ENG_METAL_CORE_CP3_ADAPTER.render(t, &t->v[i], out, CTL, &m);
+    ENG_METAL_CORE_CP3_ADAPTER.render(t, &t->v[i], out, TEST_CTL, &m);
 }
 
 int main(void)
 {
     track_t *t = &test_tracks[0];
     eng_metal_vca_part_state_t *state;
-    int32_t out[CTL];
+    int32_t out[TEST_CTL];
     int32_t unaccented_peak;
     uint32_t i, blocks = 0;
     int monotonic = 1;
@@ -192,14 +193,14 @@ int main(void)
     check("invalid voice pointer is rejected",
           voice_vca(t, (voice_t *)(uintptr_t)1u) == 0);
 
-    for (i = 0; i < CTL; ++i)
+    for (i = 0; i < TEST_CTL; ++i)
         out[i] = 250;
     render_voice(t, 0u, out, 0, 32767);
-    for (i = 1; i < CTL; ++i)
+    for (i = 1; i < TEST_CTL; ++i)
         if (out[i] < out[i - 1u])
             monotonic = 0;
     check("render is additive and preserves the host amp ramp",
-          out[0] >= 250 && out[CTL - 1u] > out[0] && monotonic);
+          out[0] >= 250 && out[TEST_CTL - 1u] > out[0] && monotonic);
 
     t->v[0].gate = 0u;
     render_voice(t, 0u, out, 32767, 32767);
