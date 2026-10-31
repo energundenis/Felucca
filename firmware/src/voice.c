@@ -446,8 +446,13 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel, uint32_t source
         t->mono_source[t->nmono] = (uint8_t)source;
         t->nmono++;
         want = mono_pick(t);
-        if (sounding && want == t->mono_note)
+        if (sounding && want == t->mono_note) {
+            uint32_t k, nv = mode == V_UNISON ? trk_nvoice(t) : 1u;
+            uint8_t src = (uint8_t)mono_source_for(t, want);
+            for (k = 0; k < nv; k++)
+                t->voice_source[k] = src;               /* same pitch, new source owns the active note */
             return;                                     /* LOW / HIGH priority: this key does not win */
+        }
         if (mode == V_MONO)                             /* MONO: always retrigger, glide when GLIDE is set */
             mono_play(t, want, vel, 1, t->p[P_GLIDE] != 0 || t->slide_glide, mono_source_for(t, want));
         else                                            /* LEGATO / UNISON: glide only between held notes */

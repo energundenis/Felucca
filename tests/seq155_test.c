@@ -645,6 +645,16 @@ static int note_source_provenance(void)
 
     ui_power_on();
     t = &trk[0];
+    t->p[P_VOICE] = V_LEGATO;
+    trk_note_on(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
+    trk_note_on(t, 60u, 100u, NOTE_SRC_SEQUENCER);
+    bad += check("FOLLOW provenance: same-pitch MONO retrigger updates active source",
+                 t->nmono == 1u &&
+                 t->mono_source[0] == NOTE_SRC_SEQUENCER &&
+                 t->voice_source[0] == NOTE_SRC_SEQUENCER);
+
+    ui_power_on();
+    t = &trk[0];
     t->p[P_VOICE] = V_POLY;
     t->step[0] = (step_t){{72u}, 1u, ST_NOTE, 0u, 100u};
     seq_step(t, &t->step[0], 0u, div_samples(2), SEQ_ROLLED);
@@ -667,6 +677,36 @@ static int note_source_provenance(void)
             break;
         }
     bad += check("FOLLOW provenance: input_on keyboard/MIDI path marks performance note", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->step[0] = (step_t){{74u}, 1u, ST_NOTE, 0u, 100u};
+    aud_req = 1u;                                      /* step 1, track 1 */
+    seq_audition();
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 74u) {
+            found = t->voice_source[i] == NOTE_SRC_SEQUENCER;
+            break;
+        }
+    bad += check("FOLLOW provenance: stopped-transport step preview is sequencer source", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->p[P_AMODE] = AM_UP;
+    t->nheld = 1u;
+    t->held[0] = 62u;
+    t->p[P_APROB] = 127;
+    arp_fire(t, div_samples(2));
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 62u) {
+            found = t->voice_source[i] == NOTE_SRC_PERFORMANCE;
+            break;
+        }
+    bad += check("FOLLOW provenance: arpeggiator output remains performance source", found);
 
     ui_power_on();
     t = &trk[0];
