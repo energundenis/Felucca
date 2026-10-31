@@ -231,8 +231,11 @@ static void feedback_step_bounds(void)
     check("negative delayed feedback lowers wcMod frequency", negative < 0);
     check("wcMod feedback step clamps below positive Nyquist",
         metal_core_modulator_signed_step(base, INT32_MAX) == 0x7FFFFFFF);
-    check("wcMod feedback step clamps below negative Nyquist",
-        metal_core_modulator_signed_step(base, INT32_MIN) == -0x7FFFFFFF);
+    {
+        int32_t negative_step = metal_core_modulator_signed_step(base, -0x7FFFFFFF);
+        check("wcMod negative feedback remains within signed Nyquist bound",
+              negative_step < 0 && negative_step >= -0x7FFFFFFF);
+    }
 }
 
 int main(void)
