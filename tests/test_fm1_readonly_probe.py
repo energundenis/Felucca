@@ -16,7 +16,7 @@ class ProbeCodecTests(unittest.TestCase):
             self.assertEqual(probe.decode_v14(encoded & 127, encoded >> 7), value)
 
     def test_info_reply(self):
-        payload = [ord(c) for c in "FELUCCA 1.7.0"] + [0, 14, 111, 13, 64, 103]
+        payload = [ord(c) for c in "FELUCCA 1.7.0"] + [0, 2, 111, 13, 64, 103]
         for name in ["ANALOG", "FM6"]:
             payload.extend(ord(c) for c in name)
             payload.append(0)
