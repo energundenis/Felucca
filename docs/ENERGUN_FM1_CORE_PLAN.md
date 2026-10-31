@@ -244,3 +244,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Corrected `docs/ENERGUN_METAL_CORE_LPG_DESIGN_02_V98_FAITHFUL.md` (commit `239efdd810dfbf595d3b044c0118ca72abc7d1c5`) and updated CP1.7 matrix language (see current matrix revision).
 - Documented three explicit V1 choices: faithful compatibility, separate post-envelope gain, or scaling the LPG envelope peak. Recommended the latter as a listening candidate, but no behavior was selected or implemented.
 - No DSP, UI, IDs, ABI, storage, Flash, firmware package or hardware changes.
+
+
+## CP1.9 — voice-state and feedback memory budget (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_9_VOICE_MEMORY_BUDGET.md` (initial commit `f732778e9395bb648a6d7fb991e714c7a3e45132`, refined in the current milestone commit).
+- Rechecked pinned `voice_t` and engine API: three phase accumulators plus eight 32-bit state words per host voice; eight voice records per part; `engine_t.mem` provides a zeroed 12,888-byte per-part region by default (13,344 with ADPCM).
+- v98 requires five independent phase sources: OSC1, OSC2, Complex modulator, METAL FM modulator and METAL ring oscillator. Three host phase words are insufficient.
+- The 3 ms Complex feedback delay needs 133 int32 samples per voice at 44.1 kHz: 4,256 bytes for eight slots per part. At 96 kHz this grows to 9,216 bytes; at 192 kHz it alone requires 18,432 bytes and exceeds the current part pool.
+- Direct use of `voice_t.s[8]` is too tight for five phases, two independent filter stages, envelope state and feedback cursor. Preferred proposal is a typed per-voice state record plus delay rings in `engine_t.mem`, with no shared `voice_t` ABI change. A conservative 64-byte record ×8 plus delay rings totals about 4,768 bytes at 44.1 kHz.
+- This is a budget proposal only. Host-vs-engine VCA envelope ownership, exact filter topology, sample-rate support, and final state fields remain open. No code, memory request, ABI or target budget changed.
