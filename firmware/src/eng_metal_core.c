@@ -1,38 +1,103 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * ENERGUN METAL CORE — isolated integration scaffold.
+ * ENERGUN METAL CORE — Stage 1: isolated main oscillator subsystem.
  *
- * This file is intentionally NOT included by engines.c yet.
- * It defines the implementation boundary before engine IDs, UI pages, or DSP
- * are changed. Do not register a silent placeholder as a playable engine.
+ * This file is not included by engines.c and is not a registered/playable
+ * engine yet. The functions below are fixed-point DSP primitives, developed
+ * and tested independently before parameter IDs, UI pages, or engine
+ * registration are changed.
  *
  * Integration contract:
  *   - Use Felucca's track_t / voice_t / vmod_t / engine_t and allocator.
- *   - Initial voice mode: monophonic, selected through the existing track mode.
- *   - Render adds to out[]; it must never overwrite the host mix.
- *   - Stereo is supplied by the host's existing part/mix path.
- *   - Any persistent per-part state must be declared in engine_t.mem and fit
- *     ENG_MEM_PART (checked at registration with ENG_MEM_FITS).
- *   - Any per-voice state must use only the documented voice_t state slots,
- *     respecting note_on retrigger/keep semantics.
- *   - DSP must be fixed-point, bounded per CTL block, and measured on target.
+ *   - Initial voice mode remains monophonic, selected through existing track
+ *     mode; do not change host voice allocation.
+ *   - A future render callback must add final voice output to out[], never
+ *     overwrite the host mix.
+ *   - Stereo remains the host's existing part/mix responsibility.
+ *   - Per-part state must fit ENG_MEM_PART; per-voice state uses voice_t slots.
+ *   - DSP is fixed-point and bounded to CTL samples per render block.
  *
- * Parameter mapping is deliberately pending. P_E0..P_E7 are the eight
- * engine edit values; do not assign FOLLOW/METAL switches to these slots
- * until the control/value-retention design is finalized.
+ * Frozen v98 oscillator roles:
+ *   OSC 1 (wcOsc): main carrier.
+ *   OSC 2 (wcOsc2): second direct-audio source mixed into the shared pre-fold
+ *     input. It is NOT the Complex FM modulator.
+ *   wcMod, wcMMod, and wcRingOsc are separate modulation sources and are
+ *     intentionally not implemented in this first stage.
  *
- * FOLLOW and METAL requirements:
- *   - independent ON/OFF controls on the FOLD page;
- *   - OFF bypasses only the corresponding processing stage;
- *   - OFF preserves the associated amount/value;
- *   - ON restores processing using the retained amount/value.
+ * FOLLOW and METAL are independent switches in the OSCILLATORS / SYNTH VOICE
+ * block (not the FOLD page). Their behavior is not implemented in this stage.
  *
- * Implementation stages:
- *   1. agree parameter map and signal-flow diagram;
- *   2. implement oscillator / FM / fold / LPG in isolated functions;
- *   3. implement note lifecycle and block rendering;
- *   4. add host regression tests and CPU baseline;
- *   5. register at the append-only engine ID and add UI pages.
- *
- * No functions or symbols are exported here yet: this prevents an incomplete
- * engine from accidentally entering a firmware build.
+ * Parameter IDs and persistence are deliberately not assigned here. The
+ * approved scope requires the control map and storage design to be frozen
+ * before engine registration.
  */
+
+enum {
+    MC_OSC_SINE = 0,
+    MC_OSC_TRIANGLE = 1,
+    MC_OSC_SAW = 2
+};
+
+/* v98 waveform order: SINE / TRI / SAW. Saw uses Felucca's polyBLEP primitive. */
+static inline int32_t metal_core_osc_sample(uint32_t phase, uint32_t inc, uint32_t wave)
+{
+    switch (wave) {
+    case MC_OSC_TRIANGLE:
+        return osc_tri(phase);
+    case MC_OSC_SAW:
+        return osc_saw(phase, inc);
+    case MC_OSC_SINE:
+    default:
+        return osc_sine(phase);
+    }
+}
+
+/* OSC2 has its own cents detune, while inheriting host pitch bend / UNISON
+ * fine tuning. At zero detune use the exact host increment without recalculation. */
+static inline uint32_t metal_core_osc2_increment(const vmod_t *m, uint32_t detune_cents)
+{
+    if (!detune_cents)
+        return m->inc;
+    return cents_inc(m->pitch16, (int32_t)detune_cents, m->fine);
+}
+
+/* Render the two audible oscillators into the shared pre-fold signal.
+ *
+ * n is bounded to CTL. The caller supplies v98 control values; stable
+ * parameter IDs and persistence are intentionally outside this subsystem.
+ *
+ * OSC2 phase advances even at level zero, preserving phase continuity when
+ * its retained level is raised later.
+ *
+ * Output is the raw Q15 oscillator sum (up to approximately +/-65534),
+ * before TIMBRE and both wavefolder stages. No voice amplitude, filter,
+ * envelope, or final output gain is applied here.
+ */
+static void metal_core_osc_pair_block(voice_t *v, int32_t *pre_fold, uint32_t n,
+                                      const vmod_t *m, uint32_t wave,
+                                      uint32_t osc2_detune_cents, int32_t osc2_level_q15)
+{
+    uint32_t i, ph1, ph2, inc1, inc2;
+    int32_t level;
+
+    if (!v || !pre_fold || !m || !n)
+        return;
+    if (n > CTL)
+        n = CTL;
+
+    inc1 = m->inc;
+    inc2 = metal_core_osc2_increment(m, osc2_detune_cents);
+    level = clamp(osc2_level_q15, 0, 32767);
+    ph1 = v->ph[0];
+    ph2 = v->ph[1];
+
+    for (i = 0; i < n; i++) {
+        int32_t osc1 = metal_core_osc_sample(ph1, inc1, wave);
+        int32_t osc2 = metal_core_osc_sample(ph2, inc2, wave);
+        pre_fold[i] = osc1 + mulq15(osc2, level);
+        ph1 += inc1;
+        ph2 += inc2;
+    }
+
+    v->ph[0] = ph1;
+    v->ph[1] = ph2;
+}
