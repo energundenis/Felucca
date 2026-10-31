@@ -502,3 +502,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Decision record: [CP1.14 VCA ownership decision](ENERGUN_METAL_CORE_CP1_14_VCA_OWNERSHIP_DECISION.md), commit `90ac36e6ac95df6b7bc2723f4d6d38ec1cc08bae`.
 - This supersedes the earlier CP1.9 recommendation to defer VCA ownership pending comparison. The architecture choice is resolved; exact source math, sample-domain specification, isolated tests, target CPU/RAM and engine integration remain open.
 - No firmware implementation, engine registration, parameter IDs, storage/Flash changes, package, factory firmware, physical FM-1 state or `main` branch changed.
+
+## CP1.15 — V98 VCA source specification and host API trace (2026-10-31)
+
+- Created [CP1.15 VCA source specification](ENERGUN_METAL_CORE_CP1_15_VCA_SOURCE_SPEC.md); source-trace commit `f826b476f79912cc04c2a5443c8ee3a948a6d133`, pinned API follow-up commit `cdcf4c0eb9327a453b72efc31b38e0f30fa9192b`.
+- V98 source confirms exponential `setTargetAtTime` segments: peak at trigger with `max(5 ms, attack/3)`; sustain at trigger + `max(5 ms, attack)` with `max(5 ms, decay/3)`; release target 0.0001 at trigger + `60/BPM/4` with `max(5 ms, release/3)`.
+- METAL overrides Attack to 2 ms and selects METAL DECAY. Velocity is clamped to 0.1..1 (default 0.8 if absent); Accent scales peak by 1.18 and sustain by 1.08. Source defaults/ranges are recorded in the specification.
+- V98's sequencer mode triggers this contour; manual mode sets a constant LEVEL. Mapping these two modes to FM-1 MIDI/performance and integrated sequencer sources remains open.
+- The exact Felucca-Engines API at pinned submodule SHA `d0260074ce100a47675814b7f38d61f11176c926` confirms `amp()` once per control tick, `ownenv=1` host-ADSR/velocity bypass, and `done()` once per control tick before render. FM6 is an existing own-envelope example.
+- Source/API trace is complete; VCA fixed-point/sample-domain implementation, short-gate ordering decision, retrigger/lifecycle tests, memory/CPU measurement and render integration remain open.
+- No firmware implementation, engine registration, parameter IDs, storage/Flash changes, package, factory firmware, physical device state or `main` branch changed.
