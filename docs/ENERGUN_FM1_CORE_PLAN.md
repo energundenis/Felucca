@@ -602,3 +602,12 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Remaining blockers: explicit Accent provenance (do not infer sequencer ACCENT from expressive MIDI velocity) and Gate event timing (current host API observes Gate at render-block entry; sample-accurate sub-block Note Off needs an API extension).
 - This is a behavior/specification decision only. No production VCA callbacks, render chain, engine registration, UI, parameter map, persistence/Flash, firmware package or device state changed. No flashing; main and factory firmware remain untouched.
 - Next step: add/test explicit Gate-off support and a VCA-only host integration harness for both MIDI and sequencer sources, while preserving target-budget thresholds.
+## CP2.20 — explicit VCA Gate-off event (2026-10-31)
+
+- Added `eng_metal_vca_gate_off()` to the isolated VCA model; it switches to Release at the instantaneous held level, suppresses pending Decay, is idempotent during Release, and is harmless when idle.
+- Added six host checks for explicit Gate-off, first Release sample, duplicate event, short-Gate completion, idle event and retrigger after Gate-off. Existing fixed-countdown tests remain.
+- No state fields added; `eng_metal_vca_t` remains 36 bytes.
+- Source commit: `c3272598b37ea79ce024227658167dd133245458`; test commit: `283dc69390f6820e695e090f561347d89d133c0b`; integration-plan update: `4bbc1d51fb1eaff486c2e073950f8825448629b0`; CP2.20 record: `e31e1ee39a6a131e64b55540edcccc89438967ca`.
+- This is isolated model/API work only. It does not yet dispatch MIDI or sequencer events, connect `voice_t.gate` to VCA, or prove sample-accurate Note Off. Current host interface still implies block-boundary Gate observation.
+- CI verification is pending; do not count CP2.20 as passed until the latest branch workflow completes.
+- Accent provenance remains unresolved; no velocity heuristic is introduced. No engine registration, parameter/UI/storage/Flash/package/device changes; no flashing; `main` and factory firmware untouched.
