@@ -398,7 +398,7 @@ static inline int32_t metal_core_feedback_delay_tick(metal_core_feedback_state_t
  * Web Audio: delayed wcMod sample * FM_FEEDBACK * FREQ * 3 Hz.
  * FREQ is represented here by OSC1's phase increment, so no float or Hz
  * conversion is needed. Both inputs are normalized Q15. */
-static inline int32_t metal_core_feedback_modulator_step(uint32_t base_inc,
+static inline int32_t metal_core_feedback_modulator_step(uint32_t feedback_ref_inc,
                                                           int32_t delayed_q15,
                                                           int32_t feedback_q15)
 {
@@ -473,7 +473,7 @@ static inline int32_t metal_core_modulator_signed_step(uint32_t base_inc,
  * engine-lifecycle decision and is not made here. */
 static void metal_core_complex_fm_feedback_pair_block(
     voice_t *v, int32_t *pre_fold, uint32_t n,
-    uint32_t osc1_inc, uint32_t osc2_inc,
+    uint32_t osc1_inc, uint32_t osc2_inc, uint32_t feedback_ref_inc,
     uint32_t mod_ratio_q16, uint32_t osc_wave, uint32_t mod_wave,
     int32_t fm_index_q15, int32_t west_coast_drive_q15, uint32_t character,
     int32_t osc2_level_q15, int32_t feedback_q15,
@@ -510,7 +510,7 @@ static void metal_core_complex_fm_feedback_pair_block(
         delayed = metal_core_feedback_delay_peek(state, voice);
         feedback_current = metal_core_feedback_smooth_q15(feedback_current,
                                                            feedback_q15);
-        fb_step = metal_core_feedback_modulator_step(osc1_inc, delayed,
+        fb_step = metal_core_feedback_modulator_step(feedback_ref_inc, delayed,
                                                        feedback_current);
         mod_step = metal_core_modulator_signed_step(mod_inc, fb_step);
         mod = metal_core_modulator_sample_signed(phm, mod_step, mod_wave);
