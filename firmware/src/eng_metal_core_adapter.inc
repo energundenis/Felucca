@@ -19,6 +19,14 @@ static metal_core_part_state_t *metal_core_adapter_state(track_t *t)
     return (metal_core_part_state_t *)ENG_MEM(part);
 }
 
+static void metal_core_adapter_note_on(track_t *t, voice_t *v)
+{
+    /* Felucca calls note_on unconditionally. Per-part oscillator/delay state
+     * intentionally survives retrigger; only the host voice envelope restarts. */
+    (void)t;
+    (void)v;
+}
+
 static void metal_core_adapter_block(track_t *t)
 {
     metal_core_part_state_t *s = metal_core_adapter_state(t);
@@ -71,6 +79,7 @@ static uint32_t metal_core_adapter_post(track_t *t, int32_t *out, uint32_t n)
 static const engine_t ENG_METAL_CORE_ADAPTER __attribute__((unused)) = {
     .name = "METAL CORE ADAPTER TEST",
     .poly = 1,
+    .note_on = metal_core_adapter_note_on,
     .render = metal_core_adapter_render,
     .block = metal_core_adapter_block,
     .mem = sizeof(metal_core_part_state_t),
