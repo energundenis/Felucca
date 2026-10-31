@@ -23,18 +23,25 @@ Sound-engine direction: ENERGUN METAL CORE V1
 - Its source comment explicitly says it is not included by `engines.c`, exports no functions or symbols, and is not a playable registered engine.
 - The scaffold records pending work: parameter map and signal-flow agreement; oscillator/FM/fold/LPG implementation; note lifecycle and block rendering; host regression tests and CPU baseline; append-only engine registration and UI pages.
 - The scaffold specifies an initial monophonic voice mode, additive rendering into the host mix, host-provided stereo path, bounded fixed-point DSP, and per-part memory constraints.
-- FOLLOW and METAL are specified as independent ON/OFF controls on the FOLD page. OFF must bypass only its own processing stage while retaining its amount/value.
+- FOLLOW and METAL are independent ON/OFF controls in the OSCILLATORS / SYNTH VOICE block (not the FOLD page), per `docs/ENERGUN_METAL_CORE_SIGNAL_FLOW.md`. OFF bypasses only the corresponding processing contribution while retaining its associated values.
 - No project-specific document at `docs/ENERGUN_FM1_CORE.md` was found on this branch at audit time.
 - Do not treat DSP Stage 1/2/3 as integrated or complete based only on references to commits or other branch names. Their presence and ancestry must be verified before relying on them.
 - No successful full firmware build or physical-device test of ENERGUN METAL CORE is established by this plan.
 
+## Audit update — 2026-10-31
+
+- The exact working-branch HEAD is `4ea3ed85877a8a7f241ecfdb5c9604686309a0c8`; the comparison baseline on `main` is `65b21d344fca68bd4bbc1eb24d7b90edfbe98200`.
+- The separate DSP prototype branch is not merged. Its reports describe successful host-side subsystem tests and syntax-only checking of `engines.c`, but explicitly do not establish a full JieLi target firmware build, target CPU/RAM measurements, or physical FM-1 validation.
+- The approved FOLLOW/METAL UI placement is OSCILLATORS / SYNTH VOICE. Any older FOLD-page wording in scaffold comments or this plan is stale and must not guide UI implementation.
+- No firmware source has been changed during this audit. No cherry-pick, engine registration, firmware build, or device write has been performed.
+
 ## Implementation plan
 
 ### Phase 0 — Branch, source, and build audit
-- [ ] Record the exact HEAD SHA of `energun-metal-core`.
-- [ ] Compare its ancestry and changed files with the agreed baseline commit and any DSP-stage branches/commits.
-- [ ] Identify which DSP code is actually present on this branch; cherry-pick or port only after reviewing diffs and licences.
-- [ ] Verify `firmware/engines` and `firmware/bsp` submodules and required toolchain/SDK.
+- [x] Record the exact HEAD SHA of `energun-metal-core`: `4ea3ed85877a8a7f241ecfdb5c9604686309a0c8` (2026-10-31 audit).
+- [x] Compare ancestry and changed files with `main` and the separate DSP-stage branch; the working branch is 77 commits ahead of `main` and 0 behind it.
+- [x] Inventory DSP code: the working branch contains only the unregistered scaffold. A separate branch, `metal-core-dsp-stage1-osc` (HEAD `cf22f01b23f618feda65ccde85b0503fccacc7b0`), contains OSC/FM/feedback prototypes, per-part state, an unregistered callback adapter, tests, and stage reports. It has diverged from `energun-metal-core` (86 commits on its side and 1 commit on the working-branch side after their merge base); none of that implementation is present in the working branch. No cherry-pick/port has been performed.
+- [ ] Verify the checked-out `firmware/engines` and `firmware/bsp` submodule SHAs against the intended pins. Repository docs identify the submodules and macOS build prerequisites; actual local checkout verification remains pending.
 - [ ] Build unmodified Felucca from this branch on the development Mac.
 - [ ] Record baseline test results, firmware size, RAM use, and CPU/audio-render budget.
 - Exit criteria: reproducible clean baseline build and an evidence-based branch/code inventory.
@@ -72,7 +79,7 @@ Sound-engine direction: ENERGUN METAL CORE V1
 ### Phase 4 — FM-1 interface
 - [ ] Implement the engine pages with FMini-1 as the interaction/layout reference.
 - [ ] Map all eight edit parameters to the physical controls and display.
-- [ ] Add independent FOLLOW and METAL switches on the FOLD page, retaining their amounts when OFF.
+- [ ] Add independent FOLLOW and METAL switches in the OSCILLATORS / SYNTH VOICE block, retaining their associated values when OFF.
 - [ ] Implement navigation, value display, and settings persistence.
 - [ ] Test every control on the browser/emulator where applicable and on the physical FM-1.
 - Exit criteria: all controls operate predictably and saved settings restore correctly.
