@@ -721,9 +721,125 @@ static int note_source_provenance(void)
     return bad;
 }
 
+static int note_accent_metadata(void)
+{
+    int bad = 0, found;
+    uint32_t i, active;
+    track_t *t;
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    trk_note_on_source(t, 60u, 127u, NOTE_SRC_PERFORMANCE);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 60u) {
+            found = t->voice_source[i] == NOTE_SRC_PERFORMANCE && t->v[i].vel == 127u;
+            break;
+        }
+    bad += check("Accent metadata: MIDI velocity 127 remains unaccented", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->step[0] = (step_t){{72u}, 1u, ST_NOTE, SF_ACCENT, 96u, 0u, 0u, 0u};
+    seq_step(t, &t->step[0], 0u, div_samples(2), SEQ_ROLLED);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 72u) {
+            found = t->voice_source[i] == (NOTE_SRC_SEQUENCER | NOTE_META_ACCENT) && t->v[i].vel == 127u;
+            break;
+        }
+    bad += check("Accent metadata: SF_ACCENT reaches the poly voice independently", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->step[0] = (step_t){{73u}, 1u, ST_NOTE, 0u, 127u, 0u, 0u, 0u};
+    seq_step(t, &t->step[0], 0u, div_samples(2), SEQ_ROLLED);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == 73u) {
+            found = t->voice_source[i] == NOTE_SRC_SEQUENCER && t->v[i].vel == 127u;
+            break;
+        }
+    bad += check("Accent metadata: unaccented sequencer velocity 127 remains unaccented", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->step[0] = (step_t){{0u}, 0u, ST_NOTE, 0u, 96u, 1u, 1u, 0u};
+    seq_step(t, &t->step[0], 0u, div_samples(2), SEQ_ROLLED);
+    found = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].note == DRUM_LANE_NOTE[0]) {
+            found = t->voice_source[i] == (NOTE_SRC_SEQUENCER | NOTE_META_ACCENT) && t->v[i].vel == 127u;
+            break;
+        }
+    bad += check("Accent metadata: per-lane step_t.acc reaches its own voice", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_LEGATO;
+    trk_note_on_source(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
+    trk_note_on_source(t, 64u, 127u, NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
+    found = t->voice_source[0] == (NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
+    trk_note_off(t, 64u);
+    found &= t->v[0].note == 60u && t->voice_source[0] == NOTE_SRC_PERFORMANCE;
+    bad += check("Accent metadata: LEGATO fallback restores the older note's Accent state", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_UNISON;
+    trk_note_on_source(t, 60u, 127u, NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
+    active = 0;
+    found = 1;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active) {
+            active++;
+            found &= t->voice_source[i] == (NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
+        }
+    bad += check("Accent metadata: UNISON voices all inherit the same explicit Accent", found && active > 1u);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->xf_on = 1u;
+    t->xf = 1u;
+    trk_note_on_source(t, 81u, 127u, NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
+    found = t->xp_n == 1u && t->xp_note[0] == (uint8_t)(81u | 0x80u) && t->xp_vel[0] == 0xFFu;
+    trk_note_off(t, 81u);
+    found &= t->xp_n == 0u;
+    bad += check("Accent metadata: queued Note Off removes the matching packed note", found);
+
+    ui_power_on();
+    t = &trk[0];
+    t->p[P_VOICE] = V_POLY;
+    t->xf_on = 1u;
+    t->xf = 1u;
+    trk_note_on_source(t, 82u, 127u, NOTE_SRC_PERFORMANCE);
+    trk_note_on_source(t, 83u, 91u, NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
+    found = t->xp_n == 2u && t->xp_vel[0] == 127u && t->xp_vel[1] == (uint8_t)(91u | 0x80u);
+    t->xf = 0u;
+    engine_block(t);
+    found &= t->xp_n == 0u;
+    {
+        int seen_performance = 0, seen_accent = 0;
+        for (i = 0; i < NVOICE; i++)
+            if (t->v[i].active && t->v[i].note == 82u)
+                seen_performance = t->voice_source[i] == NOTE_SRC_PERFORMANCE && t->v[i].vel == 127u;
+            else if (t->v[i].active && t->v[i].note == 83u)
+                seen_accent = t->voice_source[i] == (NOTE_SRC_SEQUENCER | NOTE_META_ACCENT) && t->v[i].vel == 91u;
+        found &= seen_performance && seen_accent;
+    }
+    bad += check("Accent metadata: engine-switch queue round-trips Accent and full 7-bit velocity", found);
+
+    return bad;
+}
+
 int main(void)
 {
-    int bad = conditions() + cond_locks_rolls() + cond_song() + cond_nudge() + cond_ui() + fill_key() + cond_store() + test_euclid() + test_double_half() + note_source_provenance();
+    int bad = conditions() + cond_locks_rolls() + cond_song() + cond_nudge() + cond_ui() + fill_key() + cond_store() + test_euclid() + test_double_half() + note_source_provenance() + note_accent_metadata();
     printf("%s\n", bad ? "SEQ 1.5.5 TEST FAILED" : "seq 1.5.5 tests passed");
     return bad != 0;
 }
