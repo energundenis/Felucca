@@ -3,7 +3,7 @@
 Date: 2026-10-31
 Branch: energun-metal-core
 Reference: protected Library HTML `energun_westcoast_synth_v98_metal_core_follow_metal_on(1).html`, 140,537 bytes.
-Status: exact source trace; no implementation or parameter-map changes.
+Status: exact v98 source trace plus approved V1 behavior update; isolated peak math helper added, engine integration pending.
 
 ## 1. Exact source behavior
 
@@ -61,19 +61,19 @@ The accurate reference model is:
 - No extra gain node; MODULE VOLUME becomes a meaningful envelope-peak scale.
 - Also changes v98 behavior but costs less state/CPU than Option B.
 
-No option is silently selected. The choice must be made before finalizing LPG-03 expected results and the fixed-point signal map.
+At the time of the original source-trace review, no option had been selected. The later user decision is recorded in Section 7 and supersedes this historical status.
 
 ## 5. Recommendation for sound-faithful V1
 
 Prefer **Option C** as the first listening candidate: it preserves a single LPG gain stage and the existing response/decay contour while making MODULE VOLUME effective during every trigger. Keep Option A as the exact-reference compatibility mode only if strict v98 reproduction is required. Option B is appropriate only if the desired architecture explicitly requires a post-envelope module output level.
 
-This is a recommendation, not approval or implementation.
+This was the recommendation at the time of the original review; Option C was subsequently approved by the user and is recorded in Section 7.
 
 ## 6. Verification evidence and remaining gates
 
 - Source locations: parameter declaration in `P`; knob creation in the LOW-PASS GATE module; audio node creation and connection in `wcInit`; knob dispatch in `wcUpdateParam`; envelope scheduling in `wcTrig`; `wcHold` helper.
 - No parameter IDs, engine ABI, DSP source, UI, project/preset storage, sidecar, Flash allocation, package or device state changed.
-- CP1.8 closes the source ambiguity but leaves the user-facing V1 behavior choice open.
+- CP1.8 closes the source ambiguity. The user-facing V1 behavior choice was subsequently resolved as Option C; remaining gates are implementation and validation.
 
 
 ## 7. Approved V1 behavior — Option C (2026-10-31)
@@ -86,5 +86,5 @@ The user approved **Option C — envelope-scaled LPG peak**.
 - RESPONSE continues to define the peak contour and opening attack; DECAY continues to define the tail.
 - This intentionally departs from the v98 shared-AudioParam overwrite behavior.
 - Isolated Q15 helper: `firmware/src/eng_metal_core_math.h`, function `eng_metal_lpg_peak_q15()`.
-- Host test: `tests/metal_core_lpg_test.c`; runner integration is part of CP2.2.
+- Host test: `tests/metal_core_lpg_test.c`; runner integration is included in the current CI validation.
 - The helper is not connected to `eng_metal_core.c` and does not make the engine playable or change registration, IDs, UI, storage, package, or device state.
