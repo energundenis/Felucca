@@ -25,6 +25,8 @@ jobs:
         run: |
           mkdir -p build/gen
           python3 firmware/engines/tools/gen_engine_tables.py build/gen/felucca_tables.h
+          python3 tools/gen_samples.py build/gen/felucca_samples.h
+          python3 tools/gen_fm6_patches.py build/gen/felucca_fm6.h
       - name: Syntax-check complete Felucca engine translation unit
         run: cc -w -std=c99 -Ibuild/gen -fsyntax-only tests/metal_engines_compile_test.c
       - name: Compile isolated METAL CORE OSC test
