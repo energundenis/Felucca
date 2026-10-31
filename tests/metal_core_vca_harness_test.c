@@ -5,6 +5,7 @@
  */
 #define NVOICE 8
 #define NPART 1
+#define CTL 32u
 #include "../firmware/engines/src/felucca_engine.h"
 #include "../firmware/src/eng_metal_core_vca_render.h"
 
@@ -82,7 +83,7 @@ static void harness_note_on(struct track *track, voice_t *voice)
                               &peak, &sustain);
     eng_metal_vca_trigger(vca, peak, sustain,
                           221u, 441u, 13230u,
-                          UINT32_MAX, 8820u);
+                          UINT32_MAX, 882u);
 }
 
 static void harness_render(struct track *track, voice_t *voice,
