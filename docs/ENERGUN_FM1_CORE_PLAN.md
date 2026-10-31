@@ -512,3 +512,4 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The exact Felucca-Engines API at pinned submodule SHA `d0260074ce100a47675814b7f38d61f11176c926` confirms `amp()` once per control tick, `ownenv=1` host-ADSR/velocity bypass, and `done()` once per control tick before render. FM6 is an existing own-envelope example.
 - Source/API trace is complete; VCA fixed-point/sample-domain implementation, short-gate ordering decision, retrigger/lifecycle tests, memory/CPU measurement and render integration remain open.
 - No firmware implementation, engine registration, parameter IDs, storage/Flash changes, package, factory firmware, physical device state or `main` branch changed.
+- Added 21 planned VCA acceptance tests (VCA-01..VCA-21) to [DSP acceptance matrix](ENERGUN_METAL_CORE_CP1_7_DSP_ACCEPTANCE_MATRIX.md), commit `7455bb9579ef8610fc703d509f36c3a8f26b203e`. These are test requirements, not completed test results.
