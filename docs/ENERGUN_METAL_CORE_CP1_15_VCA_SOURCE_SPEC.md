@@ -161,3 +161,17 @@ The current host source calls `done()` before `render()`. If a sample-domain env
 The user selected Option B: preserve the V98 envelope character but prevent a pending Decay segment from reopening the VCA after Gate-off / Release has begun. Release starts at Gate-off from the instantaneous current level, even if Attack is incomplete; any Decay event scheduled after Gate-off is cancelled/suppressed. Retrigger during Release holds the current level and starts a new contour.
 
 Decision record: [CP1.16 short-Gate VCA decision](ENERGUN_METAL_CORE_CP1_16_SHORT_GATE_VCA_DECISION.md). This resolves the specification question only; implementation and regression evidence remain pending.
+
+
+## 12. CP2.13 isolated VCA model — first implementation
+
+Created `firmware/src/eng_metal_core_vca.h` and host regression `tests/metal_core_vca_test.c`; registered the test in `tests/run_tests.sh`.
+
+The isolated model currently provides:
+- Q16 amplitude with headroom for V98 Accent peak up to 1.18; Q30 one-pole coefficients prepared outside the sample loop.
+- Source-derived velocity default/clamp and Accent target scaling.
+- Attack → Decay → Sustain → Release state transitions, retrigger from held current level, zero-Gate handling, and `done()` state query.
+- CP1.16 priority: Gate-off / Release is checked before a pending Decay transition, so a delayed Decay cannot reopen the VCA.
+- No floating point, allocation, or division in the per-sample process function.
+
+This is a first isolated host model, not an audio-engine integration. The one-pole coefficient currently uses the documented Q30 `1 / tau_samples` approximation; accuracy against a high-precision V98 exponential reference still requires quantified tests. Host regression has been added to the CI runner but is not yet confirmed passing. Manual-mode constant LEVEL mapping, target CPU/RAM cost, callback-vs-render selection and lifecycle integration remain open.
