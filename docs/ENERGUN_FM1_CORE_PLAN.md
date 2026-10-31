@@ -451,3 +451,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Immediate execution order is unchanged: (1) obtain and inspect fresh CI for the latest FOLLOW adapter/test commit; (2) verify the pinned AC79 SDK in CI; (3) close the remaining CP1 specification decisions, including the 37-control inventory, signal flow, parameter persistence/sidecar and memory/resource budgets; (4) continue isolated DSP implementation and tests; (5) integrate only after the relevant gates pass.
 - This confirmation freezes the roadmap, not the implementation status: no phase or checkbox is marked complete solely by this approval. Existing evidence and open gates above remain authoritative.
 - Safety boundary reaffirmed: do not modify `main`, do not overwrite known-good milestones, do not flash the FM-1, and do not alter factory firmware. Physical-device work requires a separate explicit go/no-go approval after package and recovery verification.
+
+## CI validation — FOLLOW adapter and full host/web regression (2026-10-31)
+
+- GitHub Actions workflow run [41215878800](https://github.com/energundenis/Felucca/actions/runs/41215878800) completed with conclusion **success** on branch `energun-metal-core`, source HEAD `edfa91a04896dba362ef79f1e8247271da8bb99e`.
+- Job `Linux x86-64 firmware build and host regression` completed successfully.
+- The step `Run Felucca host and web regression tests` completed with conclusion **success**. The regression step is not merely pending: the complete step is green.
+- Pinned JieLi AC79 SDK cache restore and exact pinned-SHA verification both succeeded. The unmodified Felucca target firmware build also succeeded.
+- Build-output recording and upload of experimental build evidence both succeeded. SDK cache save was skipped because the pinned cache was restored; this is expected and not a failure.
+- This run validates the current branch commit's baseline firmware build and Host/Web regression workflow. It does **not** validate an integrated or registered ENERGUN METAL CORE render engine, physical FM-1 audio behavior, target DSP CPU/RAM budgets, packaging/recovery readiness, or device flashing.
+- No factory firmware, physical device state, or `main` branch was changed. CP1, CP2, and later implementation phases remain open according to their existing gates; this CI success does not close them by itself.
