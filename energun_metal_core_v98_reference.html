@@ -1,0 +1,972 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ENERGUN WEST COAST — METAL CORE Reference v98</title>
+<style>body{background:#0a0a0c;color:#ddd;font-family:system-ui;margin:0;padding:20px;display:flex;justify-content:center}.rack{width:min(1250px,100%);background:#151519;border:1px solid #333;border-radius:16px;padding:16px}.top{display:flex;gap:14px;align-items:center;margin-bottom:14px}.brand{font-weight:800;letter-spacing:.14em}.scope{flex:1;height:60px;background:#08080a;border:1px solid #2c2c33;border-radius:8px}canvas{width:100%;height:100%}.module{background:#1c1c21;border:1px solid #2e2e36;border-radius:12px;padding:12px;border-top:3px solid #ffcc33}.gen{border-top:3px solid #b388ff}.eq{border-top:3px solid #4dff88}.lfo{border-top:3px solid #ff8c42}.fx{border-top:3px solid #ff5c8a}.seqctl{border-top:3px solid #2b6cff;margin-top:12px}.stepedit{border-top:3px solid #fc0;margin-top:12px}.gen h2,.lfo h2,.fx h2{display:flex;justify-content:space-between;align-items:center}.gen h2 .sw,.lfo h2 .sw,.fx h2 .sw,.wc h2 .sw{font-size:9px;padding:2px 8px;border-radius:6px;background:#26262c;color:#999;cursor:pointer;border:1px solid #3a3a44}.gen h2 .sw.on,.lfo h2 .sw.on,.fx h2 .sw.on,.wc h2 .sw.on{background:#2b6cff;color:#fff}.port{display:inline-block;border:1px solid #555;border-radius:10px;padding:2px 10px;margin:2px;cursor:pointer;font-size:11px;background:#222;color:#ddd;user-select:none}
+.port.src.sel{background:#4ac8ff;color:#000;border-color:#4ac8ff}
+.port.dst.sel{background:#b06cff;color:#000;border-color:#b06cff}
+.port.on{box-shadow:0 0 6px #7fd4ff}
+#wcPatches div{margin:2px 0}
+.knobs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;align-items:start}.knob{width:100%;text-align:center}.dial{width:32px;height:32px;margin:0 auto 2px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3a3a42,#191920);border:1px solid #444;position:relative;cursor:ns-resize}.dial:after{content:"";position:absolute;left:50%;top:3px;width:2px;height:9px;background:#fff;transform-origin:50% 13px}.knob label{font-size:8px;color:#888;display:block;line-height:1.1}.knob input,.knob select{width:100%;margin-top:2px;height:18px;background:#0a0a0c;color:#fff;border:1px solid #3a3a44;border-radius:6px}.val{font-size:8px;color:#666}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;align-items:center}.btn{background:#26262c;color:#ddd;border:1px solid #3a3a44;border-radius:8px;padding:8px 14px;cursor:pointer}.btn.active{background:#2b6cff;color:#fff}.bpm{display:flex;align-items:center;gap:8px;background:#1c1c21;border:1px solid #2e2e36;border-radius:8px;padding:6px 10px}.bpm input,.bpm select{background:#0a0a0c;color:#fff;border:1px solid #3a3a44;border-radius:6px;padding:4px 6px}.bpm label{font-size:10px;color:#888}.preset{display:flex;gap:6px;align-items:center;background:#1c1c21;border:1px solid #2e2e36;border-radius:8px;padding:6px 10px}.preset select,.preset input{background:#0a0a0c;color:#fff;border:1px solid #3a3a44;border-radius:6px;padding:4px 6px}.preset label{font-size:10px;color:#888}.pathinfo{font-size:9px;color:#777;margin-top:4px}.seqmod{background:#1c1c21;border:1px solid #2e2e36;border-radius:12px;padding:12px;margin-top:12px;border-top:3px solid #888}.seq{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin:8px 0}.step{height:64px;background:#232329;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#777;cursor:pointer;user-select:none}.step.on{background:#2b6cff;color:#fff}.step.acc{box-shadow:inset 0 0 0 2px #fc0}.step.now{outline:2px solid #fff}.step.sel{outline:2px solid #fc0}.prob{font-size:8px;color:#aaa}.rat{font-size:8px;color:#fc0}.vel{font-size:8px;color:#4dff88}.oct{font-size:8px;color:#ffcc33}.note{font-size:8px;color:#ff8c42}#err{color:#f66;font-family:monospace;white-space:pre-wrap}
+/* ENERGUN WEST COAST — matte black hardware skin; visual-only CSS */
+:root{color-scheme:dark;--amber:#e9a23b;--amber-hot:#ffbf52;--edge:#3b3c3e;--panel:#171819;--panel-hi:#222426}
+html{background:#08090a}
+body{background:radial-gradient(ellipse at 50% -20%,#252729 0,#111213 48%,#08090a 100%)!important;color:#d9dadd!important;font-family:Arial,Helvetica,sans-serif!important;padding:18px!important}
+.rack{background:linear-gradient(145deg,#202123 0%,#121314 52%,#191a1b 100%)!important;border:1px solid #454648!important;border-radius:10px!important;box-shadow:0 0 0 2px #08090a,0 12px 32px #0009,inset 0 1px #ffffff12!important;position:relative;overflow:hidden}
+.rack:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#454648,#a6a7a7 22%,#37383a 45%,#d99a36 72%,#494a4c);opacity:.9;pointer-events:none}
+.top{background:linear-gradient(180deg,#111213,#1c1d1f)!important;border:1px solid #3b3c3e!important;border-radius:6px!important;padding:12px!important;box-shadow:inset 0 1px #ffffff0b,0 2px 5px #0008!important}
+.brand{color:#e7e8e9!important;text-shadow:0 1px 1px #000!important;letter-spacing:.17em!important;font-weight:800!important}
+.scope{background:#070809!important;border-color:#454648!important;box-shadow:inset 0 0 14px #000,inset 0 1px #ffffff0a!important}
+.module,.seqmod{background:linear-gradient(145deg,#242527,#171819 68%,#1b1c1d)!important;border:1px solid #414244!important;border-top:2px solid #a77732!important;border-radius:6px!important;box-shadow:inset 0 1px #ffffff0b,0 3px 7px #0007!important;color:#d8d9da!important}
+.gen,.eq,.lfo,.fx,.seqctl,.stepedit{border-top-color:#a77732!important}
+.module h2,.seqmod h2{color:#e5e6e7!important;letter-spacing:.045em!important;text-transform:uppercase!important}
+button,.btn{background:linear-gradient(180deg,#343638,#1b1c1e)!important;color:#dedfe0!important;border:1px solid #55575a!important;border-radius:4px!important;box-shadow:inset 0 1px #ffffff16,0 2px 3px #0009!important;transition:background .12s,border-color .12s,box-shadow .12s!important}
+button:hover,.btn:hover{border-color:#b88a45!important;box-shadow:inset 0 1px #ffffff18,0 0 7px #e9a23b24!important}
+button.active,button.on,.btn.active,.active button{background:linear-gradient(180deg,#eab052,#986324)!important;color:#fff!important;border-color:#f2bd62!important;box-shadow:inset 0 1px #ffffff55,0 0 8px #e9a23b35!important}
+input,select{background:#0c0d0e!important;color:#e6e7e8!important;border:1px solid #494b4d!important;border-radius:4px!important}
+label,.label,.title{color:#aeb0b2!important}
+h1,h2,h3{color:#e0e1e2!important}
+input[type=range]{accent-color:#e9a23b!important}
+.dial{width:38px!important;height:38px!important;background:radial-gradient(circle at 32% 25%,#55585b 0,#303235 34%,#171819 72%,#0b0c0d 100%)!important;border:1px solid #66686a!important;box-shadow:inset 0 1px #ffffff22,0 2px 4px #000b,0 0 0 2px #151617!important}
+.dial:after{background:#f0ad42!important;width:3px!important;height:11px!important;top:3px!important;box-shadow:0 0 4px #e9a23b55!important}
+.knob label{color:#b0b1b2!important;font-size:8px!important;letter-spacing:.025em!important}
+.val{color:#e2ac53!important}
+.port{background:linear-gradient(180deg,#303234,#1b1c1d)!important;color:#d7d8d9!important;border:1px solid #55575a!important;border-radius:3px!important}
+.port.src.sel,.port.dst.sel{background:#bd8838!important;color:#111!important;border-color:#f2bd62!important}
+.port.on{box-shadow:0 0 6px #e9a23b35!important}
+.step,.stepbtn,.seq-step{background:linear-gradient(180deg,#292b2d,#1b1c1d)!important;border:1px solid #454749!important;color:#aeb0b2!important;border-radius:3px!important}
+.step.on,.step.active,.seq-step.active,.seq-step.on{background:linear-gradient(180deg,#e8ae4c,#956127)!important;color:#fff!important;border-color:#f0bd65!important;box-shadow:0 0 8px #e9a23b30!important}
+.step.acc{box-shadow:inset 0 0 0 2px #f0b54f!important}
+.step.now{outline:2px solid #e8ae4c!important}
+.step.sel{outline:2px solid #f0b54f!important}
+.rat,.oct{color:#edb44f!important}.vel{color:#b6b9bc!important}.note{color:#d5a05a!important}.prob{color:#aeb0b2!important}
+.bpm,.preset{background:#191a1b!important;border:1px solid #414244!important;border-radius:5px!important}
+@media(max-width:700px){body{padding:6px!important}.rack{padding:8px!important}.top{gap:8px;padding:8px!important}.dial{width:34px!important;height:34px!important}}
+
+/* v39: tactile 3D hardware treatment — CSS only */
+body{perspective:1400px!important;background:radial-gradient(ellipse at 50% 0%,#343638 0,#171819 42%,#050606 100%)!important}
+.rack{padding:20px!important;border-radius:13px!important;background:linear-gradient(135deg,#303234 0%,#1b1c1e 18%,#101112 52%,#242527 100%)!important;box-shadow:0 28px 50px #000d,0 8px 0 #070809,0 0 0 1px #5a5c5e,inset 0 2px 2px #ffffff20,inset 0 -3px 5px #000!important}
+.rack:after{content:"";position:absolute;inset:10px;border:1px solid #ffffff08;border-radius:7px;pointer-events:none}
+.top{position:relative;background:linear-gradient(180deg,#333638 0%,#202224 12%,#121314 100%)!important;border:1px solid #5a5c5e!important;box-shadow:inset 0 2px 2px #ffffff20,inset 0 -3px 5px #000,0 5px 9px #000b!important}
+.scope{border-radius:3px!important;box-shadow:inset 0 5px 14px #000,inset 0 0 0 3px #222426,0 1px 0 #ffffff16!important}
+.module,.seqmod{position:relative;background:repeating-linear-gradient(115deg,#ffffff03 0px,#ffffff03 1px,transparent 1px,transparent 4px),linear-gradient(145deg,#343638 0%,#242628 12%,#171819 52%,#292b2d 100%)!important;border:1px solid #55585a!important;border-top:3px solid #c08a37!important;border-radius:7px!important;box-shadow:inset 0 2px 2px #ffffff1c,inset 0 -4px 7px #0008,0 5px 10px #0009!important}
+.module:before,.seqmod:before{content:"";position:absolute;left:8px;right:8px;top:5px;height:1px;background:linear-gradient(90deg,transparent,#ffffff24,transparent);pointer-events:none}
+.module h2,.seqmod h2{ text-shadow:0 1px 1px #000!important; letter-spacing:.09em!important }
+.knobs{gap:12px!important}
+.knob{padding:5px 3px 7px!important;border-radius:5px!important;background:linear-gradient(145deg,#292b2d,#171819)!important;box-shadow:inset 0 1px #ffffff10,inset 0 -2px 3px #0008,0 1px 1px #ffffff08!important}
+.dial{width:48px!important;height:48px!important;border:2px solid #66696b!important;background:radial-gradient(circle at 30% 22%,#85888a 0,#55585a 13%,#3a3c3e 32%,#222426 57%,#111213 75%,#090a0a 100%)!important;box-shadow:inset 0 2px 3px #ffffff55,inset 0 -5px 7px #000c,0 3px 0 #080909,0 5px 7px #000c,0 0 0 2px #252729!important}
+.dial:before{content:"";position:absolute;inset:5px;border-radius:50%;border:1px solid #ffffff12;box-shadow:inset 0 1px 2px #0008;pointer-events:none}
+.dial:after{left:calc(50% - 1px)!important;top:5px!important;width:3px!important;height:13px!important;border-radius:3px!important;background:linear-gradient(90deg,#8d571b,#ffd06d,#b87823)!important;box-shadow:0 0 2px #ffbf52,0 1px 1px #000!important;transform-origin:50% 18px!important}
+.knob label{font-size:8px!important;text-shadow:0 1px #000!important}
+.knob input,.knob select{box-shadow:inset 0 3px 5px #000c,0 1px #ffffff10!important}
+button,.btn,.port{position:relative;box-shadow:inset 0 2px 1px #ffffff28,inset 0 -3px 4px #0008,0 3px 0 #080909,0 4px 6px #0009!important}
+button:active,.btn:active{transform:translateY(2px)!important;box-shadow:inset 0 2px 5px #000b,0 1px 0 #080909!important}
+button.active,button.on,.btn.active,.active button{background:linear-gradient(180deg,#ffd27a 0%,#d79838 45%,#80501d 100%)!important;box-shadow:inset 0 2px 1px #fff8,inset 0 -3px 4px #542f0b,0 0 12px #e9a23b55,0 3px 0 #080909!important}
+.step{box-shadow:inset 0 2px 2px #ffffff13,inset 0 -3px 4px #0008,0 2px 0 #090a0a!important}
+.step.on{box-shadow:inset 0 2px 2px #fff7,inset 0 -3px 4px #512f0b,0 0 9px #e9a23b45,0 2px 0 #090a0a!important}
+.bpm,.preset{box-shadow:inset 0 2px 2px #ffffff12,inset 0 -3px 4px #0008,0 3px 0 #080909!important}
+@media(max-width:700px){.dial{width:40px!important;height:40px!important}.knob{padding:4px 2px 5px!important}}
+
+/* v40 PATCH LCD — green monochrome display with amber routing accents; sound/JS unchanged */
+#wcBlock .knobs + div{margin-top:12px!important;padding:10px!important;background:linear-gradient(145deg,#292b2c,#151617 55%,#222425)!important;border:1px solid #55585a!important;border-radius:6px!important;box-shadow:inset 0 2px 3px #ffffff12,inset 0 -4px 8px #000b,0 3px 5px #0008!important}
+#wcBlock .knobs + div > div:first-child{color:#d7d9d9!important;font-size:10px!important;letter-spacing:.08em!important;text-transform:uppercase!important;margin-bottom:8px!important}
+#wcBlock .knobs + div > div:first-child .port{font-size:9px!important;margin:2px!important;padding:4px 7px!important;border-radius:3px!important}
+#wcBlock .knobs + div > div:first-child .port.src{border-color:#55735b!important}
+#wcBlock .knobs + div > div:first-child .port.dst{border-color:#9b763e!important}
+#wcPatches{position:relative!important;min-height:42px!important;max-height:142px!important;overflow:auto!important;margin-top:9px!important;padding:25px 9px 8px!important;background:linear-gradient(180deg,#0b100d,#111b14)!important;border:2px solid #515c4e!important;border-radius:4px!important;box-shadow:inset 0 0 0 2px #080b09,inset 0 0 16px #000,0 1px 0 #ffffff1a!important;color:#b6d9ad!important;font-family:'Courier New',monospace!important;font-size:11px!important;scrollbar-color:#a77a35 #101510!important}
+#wcPatches:before{content:'PATCH ROUTING  ▸  LCD';position:absolute;top:6px;left:9px;right:9px;padding-bottom:4px;border-bottom:1px solid #304231;color:#dfa84d;font:bold 9px 'Courier New',monospace;letter-spacing:.14em;pointer-events:none}
+#wcPatches:after{content:'SOURCE  →  DEST';position:sticky;bottom:0;display:block;margin-top:5px;padding-top:5px;border-top:1px solid #304231;color:#c58c3c;font:9px 'Courier New',monospace;letter-spacing:.1em;pointer-events:none}
+#wcPatches div{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin:0!important;padding:5px 2px!important;border-bottom:1px dotted #2b3d2e!important;color:#b6d9ad!important;font:11px 'Courier New',monospace!important;letter-spacing:.035em!important;text-shadow:0 0 5px #86c67a22!important}
+#wcPatches div:last-child{border-bottom:0!important}
+.patch-depth{display:flex;align-items:center;gap:6px;min-width:105px;color:#d7a24c;font:9px 'Courier New',monospace}
+.patch-depth input{width:62px;accent-color:#d7a24c;height:12px;cursor:pointer}
+.patch-depth output{min-width:24px;text-align:right;color:#b6d9ad}
+.patch-help{font:9px 'Courier New',monospace;letter-spacing:.04em;color:#9aa89a;margin-top:5px}
+.port.src,.port.dst{cursor:pointer;user-select:none;transition:background .12s,border-color .12s}
+.port.src.sel{outline:1px solid #dfa84d;background:#503a1b!important;color:#ffe0a0!important}
+.port.dst:hover,.port.src:hover{filter:brightness(1.3)}
+#wcPatches .port.on{flex:1!important;display:block!important;min-width:0!important;margin:0!important;padding:3px 6px!important;border:0!important;border-radius:2px!important;background:transparent!important;color:#b8e0ad!important;box-shadow:none!important;font:11px 'Courier New',monospace!important;text-shadow:0 0 5px #8fce7b35!important}
+#wcPatches .port[style*='background:#ff5555']{flex:0 0 auto!important;width:20px!important;height:20px!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;border:1px solid #a77a35!important;border-radius:3px!important;background:linear-gradient(180deg,#4a3a20,#211b12)!important;color:#efb34f!important;font:bold 11px Arial,sans-serif!important;box-shadow:inset 0 1px #ffffff22,0 2px 0 #080909!important}
+#wcPatches .port[style*='background:#ff5555']:hover{background:linear-gradient(180deg,#8b5c26,#4a2d10)!important;color:#fff!important}
+@media(max-width:700px){#wcPatches{max-height:118px!important;font-size:10px!important}#wcPatches .port.on{font-size:10px!important}}
+
+/* v41 — sequencer controls, step parameters and presets grouped beneath the pad */
+.sequencer-layout{display:grid!important;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(240px,1fr)!important;gap:12px!important;align-items:stretch!important;margin-top:12px!important}
+.sequencer-layout>.module,.sequencer-layout>.preset-panel{margin:0!important;min-width:0!important}
+.sequencer-layout .buttons{gap:6px!important;margin:8px 0!important}
+.sequencer-layout .bpm{padding:5px 7px!important;gap:5px!important}
+.sequencer-layout .preset{display:flex!important;flex-wrap:wrap!important;align-items:center!important;padding:8px!important;gap:6px!important}
+.sequencer-layout .preset label{display:none!important}
+.sequencer-layout .preset select,.sequencer-layout .preset input{min-width:0!important;max-width:100%!important}
+.sequencer-layout .preset input#presetName{width:100%!important;box-sizing:border-box!important}
+.sequencer-layout .preset .btn{padding:6px 9px!important;font-size:9px!important}
+.sequencer-layout .pathinfo{display:none!important}
+.seqmod h2{font-size:12px!important;letter-spacing:.13em!important}
+@media(max-width:950px){.sequencer-layout{grid-template-columns:1fr 1fr!important}.sequencer-layout .preset-panel{grid-column:1/-1!important}}
+@media(max-width:620px){.sequencer-layout{grid-template-columns:1fr!important}.sequencer-layout .preset-panel{grid-column:auto!important}.seq{grid-template-columns:repeat(8,minmax(0,1fr))!important}.step{height:52px!important}}
+
+/* v46 layout: WEST COAST at upper left, sequencer at upper right;
+   FX and EQ share the next row on the left; sequencer controls below its pad. */
+.main-layout{display:grid!important;grid-template-columns:minmax(0,1.8fr) minmax(330px,1fr)!important;gap:12px!important;align-items:start!important}
+.left-column{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;min-width:0!important}
+.wc-row,.fx-eq-row,.right-column{min-width:0!important}
+.wc-row>.module{margin:0!important}
+#wcBlock .knobs{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:7px!important}
+#wcBlock .knob{padding:3px 2px 4px!important}
+#wcBlock .dial{width:36px!important;height:36px!important}
+#wcBlock .dial:after{height:10px!important;transform-origin:50% 15px!important}
+.fx-eq-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:12px!important;align-items:stretch!important}
+.fx-eq-row>.module{margin:0!important;min-width:0!important}
+.fx-eq-row .knobs{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+.right-column .seqmod{margin-top:0!important}
+.right-column .sequencer-layout{grid-template-columns:minmax(0,1fr)!important;margin-top:12px!important}
+.right-column .sequencer-layout>.preset-panel{grid-column:auto!important}
+.right-column .seq{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.right-column .step{height:36px!important}
+@media(max-width:950px){.main-layout{grid-template-columns:minmax(0,1fr)!important}.right-column .seq{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
+@media(max-width:620px){.fx-eq-row{grid-template-columns:minmax(0,1fr)!important}.right-column .sequencer-layout{grid-template-columns:minmax(0,1fr)!important}}
+
+
+.master-mod-depth{margin:8px 0 10px;padding:9px 12px;border:1px solid #38434a;border-radius:8px;background:#12171b}.master-mod-depth label{display:flex;justify-content:space-between;gap:12px;font-size:11px;font-weight:700;letter-spacing:.08em;color:#dce7eb}.master-mod-depth output{color:#78d8ff;font-size:12px}.master-mod-depth input{display:block;width:100%;margin:8px 0 4px;accent-color:#4ac8ff;cursor:pointer}.master-mod-help{font-size:10px;color:#8e9ba1}
+</style>
+<style id="v48-photoreal-hardware">
+/* v48: stronger tactile hardware finish; CSS only */
+:root{--metal-hi:#777b7d;--metal-mid:#343739;--metal-low:#101112;--amber:#ffb94d}
+body{background:radial-gradient(ellipse at 50% 0%,#45484a 0%,#242628 27%,#101112 68%,#050606 100%)!important;padding:24px!important}
+.rack{position:relative!important;isolation:isolate!important;padding:22px!important;border:2px solid #65686a!important;border-radius:14px!important;background:linear-gradient(145deg,#45484a 0%,#292b2d 7%,#151617 23%,#222426 48%,#0e0f10 74%,#303234 100%)!important;box-shadow:0 2px 0 #777a7b,0 5px 0 #171819,0 9px 0 #080909,0 18px 30px #000d,inset 0 2px 2px #ffffff55,inset 0 -5px 8px #000!important}
+.rack:before{height:5px!important;background:linear-gradient(90deg,#65696b,#c1c4c5 12%,#4a4d4f 28%,#8d9193 45%,#e0a343 63%,#55585a 82%,#a7aaab)!important;box-shadow:0 2px 4px #000b!important}
+.rack:after{inset:10px!important;border:1px solid #ffffff20!important;border-radius:7px!important;box-shadow:inset 0 0 0 1px #0008!important;pointer-events:none!important;z-index:-1!important}
+.top{background:linear-gradient(180deg,#56595b 0%,#343638 5%,#1d1f20 20%,#101112 80%,#292b2c 100%)!important;border:1px solid #737678!important;border-radius:6px!important;box-shadow:inset 0 2px 2px #ffffff55,inset 0 -5px 8px #000c,0 5px 0 #090a0a,0 8px 12px #000b!important}
+.module,.seqmod{position:relative!important;overflow:visible!important;background:linear-gradient(145deg,#55585a 0%,#353739 3%,#242628 13%,#171819 50%,#292b2d 83%,#414345 100%)!important;border:1px solid #777a7c!important;border-top:3px solid #e0aa50!important;border-radius:7px!important;box-shadow:inset 0 2px 2px #ffffff35,inset 0 -5px 9px #000b,0 2px 0 #090a0a,0 5px 0 #111213,0 8px 12px #000a!important}
+.module:before,.seqmod:before{content:""!important;position:absolute!important;left:8px!important;right:8px!important;top:5px!important;height:1px!important;background:linear-gradient(90deg,transparent,#ffffff55,transparent)!important;pointer-events:none!important}
+/* corner fasteners */
+.module:after,.seqmod:after{content:"";position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,#c7cacc,#56595b 42%,#171819 70%,#8a8d8f);box-shadow:0 1px 2px #000,inset 0 1px #ffffff80;pointer-events:none}
+.module h2,.seqmod h2{letter-spacing:.11em!important;text-shadow:0 2px 2px #000,0 0 1px #fff3!important}
+.knob{position:relative!important;border-radius:6px!important;padding:7px 4px 8px!important;background:linear-gradient(145deg,#3b3e40,#1b1c1d 65%,#2e3032)!important;border:1px solid #4a4d4f!important;box-shadow:inset 0 1px #ffffff20,inset 0 -3px 5px #000c,0 2px 0 #080909,0 3px 4px #0009!important}
+.dial{width:48px!important;height:48px!important;border:2px solid #777b7d!important;border-radius:50%!important;background:radial-gradient(circle at 30% 22%,#c1c4c5 0%,#85898b 8%,#55595b 20%,#383b3d 38%,#202223 62%,#0b0c0c 79%,#525658 100%)!important;box-shadow:inset 0 2px 3px #ffffff90,inset 0 -6px 8px #000f,0 2px 0 #070808,0 5px 0 #090a0a,0 7px 8px #000c,0 0 0 2px #252729!important}
+.dial:before{content:"";position:absolute;inset:5px;border-radius:50%;border:1px solid #ffffff35;box-shadow:inset 0 2px 3px #0009,0 1px #ffffff14;pointer-events:none}
+.dial:after{left:calc(50% - 1.5px)!important;top:4px!important;width:3px!important;height:14px!important;border-radius:2px!important;background:linear-gradient(90deg,#754714,#ffd782 48%,#b87a2a)!important;box-shadow:0 0 5px #ffb94d70,0 1px 2px #000!important;transform-origin:50% 19px!important}
+.knob label{color:#d2d4d5!important;text-shadow:0 1px 2px #000!important;letter-spacing:.04em!important}
+.knob input,.knob select{height:20px!important;box-shadow:inset 0 3px 6px #000e,0 1px #ffffff16!important;border-color:#5c6062!important}
+button,.btn,.port{border:1px solid #777a7c!important;border-radius:4px!important;background:linear-gradient(180deg,#626668 0%,#414446 12%,#292b2d 48%,#171819 88%,#383a3c 100%)!important;color:#e7e8e9!important;box-shadow:inset 0 2px 1px #ffffff5c,inset 0 -4px 5px #000b,0 2px 0 #080909,0 4px 5px #000b!important;text-shadow:0 1px 1px #000!important}
+button:active,.btn:active{transform:translateY(2px)!important;box-shadow:inset 0 3px 6px #000d,0 1px 0 #080909!important}
+button.active,button.on,.btn.active,.active button{background:linear-gradient(180deg,#ffe0a0 0%,#efb44f 20%,#bd7d2c 64%,#744718 100%)!important;border-color:#ffdc91!important;color:#fff!important;box-shadow:inset 0 2px 1px #fff9,inset 0 -4px 5px #603809,0 0 12px #ffb94d55,0 3px 0 #080909!important}
+.step,.stepbtn,.seq-step{position:relative!important;background:linear-gradient(145deg,#5a5d5f 0%,#35383a 9%,#222425 50%,#111213 85%,#3b3e40 100%)!important;border:1px solid #737678!important;border-radius:4px!important;box-shadow:inset 0 2px 2px #ffffff2e,inset 0 -4px 5px #000c,0 2px 0 #080909,0 4px 5px #0009!important;color:#c4c6c7!important}
+.step.on,.step.active,.seq-step.active,.seq-step.on{background:linear-gradient(180deg,#ffe0a0 0%,#eab04c 25%,#b8792c 68%,#714519 100%)!important;border-color:#ffda8a!important;color:#fff!important;box-shadow:inset 0 2px 1px #fff9,inset 0 -4px 5px #603809,0 0 12px #ffb94d70,0 2px 0 #080909!important}
+.step.acc{box-shadow:inset 0 0 0 2px #ffce70,inset 0 -4px 5px #0008,0 2px 0 #080909!important}
+.step.now{outline:2px solid #ffce70!important;outline-offset:1px!important}
+.bpm,.preset{background:linear-gradient(145deg,#444749,#1c1e1f 65%,#343638)!important;border:1px solid #696c6e!important;border-radius:5px!important;box-shadow:inset 0 2px 2px #ffffff25,inset 0 -4px 5px #000a,0 3px 0 #080909,0 5px 7px #0009!important}
+input,select{box-shadow:inset 0 3px 6px #000e,0 1px #ffffff12!important}
+/* LCD stays green, but looks recessed behind glass */
+#wcPatches{background:linear-gradient(180deg,#07110b,#0b1b10 55%,#07100a)!important;border:2px solid #444b46!important;box-shadow:inset 0 4px 9px #000,inset 0 0 10px #1c6d3524,0 1px 0 #ffffff1b!important;color:#a5e7a9!important}
+@media(max-width:700px){body{padding:8px!important}.rack{padding:12px!important}.dial{width:40px!important;height:40px!important}.knob{padding:5px 2px 6px!important}}
+</style>
+
+<style id="v50-compact-layout">
+/* v50: compact, space-efficient hardware layout; visual/CSS only */
+body{padding:10px!important;align-items:flex-start!important}
+.rack{width:min(1120px,100%)!important;padding:12px!important;border-radius:10px!important}
+.top{gap:8px!important;margin-bottom:8px!important;padding:7px!important}
+.top-controls-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important;align-items:stretch!important;margin-bottom:8px!important}
+.top-controls-row>.module,.top-controls-row>.preset-panel{min-width:0!important;margin:0!important;padding:8px!important}
+.main-layout{display:flex!important;flex-direction:column!important;gap:8px!important}
+.main-layout>.module,.main-layout>.seqmod,.main-layout>.top-controls-row,.main-layout>section{width:100%!important;box-sizing:border-box!important;margin:0!important}
+#wcBlock,.fx-eq-row>.module,.left-column>.module,.seqmod,.module{padding:8px!important;border-radius:6px!important}
+.module h2,.seqmod h2{font-size:12px!important;margin:0 0 6px!important;line-height:1.2!important}
+.knobs{gap:5px!important}
+.knob{padding:4px 2px 5px!important}
+.dial{width:38px!important;height:38px!important}
+.dial:after{height:11px!important;transform-origin:50% 16px!important}
+.knob label{font-size:7px!important;line-height:1.05!important}
+.knob input,.knob select{height:17px!important;font-size:9px!important}
+.buttons{gap:5px!important;margin:6px 0!important}
+.btn,button{padding:5px 8px!important;font-size:10px!important}
+.bpm,.preset{padding:5px 7px!important;gap:5px!important}
+.preset select,.preset input,.bpm input,.bpm select{padding:3px 4px!important;font-size:10px!important;min-width:0!important}
+.seq{grid-template-columns:repeat(16,minmax(0,1fr))!important;gap:3px!important;margin:6px 0!important}
+.step{height:42px!important;font-size:8px!important}
+.prob,.rat,.vel,.oct,.note{font-size:7px!important}
+#stepEditBlock{margin-top:0!important}
+@media(max-width:760px){body{padding:5px!important}.rack{padding:7px!important}.top-controls-row{grid-template-columns:minmax(0,1fr)!important}.seq{grid-template-columns:repeat(8,minmax(0,1fr))!important}.step{height:38px!important}.dial{width:34px!important;height:34px!important}}
+</style>
+
+<style id="v51-sequencer-fullwidth-presets-up">
+/* v51: presets moved above the full-width sequencer; sound engine untouched */
+.main-layout{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-auto-flow:row!important;gap:10px!important;align-items:start!important}
+.main-layout>.left-column,.main-layout>.right-column{display:contents!important}
+.left-column>.wc-row{display:contents!important}
+.left-column>.fx-eq-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px!important;grid-column:1/-1!important;grid-row:5!important}
+.right-column>.seqmod{grid-column:1/-1!important;grid-row:2!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;margin:0!important}
+.right-column>.sequencer-layout{display:contents!important}
+.right-column .sequencer-layout>.seqctl{grid-column:1!important;grid-row:1!important;min-width:0!important}
+.right-column .sequencer-layout>.preset-panel{grid-column:2!important;grid-row:1!important;min-width:0!important;margin:0!important}
+.right-column .sequencer-layout>.stepedit{grid-column:1/-1!important;grid-row:3!important;min-width:0!important}
+.left-column .wc-row>#wcBlock{grid-column:1/-1!important;grid-row:4!important;min-width:0!important}
+.right-column .seq{grid-template-columns:repeat(16,minmax(0,1fr))!important;gap:5px!important}
+.right-column .step{height:42px!important;min-width:0!important}
+.sequencer-layout .preset{gap:5px!important;padding:6px!important}
+.sequencer-layout .preset input#presetName{width:110px!important;flex:1 1 100px!important}
+@media(max-width:800px){.main-layout{grid-template-columns:minmax(0,1fr)!important}.right-column .sequencer-layout>.seqctl,.right-column .sequencer-layout>.preset-panel,.right-column .seqmod,.right-column .sequencer-layout>.stepedit,.left-column .wc-row>#wcBlock,.left-column>.fx-eq-row{grid-column:1!important;grid-row:auto!important}.right-column .seq{grid-template-columns:repeat(8,minmax(0,1fr))!important}.right-column .step{height:42px!important}.left-column>.fx-eq-row{grid-template-columns:minmax(0,1fr)!important}}
+</style>
+
+
+<style id="v52-sequencer-controls-rows">
+/* v52: controls occupy one full row; presets are directly beneath, then the full-width pad. CSS only. */
+.right-column .sequencer-layout>.seqctl{grid-column:1/-1!important;grid-row:1!important;width:100%!important;box-sizing:border-box!important}
+.right-column .sequencer-layout>.preset-panel{grid-column:1/-1!important;grid-row:2!important;width:100%!important;box-sizing:border-box!important}
+.right-column>.seqmod{grid-column:1/-1!important;grid-row:3!important}
+.left-column .wc-row>#wcBlock{grid-column:1/-1!important;grid-row:4!important}
+.left-column>.fx-eq-row{grid-column:1/-1!important;grid-row:5!important}
+.right-column .sequencer-layout>.stepedit{grid-column:1/-1!important;grid-row:6!important}
+.right-column .sequencer-layout>.seqctl .buttons{display:flex!important;flex-wrap:nowrap!important;gap:5px!important;align-items:center!important;white-space:nowrap!important;overflow-x:auto!important;margin:5px 0!important}
+.right-column .sequencer-layout>.seqctl .btn{flex:0 0 auto!important;padding:5px 7px!important;font-size:9px!important}
+.right-column .sequencer-layout>.seqctl .bpm{flex:0 0 auto!important;padding:4px 5px!important;gap:4px!important}
+.right-column .sequencer-layout>.seqctl .bpm label{font-size:8px!important}
+.right-column .sequencer-layout>.seqctl #recordStatus{flex:0 0 auto!important;min-width:50px!important}
+.right-column .sequencer-layout>.preset-panel .preset{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:6px!important;overflow-x:auto!important}
+.right-column .sequencer-layout>.preset-panel .preset>*{flex:0 0 auto!important}
+.right-column .sequencer-layout>.preset-panel .preset input#presetName{flex:1 1 120px!important;min-width:80px!important}
+@media(max-width:800px){
+ .main-layout{grid-template-columns:minmax(0,1fr)!important}
+ .right-column .sequencer-layout>.seqctl{grid-column:1!important;grid-row:1!important}
+ .right-column .sequencer-layout>.preset-panel{grid-column:1!important;grid-row:2!important}
+ .right-column>.seqmod{grid-column:1!important;grid-row:3!important}
+ .left-column .wc-row>#wcBlock{grid-column:1!important;grid-row:4!important}
+ .left-column>.fx-eq-row{grid-column:1!important;grid-row:5!important}
+ .right-column .sequencer-layout>.stepedit{grid-column:1!important;grid-row:6!important}
+}
+</style>
+
+<style id="v59-v53-presets-bottom">
+/* v53: top row has PRESETS on the left and full SEQUENCER CONTROL on the right. */
+.main-layout{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-auto-flow:row!important;align-items:start!important}
+.main-layout>.left-column,.main-layout>.right-column{display:contents!important}
+.right-column>.sequencer-layout{display:contents!important}
+.right-column .sequencer-layout>.preset-panel{grid-column:1!important;grid-row:1!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;margin:0!important}
+.right-column .sequencer-layout>.seqctl{grid-column:2!important;grid-row:1!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;margin:0!important}
+.right-column>.seqmod{grid-column:1/-1!important;grid-row:2!important;width:100%!important;min-width:0!important}
+.left-column .wc-row>#wcBlock{grid-column:1/-1!important;grid-row:3!important}
+.left-column>.fx-eq-row{grid-column:1/-1!important;grid-row:4!important}
+.right-column .sequencer-layout>.stepedit{grid-column:1/-1!important;grid-row:5!important}
+.right-column .sequencer-layout>.seqctl .buttons{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;white-space:nowrap!important}
+.right-column .sequencer-layout>.preset-panel .preset{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:5px!important;overflow:visible!important}
+.right-column .sequencer-layout>.preset-panel .preset>*{min-width:0!important}
+.right-column .sequencer-layout>.preset-panel .preset input#presetName{flex:1 1 90px!important}
+@media(max-width:800px){
+ .main-layout{grid-template-columns:minmax(0,1fr)!important}
+ .right-column .sequencer-layout>.preset-panel{grid-column:1!important;grid-row:1!important}
+ .right-column .sequencer-layout>.seqctl{grid-column:1!important;grid-row:2!important}
+ .right-column>.seqmod{grid-column:1!important;grid-row:3!important}
+ .left-column .wc-row>#wcBlock{grid-column:1!important;grid-row:4!important}
+ .left-column>.fx-eq-row{grid-column:1!important;grid-row:5!important}
+ .right-column .sequencer-layout>.stepedit{grid-column:1!important;grid-row:6!important}
+ .right-column .sequencer-layout>.seqctl .buttons{flex-wrap:wrap!important;overflow:visible!important}
+}
+.wavefolder-module #wcFolderModeSelect{background:#171512;color:#ffd18a;border:1px solid #8b6938;padding:4px 7px;border-radius:3px;font:inherit}.wavefolder-module #wcFolderModeSelect:focus{outline:1px solid #ffc66c}
+.wc #wcComplexModeSelect,.wc #wcModWaveSelect{background:#101714;color:#a9e6c0;border:1px solid #486454;padding:4px 7px;border-radius:3px;font:inherit}.wc #wcComplexModeSelect:focus,.wc #wcModWaveSelect:focus{outline:1px solid #8bd6a6}
+
+/* v68 dedicated WAVEFOLDER module */
+.wavefolder-module{margin-top:12px;padding:12px;border:1px solid #70552f!important;border-top:3px solid #e9a23b!important;border-radius:7px;background:linear-gradient(145deg,#292724,#171819 65%,#24211d)!important;box-shadow:inset 0 1px #ffffff18,0 4px 9px #0009!important}
+.wavefolder-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;color:#f0c47b;letter-spacing:.1em;font-size:12px}
+.wavefolder-tag{font-size:9px;padding:3px 6px;border:1px solid #b17a31;background:#3a2916;color:#ffc66c;border-radius:3px;letter-spacing:.08em}
+.wavefolder-controls{display:grid;grid-template-columns:repeat(3,minmax(90px,1fr));gap:10px;max-width:560px}
+.wavefolder-note{font-size:10px;color:#aaa;margin-top:8px;line-height:1.4}
+.lpg-module{border-top-color:#79b7a1!important;border-color:#42695c!important}.lpg-module .wavefolder-tag{border-color:#4e8974;background:#19372e;color:#a8f0d5}
+@media(max-width:560px){.wavefolder-controls{grid-template-columns:repeat(2,minmax(80px,1fr))}}
+</style>
+
+<style id="step-mod-visuals-v77">
+/* Larger per-step FM/FOLD visualizers; widen the sequencer pad without changing audio logic. */
+.right-column .seqmod{width:100%;box-sizing:border-box;padding:14px!important}
+.right-column .seq{grid-template-columns:repeat(8,minmax(0,1fr))!important;gap:8px!important}
+.right-column .step{height:76px!important;min-width:0;padding:6px 3px!important;box-sizing:border-box}
+.step-mod-row{display:flex;flex-direction:column;gap:4px;justify-content:center;align-items:stretch;margin-top:5px;font-size:10px;line-height:1.15;letter-spacing:.02em;width:100%}
+.step-mod-chip{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:3px 4px;border-radius:3px;background:#17191a;border:1px solid #4b5052;color:#92999c;white-space:nowrap;min-width:0;font-size:10px;font-weight:700}
+.step-mod-chip.fm-active{border-color:#4ac8ff;color:#9be4ff;background:#102a35}
+.step-mod-chip.fold-active{border-color:#ffb94d;color:#ffdc9b;background:#332512}
+.step-mod-chip .mod-level{display:inline-block;flex:0 0 34px;width:34px;height:6px;margin-left:2px;vertical-align:middle;background:#303638;border-radius:3px;overflow:hidden}
+.step-mod-chip .mod-fill{display:block;height:100%;width:0;background:currentColor}
+@media(min-width:1200px){.right-column .seqmod{padding:16px!important}.right-column .step{height:82px!important}.step-mod-chip{font-size:11px;padding:4px 5px}.step-mod-chip .mod-level{flex-basis:42px;width:42px;height:7px}}
+@media(max-width:800px){.right-column .seq{grid-template-columns:repeat(4,minmax(0,1fr))!important}.right-column .step{height:78px!important}}
+/* v78: ensure both FM and FOLD indicators fit inside each step */
+.right-column .seq{grid-auto-rows:minmax(112px,auto)!important;align-items:stretch!important}
+.right-column .step{height:112px!important;min-height:112px!important;overflow:visible!important;display:flex!important;flex-direction:column;justify-content:flex-start;gap:2px;padding:7px 5px!important}
+.step-mod-row{display:flex!important;flex-direction:column!important;gap:5px!important;margin-top:4px!important;width:100%!important;min-height:36px;overflow:visible!important}
+.step-mod-chip{width:100%;box-sizing:border-box;min-height:16px;padding:3px 5px!important;overflow:visible!important}
+.step-mod-chip .mod-level{flex:0 0 40px!important;width:40px!important}
+@media(min-width:1200px){.right-column .seq{grid-auto-rows:minmax(120px,auto)!important}.right-column .step{height:120px!important;min-height:120px!important}}
+@media(max-width:800px){.right-column .step{height:112px!important;min-height:112px!important}}
+</style><style id="v80-compact-dense-layout">
+/* v80: compact control sizing and denser responsive grid; behavior untouched */
+:root{--compact-gap:7px}
+body{padding:10px!important}
+.rack{width:min(1500px,100%)!important;padding:10px!important;border-radius:12px!important}
+.top{gap:8px!important;margin-bottom:8px!important}
+.scope{height:48px!important}
+.module,.seqmod{padding:8px!important;border-radius:8px!important}
+.module h2,.seqmod h2{font-size:12px!important;margin:2px 0 7px!important}
+.knobs{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:5px!important}
+.knob{padding:3px 2px 4px!important;min-width:0!important;border-radius:4px!important}
+.dial{width:31px!important;height:31px!important;border-width:1px!important;margin-bottom:1px!important}
+.dial:after{top:2px!important;height:6px!important;transform-origin:50% 9px!important;width:2px!important}
+.knob label,.knob .label{font-size:8px!important;line-height:1.1!important;letter-spacing:0!important;overflow-wrap:anywhere!important}
+.knob input,.knob select,.knob .val{font-size:9px!important;max-width:100%!important}
+button,.btn,select,input{font-size:10px!important}
+.btn{padding:4px 6px!important}
+.main-layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)!important;gap:7px!important}
+.left-column{gap:7px!important}
+.top-controls-row,.fx-eq-row{gap:7px!important}
+.sequencer-layout{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin-top:7px!important}
+.sequencer-layout .module,.sequencer-layout .preset-panel{padding:7px!important}
+.wavefolder-controls{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+.wave-scope-grid{gap:6px!important;margin-top:7px!important}
+.complex-osc-controls{gap:6px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.complex-osc-knobs{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px 4px!important}
+.seqmod .seq,#seq{grid-template-columns:repeat(16,minmax(30px,1fr))!important;grid-auto-columns:minmax(30px,1fr)!important;min-width:540px!important;gap:3px!important}
+.seqmod .step{height:34px!important;font-size:7px!important}
+.step-mod-row{gap:3px!important}
+.step-mod-chip{font-size:7px!important;padding:2px 3px!important}
+@media(max-width:1000px){.main-layout{grid-template-columns:minmax(0,1fr)!important}.sequencer-layout{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:620px){body{padding:5px!important}.rack{padding:6px!important}.knobs{grid-template-columns:repeat(4,minmax(0,1fr))!important}.dial{width:29px!important;height:29px!important}.sequencer-layout{grid-template-columns:minmax(0,1fr)!important}.complex-osc-knobs{grid-template-columns:repeat(3,minmax(0,1fr))!important}.seqmod .seq,#seq{min-width:500px!important}}
+</style>
+
+
+<style id="v90-step-editor-layout-fix">
+/* v90: give STEP PARAMETER its own full-width row so buttons never overlap labels */
+.sequencer-layout{grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:start!important}
+.sequencer-layout .stepedit{grid-column:1 / -1!important;min-width:0!important;overflow:visible!important}
+#stepEditKnobs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;align-items:start!important}
+#stepEditKnobs>.knob{display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:stretch!important;min-width:0!important;padding:6px!important;box-sizing:border-box!important;background:#17191c!important;border:1px solid #34383b!important;border-radius:6px!important;gap:5px!important}
+#stepEditKnobs>.knob>label{display:block!important;position:static!important;min-height:22px!important;line-height:1.2!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:center!important;font-size:9px!important;color:#b9c1c5!important}
+#stepEditKnobs .btn{display:block!important;position:relative!important;z-index:2!important;width:100%!important;min-height:34px!important;height:auto!important;margin:0!important;padding:7px 4px!important;white-space:normal!important;line-height:1.2!important;pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important}
+#stepEditKnobs .val{position:static!important;display:block!important;min-height:12px!important;line-height:1.2!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:8px!important;color:#899398!important}
+#stepEditKnobs input,#stepEditKnobs select{position:relative!important;z-index:1!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
+@media(max-width:900px){#stepEditKnobs{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}.sequencer-layout{grid-template-columns:minmax(0,1fr)!important}.sequencer-layout .stepedit{grid-column:1!important}}
+@media(max-width:480px){#stepEditKnobs{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+</style>
+
+</head><body>
+<div class="rack"><div class="top"><div class="brand">ENERGUN WEST COST SYNTH <span style="font-size:10px;color:#dfa84d;letter-spacing:.12em">v73 · AUDIO PATH</span></div><div class="scope"><canvas id="scope"></canvas></div></div>
+<section class="module" style="display:none"><h2>METAL SOUND <span style="float:right;font-size:10px;display:flex;gap:6px;align-items:center"><span class="sw" id="metalRnd" style="cursor:pointer;font-size:10px">RANDOM</span> <span class="sw" id="genRnd" style="cursor:pointer;font-size:10px">RANDOM GEN</span></span></h2><div class="knobs" id="metalKnobs"></div></section>
+<section class="module gen" id="subBlock" style="display:none"><h2>SUB OSCILLATOR <span class="sw on" id="subOn">ON</span></h2><div class="knobs" id="subKnobs"></div></section>
+<section class="module gen" id="fm2Block" style="display:none"><h2>SECOND FM VOICE <span class="sw on" id="fm2On">ON</span></h2><div class="knobs" id="fm2Knobs"></div></section>
+<section class="module gen" id="noiseBlock" style="display:none"><h2>NOISE GENERATOR <span class="sw on" id="noiseOn">ON</span></h2><div class="knobs" id="noiseKnobs"></div></section>
+<section class="module gen" id="ringBlock" style="display:none"><h2>RING MOD GENERATOR <span class="sw on" id="ringOn">ON</span></h2><div class="knobs" id="ringKnobs"></div></section>
+<section class="module lfo" id="lfoBlock" style="display:none"><h2>LFO MODULATION <span class="sw on" id="lfoOn">ON</span></h2><div class="knobs" id="lfoKnobs"></div></section>
+<div style="margin:12px 0;padding:10px 14px;border:1px solid #4ac8ff;border-radius:8px;background:#101d29;color:#d9f4ff;font:12px/1.6 system-ui"><strong style="color:#4ac8ff">REFERENCE PRESET · METAL CORE</strong><br>FREQ 160 · METAL RATIO 4.20 · TIMBRE 0 · DRIVE 0 · FM INDEX 0 · FM FEEDBACK 0 · MOTION OFF<br><span style="color:#aabac8">Эталон параметров. Для сохранения именно твоего удачного случайного паттерна нажми PRESETS → SAVE и назови его METAL CORE RANDOM.</span></div>
+<div class="main-layout"><div class="left-column"><div class="wc-row"><section class="module wc" id="wcBlock" style="border-top-color:#4ac8ff"><h2>WEST COAST <select id="wcMode" style="font-size:11px;margin-left:8px"><option value="0">DRONE</option><option value="1" selected>SEQ</option></select> <select id="wcWave" style="font-size:11px"><option value="0">SINE</option><option value="1">TRI</option><option value="2">SAW</option></select> <span class="sw on" id="wcMetal" style="float:right" aria-pressed="true">METAL</span><span class="sw on" id="wcFollow" style="float:right" aria-pressed="true">FOLLOW</span><span class="sw on" id="wcOn" style="float:right">ON</span></h2>
+<div style="margin:8px 0;padding:8px 10px;border:1px solid #6e512d;background:#191714;color:#d7bd91;font-size:11px;line-height:1.45;border-radius:5px"><b>METAL CORE REFERENCE v98</b> · Separate experiment based on v91. METAL and FOLLOW start ON. Reference settings: FREQ 160, METAL RATIO 4.20, TIMBRE 0, DRIVE 0, FM INDEX 0, FM FEEDBACK 0. Original v91 is unchanged.</div><div class="knobs" id="wcKnobs"></div>
+<div style="margin-top:8px;font-size:11px">
+<div>SOURCES: <span class="port src" data-s="lfo">LFO</span><span class="port src" data-s="rnd">RANDOM</span><span class="port src" data-s="slew">SLEW</span><span class="port src" data-s="env">ENV</span><span class="port src" data-s="osc">OSC OUT</span><span class="port src" data-s="modosc">MOD OUT</span> &nbsp; DEST: <span class="port dst" data-d="pitch">PITCH</span><span class="port dst" data-d="pitch2">OSC2 PITCH</span><span class="port dst" data-d="det">DETUNE</span><span class="port dst" data-d="timbre">TIMBRE</span><span class="port dst" data-d="cutoff">CUTOFF</span><span class="port dst" data-d="level">LEVEL</span><span class="port dst" data-d="mrate">M-RATIO</span><span class="port dst" data-d="rrate">RING RATE</span><span class="port dst" data-d="lrate">LFO RATE</span><span class="port dst" data-d="fmindex">FM INDEX</span><span class="port dst" data-d="foldcv">FOLD CV</span><span class="port dst" data-d="lpgcv">LPG CV</span></div>
+<div id="wcPatches"></div><div class="patch-help">PATCHING: 1) выбери SOURCE  2) выбери DEST  ·  глубина регулируется в каждой линии</div>
+</div>
+</section>
+</div><div class="fx-eq-row"><section class="module fx" id="fxBlock"><h2>FX PRO <span class="sw on" id="fxOn">ON</span> <span class="sw" id="dlyOn">DELAY ON</span> <span class="sw" id="revOn">REVERB ON</span> <span class="sw" id="sprOn">SPRING ON</span></h2><div class="knobs" id="fxKnobs"></div></section>
+
+
+
+<section class="module eq"><h2>WEST COAST EQ</h2><div class="knobs" id="eqKnobs"></div></section>
+</div></div><div class="right-column"><div class="seqmod"><h2>SEQUENCER PAD</h2><div class="master-mod-depth"><label for="masterModDepth">MASTER MOD DEPTH <output id="masterModDepthValue">100%</output></label><input id="masterModDepth" type="range" min="0" max="200" step="1" value="100"><div class="master-mod-help">Scales per-step FM and FOLD together · 0% = off · 100% = original · 200% = double</div><div class="motion-panel"><div class="motion-head"><span>⚡ EXPERIMENTAL MOTION</span><button class="btn on" type="button" id="motionToggle">MOTION OFF</button><span style="font-weight:400;color:#c6a8e8">step-synced chaos</span></div><div class="motion-grid"><label class="motion-control">FM MOTION <output id="motionFmVal">75%</output><input id="motionFm" type="range" min="0" max="200" step="1" value="0"></label><label class="motion-control">FOLD MOTION <output id="motionFoldVal">80%</output><input id="motionFold" type="range" min="0" max="200" step="1" value="0"></label><label class="motion-control">CHAOS <output id="motionChaosVal">65%</output><input id="motionChaos" type="range" min="0" max="100" step="1" value="0"></label></div><div class="motion-status" id="motionStatus">Per-step FM/FOLD values are animated on each sequencer trigger. 0% motion = manual step values only.</div></div></div><div class="seq" id="seq"></div><div id="err"></div></div><div class="sequencer-layout"><section class="module seqctl"><h2>SEQUENCER CONTROL</h2><div class="buttons"><button class="btn" id="playBtn">▶ PLAY</button><button class="btn" id="recordBtn">● RECORD WAV</button><div class="bpm"><label for="wavQuality">WAV QUALITY</label><select id="wavQuality" title="WAV recording format"><option value="16">16-bit PCM</option><option value="24" selected>24-bit PCM</option><option value="32f">32-bit Float</option></select></div><span id="recordStatus" style="font-size:10px;color:#ff5c8a;min-width:90px"></span><div class="bpm"><label>BPM</label><input id="bpmInput" type="number" min="40" max="240" step="1" value="130"><input id="bpmRange" type="range" min="40" max="240" step="1" value="130"></div><div class="bpm"><label>LENGTH</label><select id="lenSelect"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16" selected>16</option></select></div><div class="bpm"><label>SWING</label><input id="swingRange" type="range" min="0" max="100" step="1" value="0"></div><button class="btn" id="euclidBtn">EUCLID</button><button class="btn" id="randBtn">RANDOMIZE</button><button class="btn" id="clearBtn">CLEAR</button></div></section><section class="module stepedit" id="stepEditBlock"><h2>STEP PARAMETER — STEP <span id="stepNum">-</span> <small style="color:#4ac8ff">FM MOD / FOLD MOD</small></h2><div class="knobs" id="stepEditKnobs"></div></section><section class="module preset-panel"><h2>PRESETS</h2><div class="preset"><label>PRESET</label><select id="presetSelect"><option value="">— select —</option></select><input id="presetName" placeholder="Name"><button class="btn" id="saveBtn">SAVE</button><button class="btn" id="loadBtn">LOAD</button><button class="btn" id="deleteBtn">DELETE</button><button class="btn" id="exportBtn">EXPORT</button><button class="btn" id="importBtn">IMPORT</button><input id="importFile" type="file" accept=".json,application/json" style="display:none"></div><div class="pathinfo" id="pathInfo">FX PRO: Delay (BPM sync, ping-pong, tone) + Reverb (pre-delay, damping, decay, width). EXPORT: .json.</div></section></div></div></div>
+</div>
+<script>
+window.addEventListener('error',e=>{let b=document.getElementById('errBar');if(!b){b=document.createElement('div');b.id='errBar';b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#c00;color:#fff;font:12px monospace;padding:6px;z-index:9999';document.body.appendChild(b)}b.textContent='JS ERROR: '+e.message});
+const $=i=>document.getElementById(i);
+let A=null,play=0,st=0,timer=null,bpm=130,len=8,swing=0,lfoOsc=null,lfoOut=null,selStep=-1;
+let masterIn=null,dryG=null,masterOut=null;
+let wavRecording=false,wavChunks=[],wavTap=null,wavMute=null,wavSampleRate=0;
+let wcScopePre=null,wcScopePost=null,wcScopeFrame=0;
+let dlyL=null,dlyR=null,dlyFbG=null,dlyToneG=null,dlyWetG=null,dlyPanL=null,dlyPanR=null,dlyInG=null,wcOsc=null,wcOsc2=null,wcComplexAmp=null,wcAMModGain=null,wc2Gain=null,wcPanA=null,wcPanB=null,wcMod=null,wcIndexG=null,wcFeedbackDelay=null,wcFeedbackGain=null,wcFoldIn=null,wcShaper=null,wcFilt=null,wcVCA=null,wcOut=null,wcLfo=null,wcLfoOut=null,wcRndStep=null,wcRndSlew=null,wcRndTimer=null,wcMMod=null,wcMIdx=null,wcRingNode=null,wcRingOsc=null,wcRingDepth=null,wcEnv=null,wcEqBands=null,wcRing2Dry=null,wcRing2Wet=null,wcRing2Osc=null,wcRing2Mix=null,wcRing2Depth=null,wcFolder2=null,wcFolder2Shaper=null,wcComplexVol=null,wcWavefolderVol=null,wcLpgFilter=null,wcLpgGain=null;
+let preDly=null,conv=null,dampG=null,revWetG=null,revSplit=null,revMerge=null,widG=null,revInG=null,sprInG=null,sprWetG=null,springConv=null,pan1Node=null,pan2Node=null,pan1G=null,pan2G=null;
+let distSh=null,distWetG=null;
+let wcStepFoldMod=0;
+let wcMasterModDepth=1;
+let wcMotionOn=false,wcMotionFm=0,wcMotionFold=0,wcMotionChaos=0,wcMotionPhase=0,wcMotionFmNow=0,wcMotionFoldNow=0;
+const NOTE_NAMES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const P={mvol:{v:.4,min:0,max:1,s:.01},mroot:{v:220,min:110,max:440,s:1},ratio:{v:5.3,min:1,max:12,s:.1},fmod:{v:.45,min:0,max:1,s:.01},fmDecay:{v:.12,min:.01,max:1,s:.01},fold:{v:.35,min:0,max:1,s:.01},lcut:{v:1800,min:200,max:6000,s:10},lr:{v:4,min:.1,max:12,s:.1},lf:{v:.3,min:0,max:1,s:.01},vd:{v:.2,min:0,max:1,s:.01},mAtk:{v:.001,min:.0005,max:.1,s:.0005},mDec:{v:.06,min:.01,max:.6,s:.005},mSus:{v:.15,min:0,max:1,s:.01},mRel:{v:.12,min:.01,max:1.2,s:.005},mHold:{v:.08,min:0,max:.8,s:.005},mPunch:{v:.6,min:0,max:1,s:.01},mTrDec:{v:.035,min:.005,max:.25,s:.005},mDet:{v:8,min:0,max:30,s:.5},mDrive:{v:.25,min:0,max:1,s:.01},mRes:{v:.25,min:0,max:1,s:.01},mNoise:{v:.35,min:0,max:1,s:.01},mNDec:{v:.02,min:.002,max:.12,s:.002},mFb:{v:.12,min:0,max:.35,s:.005},cTime:{v:.008,min:.002,max:.02,s:.0005},cWave:{v:0,min:0,max:3,s:1},pWidth:{v:.5,min:.1,max:.9,s:.01},
+subOn:{v:1,min:0,max:1,s:1},subVol:{v:1,min:0,max:1,s:.01},subLvl:{v:.5,min:0,max:1,s:.01},subOct:{v:-1,min:-2,max:0,s:1},subDet:{v:0,min:-20,max:20,s:.5},subWave:{v:0,min:0,max:2,s:1},subFilter:{v:500,min:100,max:2000,s:10},subEnv:{v:0,min:0,max:1,s:.01},subLfoRate:{v:1,min:.05,max:20,s:.05},subLfoDepth:{v:0,min:0,max:1,s:.01},
+fm2On:{v:1,min:0,max:1,s:1},fm2Vol:{v:1,min:0,max:1,s:.01},fm2Ratio:{v:7.1,min:.5,max:12,s:.1},fm2Depth:{v:.3,min:0,max:1,s:.01},fm2Decay:{v:.1,min:.01,max:1,s:.01},fm2Mix:{v:.5,min:0,max:1,s:.01},fm2Wave:{v:0,min:0,max:3,s:1},fm2Fb:{v:0,min:0,max:.5,s:.01},fm2Det:{v:0,min:-30,max:30,s:.5},fm2Atk:{v:.001,min:.0005,max:.2,s:.0005},fm2LfoRate:{v:1,min:.05,max:20,s:.05},fm2LfoDepth:{v:0,min:0,max:1,s:.01},
+noiseOn:{v:1,min:0,max:1,s:1},noiseVol:{v:1,min:0,max:1,s:.01},noiseLvl:{v:.5,min:0,max:1,s:.01},noiseDec:{v:.02,min:.002,max:.12,s:.002},noiseTone:{v:3000,min:300,max:8000,s:10},noiseType:{v:0,min:0,max:2,s:1},noiseRes:{v:1.2,min:.5,max:8,s:.1},noiseAtk:{v:0,min:0,max:.05,s:.001},noisePan:{v:0,min:-1,max:1,s:.05},noiseLfoRate:{v:1,min:.05,max:20,s:.05},noiseLfoDepth:{v:0,min:0,max:1,s:.01},
+ringOn:{v:1,min:0,max:1,s:1},ringVol:{v:1,min:0,max:1,s:.01},ringRatio:{v:2.7,min:.5,max:8,s:.1},ringMix:{v:.4,min:0,max:1,s:.01},ringWave:{v:0,min:0,max:3,s:1},ringFb:{v:0,min:0,max:.5,s:.01},ringDet:{v:0,min:-30,max:30,s:.5},ringEnv:{v:0,min:0,max:1,s:.01},ringLfoRate:{v:1,min:.05,max:20,s:.05},ringLfoDepth:{v:0,min:0,max:1,s:.01},
+lfoOn:{v:1,min:0,max:1,s:1},lfoRate:{v:2,min:.05,max:20,s:.05},lfoWave:{v:0,min:0,max:3,s:1},
+lfoSubLvl:{v:0,min:0,max:1,s:.01},lfoFm2Mix:{v:0,min:0,max:1,s:.01},lfoFm2Depth:{v:0,min:0,max:1,s:.01},lfoNoiseLvl:{v:0,min:0,max:1,s:.01},lfoNoiseTone:{v:0,min:0,max:1,s:.01},lfoRingMix:{v:0,min:0,max:1,s:.01},lfoRingRatio:{v:0,min:0,max:1,s:.01},
+eqSub:{v:0,min:-12,max:12,s:.5},eqBass:{v:0,min:-12,max:12,s:.5},eqLowMid:{v:0,min:-12,max:12,s:.5},eqMid:{v:0,min:-12,max:12,s:.5},eqPres:{v:0,min:-12,max:12,s:.5},eqAir:{v:0,min:-12,max:12,s:.5},eqMix:{v:1,min:0,max:1,s:.01},
+fxOn:{v:1,min:0,max:1,s:1},dlyOn:{v:1,min:0,max:1,s:1},revOn:{v:1,min:0,max:1,s:1},wcOn:{v:1,min:0,max:1,s:1},wcVol:{v:1,min:0,max:1,s:.01},wcFreq:{v:160,min:30,max:500,s:1},wcWave:{v:0,min:0,max:2,s:1},wcDet:{v:7,min:0,max:30,s:.5},wc2Lvl:{v:.5,min:0,max:1,s:.01},wcSpread:{v:.5,min:0,max:1,s:.01},wcTimbre:{v:0,min:0,max:1,s:.01},wcIndex:{v:0,min:0,max:1,s:.01},wcFmCharacter:{v:2,min:0,max:2,s:1},wcComplexMode:{v:0,min:0,max:1,s:1},wcModWave:{v:0,min:0,max:3,s:1},wcModRatio:{v:3.07,min:.25,max:16,s:.01},wcAMDepth:{v:.0,min:0,max:1,s:.01},wcFeedback:{v:0,min:0,max:.8,s:.01},wcFmEnvAmt:{v:.5,min:0,max:1,s:.01},wcFmEnvAtk:{v:.005,min:.001,max:1,s:.001},wcFmEnvDec:{v:.25,min:.01,max:3,s:.01},wcFoldAmount:{v:.25,min:0,max:1,s:.01},wcFoldSym:{v:0,min:-1,max:1,s:.01},wcFoldDrive:{v:.2,min:0,max:1,s:.01},wcComplexVolume:{v:1,min:0,max:1,s:.01},wcWavefolderVolume:{v:1,min:0,max:1,s:.01},wcLpgVolume:{v:1,min:0,max:1,s:.01},wcLpgResponse:{v:.5,min:0,max:1,s:.01},wcLpgDecay:{v:.25,min:.02,max:2,s:.01},wcCut:{v:1200,min:100,max:8000,s:10},wcRes:{v:2,min:.5,max:20,s:.1},wcLevel:{v:.5,min:0,max:1,s:.01},wcSus:{v:0,min:0,max:1,s:.01},wcRel:{v:.2,min:.01,max:3,s:.01},wcLfoRate:{v:1,min:.05,max:20,s:.01},wcLfoDepth:{v:.3,min:0,max:1,s:.01},wcRndRate:{v:2,min:.1,max:20,s:.1},wcSlew:{v:.15,min:.01,max:2,s:.01},wcSeq:{v:1,min:0,max:1,s:1},wcAtk:{v:.01,min:.001,max:1,s:.001},wcDec:{v:.3,min:.05,max:3,s:.01},wcMetal:{v:1,min:0,max:1,s:1},wcMRatio:{v:4.20,min:.5,max:12,s:.01},wcMDec:{v:.4,min:.05,max:3,s:.01},wcFollow:{v:1,min:0,max:1,s:1},wcDrive:{v:0,min:0,max:1,s:.01},wcRingMix:{v:0,min:0,max:1,s:.01},wcRingRatio:{v:2.01,min:.25,max:16,s:.01},dlySync:{v:1,min:0,max:1,s:1},sprOn:{v:0,min:0,max:1,s:1},sprMix:{v:.6,min:0,max:1,s:.01},pan1:{v:0,min:-1,max:1,s:.01},pan2:{v:0,min:-1,max:1,s:.01},dlyDiv:{v:3,min:0,max:3,s:1},dlyTime:{v:.25,min:.05,max:1,s:.01},dlyFb:{v:.35,min:0,max:.85,s:.01},dlyTone:{v:4000,min:500,max:8000,s:10},dlyMix:{v:.25,min:0,max:1,s:.01},dlyWidth:{v:1,min:0,max:1,s:.01},
+revPre:{v:.02,min:0,max:.2,s:.005},revDecay:{v:2,min:.5,max:6,s:.1},revDamp:{v:5000,min:500,max:12000,s:10},revMix:{v:.25,min:0,max:1,s:.01},revWidth:{v:1,min:0,max:1,s:.01},
+distDrive:{v:.2,min:0,max:1,s:.01},distMix:{v:.3,min:0,max:1,s:.01}};
+const knobEls={};
+function knob(parent,key,label){const p=P[key];const d=document.createElement('div');d.className='knob';d.innerHTML='<div class="dial"></div><label>'+label+'</label><input id="'+key+'" type="range" min="'+p.min+'" max="'+p.max+'" step="'+p.s+'" value="'+p.v+'"><div class="val"></div>';const dial=d.querySelector('.dial'),inp=d.querySelector('input'),val=d.querySelector('.val');knobEls[key]=inp;function upd(){p.v=Number(inp.value);const n=(p.v-p.min)/(p.max-p.min);dial.style.transform='rotate('+(-135+n*270)+'deg)';val.textContent=p.max<=12?p.v.toFixed(2):Math.round(p.v);if(key.startsWith('wc')&&typeof window.wcKnobChange==='function')window.wcKnobChange(key);if(typeof window.fxKnobChange==='function')window.fxKnobChange(key)}inp.addEventListener('input',upd);dial.addEventListener('wheel',e=>{e.preventDefault();const dir=e.deltaY<0?1:-1;let v=p.v+dir*p.s*(e.shiftKey?10:1);v=Math.max(p.min,Math.min(p.max,v));inp.value=v;upd()},{passive:false});let drag=0,y0=0,v0=0;dial.addEventListener('pointerdown',e=>{drag=1;y0=e.clientY;v0=p.v;dial.setPointerCapture(e.pointerId)});dial.addEventListener('pointermove',e=>{if(!drag)return;let v=v0+(y0-e.clientY)/160*(p.max-p.min);v=Math.max(p.min,Math.min(p.max,v));inp.value=v;upd()});dial.addEventListener('pointerup',()=>drag=0);upd();parent.appendChild(d)}
+function toggleGen(btnId,pKey,blockId){const b=$(btnId),blk=$(blockId);function sync(){b.textContent=P[pKey].v?'ON':'OFF';b.classList.toggle('on',!!P[pKey].v);blk.style.opacity=P[pKey].v?1:.45}b.addEventListener('click',()=>{P[pKey].v=P[pKey].v?0:1;sync()});sync()}
+// METAL SOUND
+knob($('metalKnobs'),'mvol','Vol');knob($('metalKnobs'),'mroot','Root');knob($('metalKnobs'),'ratio','FM Ratio');knob($('metalKnobs'),'fmod','FM Depth');knob($('metalKnobs'),'fmDecay','FM Decay');
+knob($('metalKnobs'),'fold','Fold');knob($('metalKnobs'),'lcut','LPG');knob($('metalKnobs'),'lr','LFO');knob($('metalKnobs'),'lf','LFO FM');knob($('metalKnobs'),'vd','Vib');
+knob($('metalKnobs'),'mAtk','Attack');knob($('metalKnobs'),'mDec','Decay');knob($('metalKnobs'),'mSus','Sustain');knob($('metalKnobs'),'mRel','Release');knob($('metalKnobs'),'mHold','Hold');
+knob($('metalKnobs'),'mPunch','Punch');knob($('metalKnobs'),'mTrDec','Transient');knob($('metalKnobs'),'mDet','Detune');knob($('metalKnobs'),'mDrive','Drive');
+function rndParams(keys){
+ keys.forEach(k=>{
+  const p=P[k];if(!p)return;
+  const v=p.min+Math.random()*(p.max-p.min);
+  P[k].v=v;
+  if(knobEls[k]){knobEls[k].value=v;knobEls[k].dispatchEvent(new Event('input'))}
+ })
+}
+$('metalRnd').addEventListener('click',()=>{rndParams(['root','ratio','fmod','fmDecay','fold','lcut','lr','lf','vd','mDet','mDrive','mPunch','mTrDec'])});
+$('genRnd').addEventListener('click',()=>{rndParams(['subOct','subDet','subFilter','subLvl','fm2Ratio','fm2Depth','fm2Decay','fm2Mix','fm2Fb','fm2Det','fm2Atk','noiseLvl','noiseTone','noiseRes','noiseDec','noisePan','noiseAtk','ringRatio','ringMix','ringFb','ringDet'])});
+knob($('metalKnobs'),'mRes','Resonance');knob($('metalKnobs'),'mNoise','Noise Click');knob($('metalKnobs'),'mNDec','Noise Decay');knob($('metalKnobs'),'mFb','FM Feedback');
+knob($('metalKnobs'),'cTime','Comb Time');
+const waveBox=document.createElement('div');waveBox.className='knob';waveBox.innerHTML='<label>CARRIER WAVE</label><select id="waveSelect"><option value="0">TRI</option><option value="1">SAW</option><option value="2">SQR</option><option value="3">PULSE</option></select><input type="range" id="pwRange" min="0.1" max="0.9" step="0.01" value="0.5"><div class="val">PULSE WIDTH</div>';$('metalKnobs').appendChild(waveBox);$('waveSelect').addEventListener('change',e=>{P.cWave.v=Number(e.target.value)});$('pwRange').addEventListener('input',e=>{P.pWidth.v=Number(e.target.value)});
+// SUB
+knob($('subKnobs'),'subVol','VOLUME');knob($('subKnobs'),'subLvl','Sub Level');knob($('subKnobs'),'subOct','Sub Octave');knob($('subKnobs'),'subDet','Sub Detune');
+const subWaveBox=document.createElement('div');subWaveBox.className='knob';subWaveBox.innerHTML='<label>SUB WAVE</label><select id="subWaveSelect"><option value="0">SINE</option><option value="1">TRI</option><option value="2">SAW</option></select>';$('subKnobs').appendChild(subWaveBox);$('subWaveSelect').addEventListener('change',e=>{P.subWave.v=Number(e.target.value)});
+knob($('subKnobs'),'subFilter','Sub Filter');knob($('subKnobs'),'subEnv','Sub Envelope');
+knob($('subKnobs'),'subLfoRate','LFO Rate');knob($('subKnobs'),'subLfoDepth','LFO Depth > Level');
+toggleGen('subOn','subOn','subBlock');
+// FM2
+knob($('fm2Knobs'),'fm2Vol','VOLUME');knob($('fm2Knobs'),'fm2Ratio','FM2 Ratio');knob($('fm2Knobs'),'fm2Depth','FM2 Depth');knob($('fm2Knobs'),'fm2Decay','FM2 Decay');knob($('fm2Knobs'),'fm2Mix','FM2 Mix');
+const fm2WaveBox=document.createElement('div');fm2WaveBox.className='knob';fm2WaveBox.innerHTML='<label>FM2 WAVE</label><select id="fm2WaveSelect"><option value="0">SINE</option><option value="1">TRI</option><option value="2">SAW</option><option value="3">SQR</option></select>';$('fm2Knobs').appendChild(fm2WaveBox);$('fm2WaveSelect').addEventListener('change',e=>{P.fm2Wave.v=Number(e.target.value)});
+knob($('fm2Knobs'),'fm2Fb','FM2 Feedback');knob($('fm2Knobs'),'fm2Det','FM2 Detune');knob($('fm2Knobs'),'fm2Atk','FM2 Attack');
+knob($('fm2Knobs'),'fm2LfoRate','LFO Rate');knob($('fm2Knobs'),'fm2LfoDepth','LFO Depth > Depth');
+toggleGen('fm2On','fm2On','fm2Block');
+// NOISE
+knob($('noiseKnobs'),'noiseVol','VOLUME');knob($('noiseKnobs'),'noiseLvl','Noise Level');knob($('noiseKnobs'),'noiseDec','Noise Decay');knob($('noiseKnobs'),'noiseTone','Noise Tone');
+const noiseTypeBox=document.createElement('div');noiseTypeBox.className='knob';noiseTypeBox.innerHTML='<label>NOISE TYPE</label><select id="noiseTypeSelect"><option value="0">WHITE</option><option value="1">PINK</option><option value="2">METALLIC</option></select>';$('noiseKnobs').appendChild(noiseTypeBox);$('noiseTypeSelect').addEventListener('change',e=>{P.noiseType.v=Number(e.target.value)});
+knob($('noiseKnobs'),'noiseRes','Noise Resonance');knob($('noiseKnobs'),'noiseAtk','Noise Attack');knob($('noiseKnobs'),'noisePan','Noise Pan');
+knob($('noiseKnobs'),'noiseLfoRate','LFO Rate');knob($('noiseKnobs'),'noiseLfoDepth','LFO Depth > Tone');
+toggleGen('noiseOn','noiseOn','noiseBlock');
+// RING
+knob($('ringKnobs'),'ringVol','VOLUME');knob($('ringKnobs'),'ringRatio','Ring Ratio');knob($('ringKnobs'),'ringMix','Ring Mix');
+const ringWaveBox=document.createElement('div');ringWaveBox.className='knob';ringWaveBox.innerHTML='<label>RING WAVE</label><select id="ringWaveSelect"><option value="0">SINE</option><option value="1">TRI</option><option value="2">SAW</option><option value="3">SQR</option></select>';$('ringKnobs').appendChild(ringWaveBox);$('ringWaveSelect').addEventListener('change',e=>{P.ringWave.v=Number(e.target.value)});
+knob($('ringKnobs'),'ringFb','Ring Feedback');knob($('ringKnobs'),'ringDet','Ring Detune');knob($('ringKnobs'),'ringEnv','Ring Envelope');
+knob($('ringKnobs'),'ringLfoRate','LFO Rate');knob($('ringKnobs'),'ringLfoDepth','LFO Depth > Mix');
+toggleGen('ringOn','ringOn','ringBlock');
+// LFO block
+knob($('lfoKnobs'),'lfoRate','LFO Rate');
+const lfoWaveBox=document.createElement('div');lfoWaveBox.className='knob';lfoWaveBox.innerHTML='<label>LFO WAVE</label><select id="lfoWaveSelect"><option value="0">SINE</option><option value="1">TRI</option><option value="2">SAW</option><option value="3">SQR</option></select>';$('lfoKnobs').appendChild(lfoWaveBox);$('lfoWaveSelect').addEventListener('change',e=>{P.lfoWave.v=Number(e.target.value);if(lfoOsc){lfoOsc.type=['sine','triangle','sawtooth','square'][P.lfoWave.v|0]}});
+$('lfoRate').addEventListener('input',()=>{if(lfoOsc){lfoOsc.frequency.value=P.lfoRate.v}});
+knob($('lfoKnobs'),'lfoSubLvl','> Sub Level');knob($('lfoKnobs'),'lfoFm2Mix','> FM2 Mix');knob($('lfoKnobs'),'lfoFm2Depth','> FM2 Depth');knob($('lfoKnobs'),'lfoNoiseLvl','> Noise Level');knob($('lfoKnobs'),'lfoNoiseTone','> Noise Tone');knob($('lfoKnobs'),'lfoRingMix','> Ring Mix');knob($('lfoKnobs'),'lfoRingRatio','> Ring Ratio');
+toggleGen('lfoOn','lfoOn','lfoBlock');
+knob($('wcKnobs'),'wcVol','VOLUME');knob($('wcKnobs'),'wcDrive','DRIVE');knob($('wcKnobs'),'wcFreq','Freq');knob($('wcKnobs'),'wcDet','Detune');knob($('wcKnobs'),'wc2Lvl','OSC2 Lvl');knob($('wcKnobs'),'wcSpread','Spread');
+knob($('wcKnobs'),'wcTimbre','Timbre');knob($('wcKnobs'),'wcCut','Cutoff');knob($('wcKnobs'),'wcRes','Reso');knob($('wcKnobs'),'wcLevel','Level');
+knob($('wcKnobs'),'wcAtk','Attack');knob($('wcKnobs'),'wcDec','Decay');knob($('wcKnobs'),'wcSus','Sustain');knob($('wcKnobs'),'wcRel','Release');knob($('wcKnobs'),'wcMRatio','METAL Ratio');
+knob($('wcKnobs'),'wcMDec','METAL Decay');knob($('wcKnobs'),'wcLfoRate','LFO Rate');knob($('wcKnobs'),'wcLfoDepth','LFO Depth');knob($('wcKnobs'),'wcRndRate','Rnd Rate');knob($('wcKnobs'),'wcSlew','Slew');
+knob($('wcKnobs'),'wcRingMix','RING Mix');knob($('wcKnobs'),'wcRingRatio','RING Ratio');
+toggleGen('wcOn','wcOn','wcBlock');
+const complexModule=document.createElement('section');complexModule.className='complex-osc-module';complexModule.id='complexOscModule';complexModule.innerHTML='<div class="complex-osc-head"><span class="complex-new-tag">NEW MODULE</span><strong>COMPLEX OSCILLATOR</strong><span class="complex-osc-subtitle">OSC 2 → OSC 1</span></div><div class="complex-osc-controls"><div class="complex-osc-select"><label for="wcComplexModeSelect">MODULATION</label><select id="wcComplexModeSelect"><option value="0">FM</option><option value="1">AM</option></select></div><div class="complex-osc-select"><label for="wcModWaveSelect">MOD OSC WAVE</label><select id="wcModWaveSelect"><option value="0">SINE</option><option value="1">TRIANGLE</option><option value="2">SAW</option><option value="3">SQUARE</option></select></div><div class="complex-osc-select"><label for="wcFmCharacterSelect">FM CHARACTER</label><select id="wcFmCharacterSelect"><option value="0">SMOOTH</option><option value="1" selected>CLASSIC</option><option value="2">METALLIC</option></select></div><div class="complex-osc-knobs" id="complexOscKnobs"></div></div><div class="complex-osc-note">FM creates harmonic sidebands · AM adds rhythmic amplitude motion · FM CHARACTER shapes index response</div><div class="complex-env-label">NEW · FM MODULATION ENVELOPE — transient bite to smooth decay</div><div class="complex-env-label">FM FEEDBACK · delayed self-modulation for denser, metallic spectra</div>';$('wcBlock').appendChild(complexModule);knob($('complexOscKnobs'),'wcIndex','FM INDEX');knob($('complexOscKnobs'),'wcModRatio','MOD RATIO');knob($('complexOscKnobs'),'wcAMDepth','AM DEPTH');knob($('complexOscKnobs'),'wcFeedback','FM FEEDBACK');knob($('complexOscKnobs'),'wcFmEnvAmt','FM ENV AMT');knob($('complexOscKnobs'),'wcFmEnvAtk','ENV ATTACK');knob($('complexOscKnobs'),'wcFmEnvDec','ENV DECAY');knob($('complexOscKnobs'),'wcComplexVolume','MODULE VOLUME');
+const wavefolderModule=document.createElement('section');wavefolderModule.className='wavefolder-module';wavefolderModule.id='wavefolderModule';wavefolderModule.innerHTML='<div class="wavefolder-head"><span class="wavefolder-tag">TONE MODES</span><strong>WAVEFOLDER</strong><label for="wcFolderModeSelect" style="margin-left:auto;font-size:10px;color:#a8a8a8">MODE</label><select id="wcFolderModeSelect" aria-label="Wavefolder tone mode"><option value="soft">SOFT</option><option value="classic" selected>CLASSIC</option><option value="hard">HARD</option></select></div><div class="wavefolder-controls" id="wavefolderControls"></div><div class="wave-scope-grid"><div class="wave-scope-box"><div class="wave-scope-label">INPUT WAVEFORM <span>PRE-FOLD</span></div><canvas id="wfScopePre" width=480 height=100></canvas></div><div class="wave-scope-box"><div class="wave-scope-label">OUTPUT WAVEFORM <span>POST-FOLD</span></div><canvas id="wfScopePost" width=480 height=100></canvas></div></div><div class="wavefolder-note">SOFT smooths the fold · CLASSIC preserves the original algorithm · HARD increases folding intensity. FOLD, SYMMETRY, DRIVE and sequencer modulation remain active in every mode. Oscilloscopes show the signal before and after folding.</div>';$('wcBlock').appendChild(wavefolderModule);knob($('wavefolderControls'),'wcFoldAmount','FOLD');knob($('wavefolderControls'),'wcFoldSym','SYMMETRY');knob($('wavefolderControls'),'wcFoldDrive','DRIVE');knob($('wavefolderControls'),'wcWavefolderVolume','MODULE VOLUME');
+const lpgModule=document.createElement('section');lpgModule.className='wavefolder-module lpg-module';lpgModule.id='lpgModule';lpgModule.innerHTML='<div class="wavefolder-head"><span class="wavefolder-tag">NEW MODULE</span><strong>LOW-PASS GATE</strong><span style="margin-left:auto;font-size:10px;color:#a8a8a8">DYNAMICS & TONE</span></div><div class="wavefolder-controls" id="lpgControls"></div><div class="wavefolder-note">RESPONSE shapes the transient brightness and gate character · DECAY sets the per-step tail · MODULE VOLUME controls LPG output</div>';$('wcBlock').appendChild(lpgModule);knob($('lpgControls'),'wcLpgResponse','RESPONSE');knob($('lpgControls'),'wcLpgDecay','DECAY');knob($('lpgControls'),'wcLpgVolume','MODULE VOLUME');
+function wcComplexSync(){if(!wcMod||!wcIndexG||!wcComplexAmp||!wcAMModGain)return;const t=A.currentTime;const am=!!P.wcComplexMode.v;wcIndexG.gain.setTargetAtTime(am?0:wcFmIndexValue(),t,.02);wcComplexAmp.gain.setTargetAtTime(1-P.wcAMDepth.v*.5,t,.035);wcAMModGain.gain.setTargetAtTime(P.wcAMDepth.v*.5,t,.035);try{wcAMModGain.disconnect()}catch(e){}if(am)wcAMModGain.connect(wcComplexAmp.gain);$('wcComplexModeSelect').value=String(P.wcComplexMode.v);$('wcModWaveSelect').value=String(P.wcModWave.v);$('wcFmCharacterSelect').value=String(P.wcFmCharacter.v)}
+$('wcComplexModeSelect').addEventListener('change',e=>{P.wcComplexMode.v=Number(e.target.value);if(A){if(!wcOsc)wcInit();wcComplexSync()}});$('wcModWaveSelect').addEventListener('change',e=>{P.wcModWave.v=Number(e.target.value);if(wcMod)wcMod.type=['sine','triangle','sawtooth','square'][P.wcModWave.v]});
+$('wcFmCharacterSelect').addEventListener('change',e=>{P.wcFmCharacter.v=Number(e.target.value);if(A){if(!wcOsc)wcInit();if(wcIndexG&&!P.wcComplexMode.v)wcIndexG.gain.setTargetAtTime(wcFmIndexValue(),A.currentTime,.025)}});
+let wcFolderMode='classic';
+const wcFolderModeSelect=document.getElementById('wcFolderModeSelect');
+if(wcFolderModeSelect)wcFolderModeSelect.addEventListener('change',e=>{wcFolderMode=e.target.value;wcUpdateFolder()});
+function wcUpdateFolder(){
+ if(!wcFolder2Shaper)return;
+ const n=2048,curve=new Float32Array(n),amount=Math.max(0,Math.min(1,P.wcFoldAmount.v+wcStepFoldMod)),drive=P.wcFoldDrive.v,sym=P.wcFoldSym.v;
+ for(let i=0;i<n;i++){
+  const x=i/(n-1)*2-1;
+  let y;
+  if(wcFolderMode==='soft'){
+   // Softer transfer: fewer abrupt corners, while retaining the fold control's blend.
+   const pre=x*(1+drive*8)+sym*1.1;
+   let folded=pre;
+   for(let k=0;k<12&&(folded>1||folded< -1);k++){if(folded>1)folded=2-folded;else if(folded< -1)folded=-2-folded}
+   folded=Math.max(-1,Math.min(1,folded));
+   y=Math.tanh(folded*1.35)/Math.tanh(1.35);
+  }else{
+   const driveScale=wcFolderMode==='hard'?18:12;
+   const symScale=wcFolderMode==='hard'?1.8:1.5;
+   y=x*(1+drive*driveScale)+sym*symScale;
+   for(let k=0;k<(wcFolderMode==='hard'?24:16)&&(y>1||y< -1);k++){if(y>1)y=2-y;else if(y< -1)y=-2-y}
+   y=Math.max(-1,Math.min(1,y));
+  }
+  curve[i]=x*(1-amount)+y*amount;
+ }
+ wcFolder2Shaper.curve=curve;
+}
+function wcInit(){
+ if(!A||wcOsc)return;
+ wcOsc=A.createOscillator();wcOsc.type=['sine','triangle','sawtooth'][P.wcWave.v];wcOsc.frequency.value=P.wcFreq.v;
+ wcOsc2=A.createOscillator();wcOsc2.type=wcOsc.type;wcOsc2.frequency.value=P.wcFreq.v;wcOsc2.detune.value=P.wcDet.v;
+ wc2Gain=A.createGain();wc2Gain.gain.value=P.wc2Lvl.v;
+ wcPanA=A.createStereoPanner();wcPanA.pan.value=-P.wcSpread.v;
+ wcPanB=A.createStereoPanner();wcPanB.pan.value=P.wcSpread.v;
+ wcMod=A.createOscillator();wcMod.type=['sine','triangle','sawtooth','square'][P.wcModWave.v|0];wcMod.frequency.value=P.wcFreq.v*P.wcModRatio.v;
+ wcIndexG=A.createGain();wcIndexG.gain.value=P.wcComplexMode.v?0:wcFmIndexValue();
+ wcMod.connect(wcIndexG);wcIndexG.connect(wcOsc.frequency);wcFeedbackDelay=A.createDelay(.02);wcFeedbackDelay.delayTime.value=.003;wcFeedbackGain=A.createGain();wcFeedbackGain.gain.value=P.wcFeedback.v*P.wcFreq.v*3;wcMod.connect(wcFeedbackDelay);wcFeedbackDelay.connect(wcFeedbackGain);wcFeedbackGain.connect(wcMod.frequency);wcComplexAmp=A.createGain();wcComplexAmp.gain.value=1-P.wcAMDepth.v*.5;wcAMModGain=A.createGain();wcAMModGain.gain.value=P.wcAMDepth.v*.5;wcMod.connect(wcAMModGain);
+ wcMMod=A.createOscillator();wcMMod.type='sine';wcMMod.frequency.value=P.wcFreq.v*P.wcMRatio.v;
+ wcMIdx=A.createGain();wcMIdx.gain.value=0;
+ wcMMod.connect(wcMIdx);wcMIdx.connect(wcOsc.frequency);
+ wcComplexVol=A.createGain();wcComplexVol.gain.value=P.wcComplexVolume.v;
+ wcWavefolderVol=A.createGain();wcWavefolderVol.gain.value=P.wcWavefolderVolume.v;
+ wcLpgFilter=A.createBiquadFilter();wcLpgFilter.type='lowpass';wcLpgFilter.frequency.value=1800;wcLpgFilter.Q.value=.7;
+ wcLpgGain=A.createGain();wcLpgGain.gain.value=P.wcSeq.v?0.8:1;
+ wcFoldIn=A.createGain();wcFoldIn.gain.value=1+P.wcTimbre.v*6;
+ wcShaper=A.createWaveShaper();const wcn=2048,wcCu=new Float32Array(wcn);for(let wi=0;wi<wcn;wi++){let x=wi/(wcn-1)*4-2,y=x;for(let k=0;k<4;k++){if(y>1)y=2-y;else if(y<-1)y=-2-y;else break}wcCu[wi]=y}
+ wcShaper.curve=wcCu;
+ wcFolder2=A.createGain();wcFolder2.gain.value=1;
+ wcFolder2Shaper=A.createWaveShaper();wcFolder2Shaper.oversample='4x';wcUpdateFolder();
+ wcScopePre=A.createAnalyser();wcScopePre.fftSize=1024;wcScopePre.smoothingTimeConstant=.15;
+ wcScopePost=A.createAnalyser();wcScopePost.fftSize=1024;wcScopePost.smoothingTimeConstant=.15;
+ wcFilt=A.createBiquadFilter();wcFilt.type='lowpass';wcFilt.frequency.value=P.wcCut.v;wcFilt.Q.value=P.wcRes.v;
+ wcVCA=A.createGain();wcVCA.gain.value=P.wcSeq.v?0:(P.wcOn.v?1:0);
+ wcRingNode=A.createGain();wcRingNode.gain.value=1;
+ wcRingOsc=A.createOscillator();wcRingOsc.type='sine';wcRingOsc.frequency.value=P.wcFreq.v*P.wcMRatio.v;
+ wcRingDepth=A.createGain();wcRingDepth.gain.value=1;
+ wcRingOsc.connect(wcRingDepth);
+ wcRing2Dry=A.createGain();wcRing2Dry.gain.value=1-P.wcRingMix.v;
+ wcRing2Wet=A.createGain();wcRing2Wet.gain.value=0;
+ wcRing2Mix=A.createGain();wcRing2Mix.gain.value=P.wcRingMix.v;
+ wcRing2Osc=A.createOscillator();wcRing2Osc.type='sine';wcRing2Osc.frequency.value=P.wcFreq.v*P.wcRingRatio.v;
+ wcRing2Depth=A.createGain();wcRing2Depth.gain.value=1;
+ wcRing2Osc.connect(wcRing2Depth);wcRing2Depth.connect(wcRing2Mix);wcRing2Mix.connect(wcRing2Wet.gain);
+ wcRing2Osc.start();
+ wcOut=A.createGain();wcOut.gain.value=P.wcVol.v*12;
+ wcEqBands=[[60,'lowshelf','eqSub'],[150,'peaking','eqBass'],[400,'peaking','eqLowMid'],[1000,'peaking','eqMid'],[3000,'peaking','eqPres'],[8000,'highshelf','eqAir']].map(([f,ty,pk])=>{const q=A.createBiquadFilter();q.type=ty;q.frequency.value=f;q.gain.value=P[pk].v*P.eqMix.v;if(ty==='peaking')q.Q.value=1;return q});
+ wcEqBands.forEach((q,i,arr)=>{if(i)arr[i-1].connect(q)});
+ wcOsc.connect(wcComplexAmp);wcComplexAmp.connect(wcComplexVol);wcComplexVol.connect(wcScopePre);wcComplexVol.connect(wcFoldIn);wcFoldIn.connect(wcShaper);wcShaper.connect(wcFolder2);wcFolder2.connect(wcFolder2Shaper);wcFolder2Shaper.connect(wcScopePost);wcFolder2Shaper.connect(wcWavefolderVol);wcWavefolderVol.connect(wcPanA);wcPanA.connect(wcRing2Dry);wcRing2Dry.connect(wcFilt);
+ wcShaper.connect(wcRing2Wet);wcRing2Wet.connect(wcFilt);
+ wcOsc2.connect(wc2Gain);wc2Gain.connect(wcFoldIn);
+ wcFilt.connect(wcLpgFilter);wcLpgFilter.connect(wcLpgGain);wcLpgGain.connect(wcVCA);wcVCA.connect(wcRingNode);wcRingNode.connect(wcOut);wcOut.connect(wcEqBands[0]);wcEqBands[5].connect(masterIn);
+ wcLfo=A.createOscillator();wcLfo.frequency.value=P.wcLfoRate.v;wcLfoOut=A.createGain();wcLfoOut.gain.value=P.wcLfoDepth.v;wcLfo.connect(wcLfoOut);
+ wcRndStep=A.createConstantSource();wcRndStep.offset.value=0;wcRndSlew=A.createConstantSource();wcRndSlew.offset.value=0;wcEnv=A.createConstantSource();wcEnv.offset.value=P.wcSeq.v?0:1;
+ wcLfo.start();wcMod.start();wcComplexSync();wcOsc.start();wcOsc2.start();wcRndStep.start();wcRndSlew.start();wcMMod.start();wcRingOsc.start();wcEnv.start();
+ wcRndTimer=setInterval(wcRndTick,1000/Math.max(.1,P.wcRndRate.v));
+ wcStartWavefolderScopes();
+ wcApply();
+}
+function wcSyncOn(){if(!A)return;if(!wcOsc)wcInit();if(wcVCA)wcVCA.gain.setTargetAtTime(P.wcSeq.v?0:P.wcLevel.v*(P.wcOn.v?1:0),A.currentTime,.02)}
+$('wcOn').addEventListener('click',wcSyncOn);
+$('wcMode').addEventListener('change',e=>{P.wcSeq.v=Number(e.target.value);if(A&&wcEnv)wcEnv.offset.setTargetAtTime(P.wcSeq.v?0:1,A.currentTime,.05);wcSyncOn()});
+$('wcWave').addEventListener('change',e=>{P.wcWave.v=Number(e.target.value);if(wcOsc){wcOsc.type=['sine','triangle','sawtooth'][P.wcWave.v];wcOsc2.type=wcOsc.type}});
+$('wcFollow').addEventListener('click',()=>{P.wcFollow.v=P.wcFollow.v?0:1;$('wcFollow').classList.toggle('on',!!P.wcFollow.v)});
+window.wcKnobChange=function(k){
+ if(!A)return;if(!wcOsc)wcInit();if(!wcOsc)return;const t=A.currentTime;
+ if(k==='wcVol'){wcOut.gain.value=P.wcVol.v*12}
+ else if(k==='wcDrive'){wcFoldIn.gain.setTargetAtTime(1+P.wcTimbre.v*6,t,.02);wcIndexG.gain.setTargetAtTime(wcFmIndexValue(),t,.02)}
+ else if(k==='wcFreq'){wcOsc.frequency.setTargetAtTime(P.wcFreq.v,t,.03);wcOsc2.frequency.setTargetAtTime(P.wcFreq.v,t,.03);wcMod.frequency.setTargetAtTime(P.wcFreq.v*P.wcModRatio.v,t,.03);if(wcFeedbackGain)wcFeedbackGain.gain.setTargetAtTime(P.wcFeedback.v*P.wcFreq.v*3,t,.03);wcRing2Osc.frequency.setTargetAtTime(P.wcFreq.v*P.wcRingRatio.v,t,.03);if(P.wcMetal.v){wcMMod.frequency.setTargetAtTime(P.wcFreq.v*P.wcMRatio.v,t,.03);wcRingOsc.frequency.setTargetAtTime(P.wcFreq.v*P.wcMRatio.v,t,.03)}}
+ else if(k==='wcDet')wcOsc2.detune.setTargetAtTime(P.wcDet.v,t,.03);
+ else if(k==='wc2Lvl')wc2Gain.gain.setTargetAtTime(P.wc2Lvl.v,t,.02);
+ else if(k==='wcSpread'){wcPanA.pan.setTargetAtTime(-P.wcSpread.v,t,.02);wcPanB.pan.setTargetAtTime(P.wcSpread.v,t,.02)}
+ else if(k==='wcTimbre')wcFoldIn.gain.setTargetAtTime(1+P.wcTimbre.v*6,t,.02);
+ else if(k==='wcIndex')wcIndexG.gain.setTargetAtTime(P.wcComplexMode.v?0:wcFmIndexValue(),t,.02);
+ else if(k==='wcAMDepth')wcComplexSync();
+ else if(k==='wcModRatio')wcMod.frequency.setTargetAtTime(P.wcFreq.v*P.wcModRatio.v,t,.03);
+ else if(k==='wcFeedback'&&wcFeedbackGain)wcFeedbackGain.gain.setTargetAtTime(P.wcFeedback.v*P.wcFreq.v*3,t,.025);
+ else if(k==='wcFoldAmount'||k==='wcFoldSym'||k==='wcFoldDrive')wcUpdateFolder();
+ else if(k==='wcComplexVolume'&&wcComplexVol)wcComplexVol.gain.setTargetAtTime(P.wcComplexVolume.v,t,.02);
+ else if(k==='wcWavefolderVolume'&&wcWavefolderVol)wcWavefolderVol.gain.setTargetAtTime(P.wcWavefolderVolume.v,t,.02);
+ else if(k==='wcLpgVolume'&&wcLpgGain)wcLpgGain.gain.setTargetAtTime(P.wcLpgVolume.v,t,.02);
+ else if(k==='wcLpgResponse'&&wcLpgFilter)wcLpgFilter.frequency.setTargetAtTime(500+P.wcLpgResponse.v*7500,t,.025);
+ else if(k==='wcLpgDecay'){}
+ else if(k==='wcCut')wcFilt.frequency.setTargetAtTime(P.wcCut.v,t,.02);
+ else if(k==='wcRes')wcFilt.Q.setTargetAtTime(P.wcRes.v,t,.02);
+ else if(k==='wcLevel'){}
+ else if(k==='wcLfoRate')wcLfo.frequency.setTargetAtTime(P.wcLfoRate.v,t,.02);
+ else if(k==='wcLfoDepth')wcLfoOut.gain.setTargetAtTime(P.wcLfoDepth.v,t,.02);
+ else if(k==='wcMRatio'){wcMMod.frequency.setTargetAtTime(P.wcFreq.v*P.wcMRatio.v,t,.03);wcRingOsc.frequency.setTargetAtTime(P.wcFreq.v*P.wcMRatio.v,t,.03)}
+ else if(k==='wcRndRate'){if(wcRndTimer){clearInterval(wcRndTimer);wcRndTimer=setInterval(wcRndTick,1000/Math.max(.1,P.wcRndRate.v))}}
+ else if(k==='wcRingMix'){wcRing2Mix.gain.setTargetAtTime(P.wcRingMix.v,t,.02);wcRing2Dry.gain.setTargetAtTime(1-P.wcRingMix.v,t,.02)}
+ else if(k==='wcRingRatio')wcRing2Osc.frequency.setTargetAtTime(P.wcFreq.v*P.wcRingRatio.v,t,.03);
+}
+function wcMetalSync(){const on=!!P.wcMetal.v;$('wcMetal').classList.toggle('on',on);if(!A)return;if(!wcOsc)wcInit();if(!wcRingNode)return;const t=A.currentTime;if(on){wcMMod.frequency.setTargetAtTime(P.wcFreq.v*P.wcMRatio.v,t,.03);wcRingOsc.frequency.setTargetAtTime(P.wcFreq.v*P.wcMRatio.v,t,.03);wcMIdx.gain.setTargetAtTime(P.wcFreq.v*2*wcDrv(),t,.02);try{wcRingDepth.disconnect()}catch(e){}wcRingDepth.connect(wcRingNode.gain);wcRingNode.gain.setTargetAtTime(0,t,.02)}else{try{wcRingDepth.disconnect()}catch(e){}wcRingNode.gain.setTargetAtTime(1,t,.02);wcMIdx.gain.setTargetAtTime(0,t,.02)}wcSyncOn()}
+$('wcMetal').addEventListener('click',()=>{P.wcMetal.v=P.wcMetal.v?0:1;wcMetalSync()});
+function wcTrig(p){if(!A||!wcVCA||!P.wcOn.v||!P.wcSeq.v)return;const t0=A.currentTime;
+ if(P.wcFollow.v&&p){let f;if(p.note>=0){f=P.wcFreq.v*Math.pow(2,p.note/12)*Math.pow(2,p.noteOct)}else{f=P.wcFreq.v*Math.pow(2,p.oct||0)}
+  wcOsc.frequency.setTargetAtTime(f,t0,.01);wcOsc2.frequency.setTargetAtTime(f,t0,.01);wcMod.frequency.setTargetAtTime(f*1.5,t0,.01);wcRing2Osc.frequency.setTargetAtTime(f*P.wcRingRatio.v,t0,.01);if(P.wcMetal.v){wcMMod.frequency.setTargetAtTime(f*P.wcMRatio.v,t0,.01);wcRingOsc.frequency.setTargetAtTime(f*P.wcMRatio.v,t0,.01)}}
+ const atk=P.wcMetal.v?.002:P.wcAtk.v;const dec=P.wcMetal.v?P.wcMDec.v:P.wcDec.v;const gate=60/bpm/4;const rel=Math.max(.01,P.wcRel.v);
+ // Complex Oscillator FM envelope: transiently raises modulation index per sequencer step, then returns to the panel's base FM INDEX.
+ if(wcIndexG&&!P.wcComplexMode.v){const base=Math.max(0,wcFmIndexValue()*(1+(((Number(p&&p.fmMod)||0)+wcMotionFmNow)*wcMasterModDepth)));const peak=base*(1+P.wcFmEnvAmt.v*4);const ea=Math.max(.001,P.wcFmEnvAtk.v),ed=Math.max(.01,P.wcFmEnvDec.v);wcHold(wcIndexG.gain,t0);wcIndexG.gain.setTargetAtTime(peak,t0+ea,Math.max(.002,ea/3));wcIndexG.gain.setTargetAtTime(base,t0+ea+ed,Math.max(.005,ed/3));}
+ // Per-step VELOCITY and ACCENT: keep the synth voice intact; shape only this step's envelope and a subtle cutoff lift.
+ const stepFold=((Number(p&&p.foldMod)||0)+wcMotionFoldNow)*wcMasterModDepth; if(stepFold!==wcStepFoldMod){wcStepFoldMod=stepFold;wcUpdateFolder();setTimeout(()=>{wcStepFoldMod=0;wcUpdateFolder()},Math.max(40,gate*1000));}
+ const vel=(p&&Number.isFinite(Number(p.vel)))?Math.max(.1,Math.min(1,Number(p.vel))):.8;
+ const accent=!!(p&&p.a);const accentGain=accent?1.18:1;
+ const peak=P.wcLevel.v*vel*accentGain;
+ const sus=Math.max(.0001,P.wcLevel.v*P.wcSus.v*vel*(accent?1.08:1));
+ wcHold(wcVCA.gain,t0);
+ wcVCA.gain.setTargetAtTime(peak,t0,Math.max(.005,atk/3));
+ wcVCA.gain.setTargetAtTime(sus,t0+Math.max(.005,atk),Math.max(.005,dec/3));
+ wcVCA.gain.setTargetAtTime(.0001,t0+gate,Math.max(.005,rel/3));
+ if(wcLpgGain){const response=P.wcLpgResponse.v,decay=P.wcLpgDecay.v,peakLpg=.25+response*.75;const lpgAttack=.0015+response*.006;const lpgTail=Math.min(gate,decay);wcHold(wcLpgGain.gain,t0);wcLpgGain.gain.setTargetAtTime(peakLpg,t0,lpgAttack);wcLpgGain.gain.setTargetAtTime(.0001,t0+lpgTail,Math.max(.006,decay*(.08+response*.18)));if(wcLpgFilter){const base=P.wcCut.v;const transientCut=Math.min(12000,base*(1.25+response*3.75));wcLpgFilter.frequency.cancelScheduledValues(t0);wcLpgFilter.frequency.setTargetAtTime(transientCut,t0,lpgAttack);wcLpgFilter.frequency.setTargetAtTime(Math.max(100,base),t0+Math.min(lpgTail,decay*.22),Math.max(.012,decay*(.08+response*.12)));}}
+ // Accent makes the step slightly brighter, then returns the filter to the user's cutoff setting.
+ if(wcFilt){const baseCut=P.wcCut.v;wcFilt.frequency.setTargetAtTime(Math.min(12000,baseCut*(accent?1.15:1)),t0,.01);if(accent)wcFilt.frequency.setTargetAtTime(baseCut,t0+gate*.65,.025)}
+ wcHold(wcEnv.offset,t0);
+ wcEnv.offset.setTargetAtTime(accent?1.12:1,t0,Math.max(.005,atk/3));
+ wcEnv.offset.setTargetAtTime(Math.max(0,P.wcSus.v)*(accent?1.08:1),t0+Math.max(.005,atk),Math.max(.005,dec/3));
+ wcEnv.offset.setTargetAtTime(0,t0+gate,Math.max(.005,rel/3))}
+function wcHold(param,t){if(param.cancelAndHoldAtTime){param.cancelAndHoldAtTime(t)}else{param.cancelScheduledValues(t)}}
+function wcSrcNode(s){switch(s){case 'lfo':return wcLfoOut;case 'rnd':return wcRndStep;case 'slew':return wcRndSlew;case 'osc':return wcOsc;case 'modosc':return wcMod;default:return wcEnv}}
+function wcDestParam(d){switch(d){case 'pitch':return wcOsc.frequency;case 'pitch2':return wcOsc2.frequency;case 'det':return wcOsc2.detune;case 'timbre':return wcFoldIn.gain;case 'cutoff':return wcFilt.frequency;case 'level':return wcVCA.gain;case 'mrate':return wcMMod.frequency;case 'rrate':return wcRingOsc.frequency;case 'fmindex':return wcIndexG.gain;case 'foldcv':return wcFoldIn.gain;case 'lpgcv':return wcLpgGain.gain;case 'lrate':return wcLfo.frequency;default:return wcLfo.frequency}}
+function wcDestScale(d){switch(d){case 'pitch':return 120;case 'pitch2':return 120;case 'det':return 200;case 'timbre':return 4;case 'cutoff':return 1500;case 'level':return .5;case 'mrate':return 400;case 'rrate':return 300;case 'fmindex':return 2;case 'foldcv':return 2;case 'lpgcv':return .7;default:return 5}}
+function wcRender(){const box=$('wcPatches');box.innerHTML='';WC.patches.forEach((p,i)=>{const d=document.createElement('div');d.innerHTML='<span class="port on">'+p.src.toUpperCase()+' &rarr; '+p.dst.toUpperCase()+'</span><label class="patch-depth">DEPTH <input type="range" min="0" max="200" step="1" value="'+Math.round((p.depth??1)*100)+'" data-depth="'+i+'"><output>'+Math.round((p.depth??1)*100)+'%</output></label> <span class="port" data-i="'+i+'" style="background:#ff5555;color:#fff" title="Remove patch">X</span>';const slider=d.querySelector('[data-depth]');slider.addEventListener('input',()=>{p.depth=Number(slider.value)/100;d.querySelector('output').textContent=slider.value+'%';if(p.g)p.g.gain.setTargetAtTime(wcDestScale(p.dst)*p.depth,A?A.currentTime:0,.01)});d.querySelector('[data-i]').addEventListener('click',()=>{try{if(p.g)p.g.disconnect()}catch(e){}WC.patches.splice(i,1);wcApply();wcRender()});box.appendChild(d)})}
+function wcApply(){if(!A)return;if(!wcOsc)wcInit();if(!wcOsc)return;WC.patches.forEach(p=>{try{if(p.g)p.g.disconnect()}catch(e){}try{const g=A.createGain();g.gain.value=wcDestScale(p.dst)*(p.depth??1);wcSrcNode(p.src).connect(g);g.connect(wcDestParam(p.dst));p.g=g}catch(e){}})}
+document.addEventListener('click',e=>{
+ const el=e.target.closest('.port');if(!el)return;
+ if(el.classList.contains('src')){const s=el.dataset.s;WC.sel=(WC.sel&&WC.sel.src===s)?null:{src:s,dst:null};document.querySelectorAll('.port.src').forEach(x=>x.classList.toggle('sel',!!(WC.sel&&WC.sel.src===x.dataset.s)));document.querySelectorAll('.port.dst').forEach(x=>x.classList.remove('sel'))}
+ else if(el.classList.contains('dst')){if(!WC.sel)return;const d=el.dataset.d;const ex=WC.patches.find(p=>p.src===WC.sel.src&&p.dst===d);if(ex){try{ex.g.disconnect()}catch(e2){}WC.patches=WC.patches.filter(p=>p!==ex)}else{WC.patches.push({src:WC.sel.src,dst:d,depth:1,g:null});wcApply()}WC.sel=null;document.querySelectorAll('.port').forEach(x=>x.classList.remove('sel'));wcRender()}
+});
+function wcRndTick(){if(!A)return;const t=A.currentTime;const v=Math.random()*2-1;wcRndStep.offset.setTargetAtTime(v,t,.006);wcRndSlew.offset.setTargetAtTime(v,t,Math.max(.01,P.wcSlew.v))}
+function wcVolLoop(){try{if(A&&wcOut){const g=P.wcVol.v*5;if(Math.abs(wcOut.gain.value-g)>.001)wcOut.gain.value=g}
+ if(A&&wcEqBands){const gains=[P.eqSub.v,P.eqBass.v,P.eqLowMid.v,P.eqMid.v,P.eqPres.v,P.eqAir.v];wcEqBands.forEach((q,i)=>{const gv=gains[i]*P.eqMix.v;if(Math.abs(q.gain.value-gv)>.01)q.gain.setTargetAtTime(gv,A.currentTime,.02)})}}catch(e){}requestAnimationFrame(wcVolLoop)}
+requestAnimationFrame(wcVolLoop);
+// EQ
+knob($('eqKnobs'),'eqSub','SUB 60Hz');knob($('eqKnobs'),'eqBass','BASS 150Hz');knob($('eqKnobs'),'eqLowMid','LOW MID 400Hz');knob($('eqKnobs'),'eqMid','MID 1kHz');knob($('eqKnobs'),'eqPres','PRESENCE 3kHz');knob($('eqKnobs'),'eqAir','AIR 8kHz');knob($('eqKnobs'),'eqMix','EQ MIX');
+// FX PRO block
+const dlySyncBox=document.createElement('div');dlySyncBox.className='knob';dlySyncBox.innerHTML='<label>DELAY SYNC</label><select id="dlySyncSelect"><option value="0">FREE</option><option value="1" selected>BPM SYNC</option></select><select id="dlyDivSelect"><option value="0">1/4</option><option value="1">1/8</option><option value="2">1/8T</option><option value="3" selected>1/16</option></select><div class="val">SYNC / DIVISION</div>';$('fxKnobs').appendChild(dlySyncBox);
+$('dlySyncSelect').addEventListener('change',e=>{P.dlySync.v=Number(e.target.value);updateDelayTime()});
+$('dlyDivSelect').addEventListener('change',e=>{P.dlyDiv.v=Number(e.target.value);updateDelayTime()});
+knob($('fxKnobs'),'dlyTime','Delay Time');knob($('fxKnobs'),'dlyFb','Feedback');knob($('fxKnobs'),'dlyTone','Tone');knob($('fxKnobs'),'dlyMix','Delay Mix');knob($('fxKnobs'),'dlyWidth','Ping-Pong Width');
+knob($('fxKnobs'),'revPre','Pre-Delay');knob($('fxKnobs'),'revDecay','Decay');knob($('fxKnobs'),'revDamp','Damping');knob($('fxKnobs'),'revMix','Reverb Mix');
+knob($('fxKnobs'),'sprMix','Spring Mix');knob($('fxKnobs'),'pan1','Pan 1 L/R');knob($('fxKnobs'),'pan2','Pan 2 L/R');knob($('fxKnobs'),'revWidth','Width');
+knob($('fxKnobs'),'distDrive','Dist Drive');knob($('fxKnobs'),'distMix','Dist Mix');
+function updateDelayTime(){if(!dlyL)return;const divs=[1,.5,1/3,.25];const t=P.dlySync.v?(60/bpm)*divs[P.dlyDiv.v|0]:P.dlyTime.v;dlyL.delayTime.value=t;dlyR.delayTime.value=t}
+$('dlyTime').addEventListener('input',()=>{if(P.dlySync.v)return;updateDelayTime()});
+$('dlyFb').addEventListener('input',()=>{if(dlyFbG)dlyFbG.gain.value=P.dlyFb.v});
+$('dlyTone').addEventListener('input',()=>{if(dlyToneG)dlyToneG.frequency.value=P.dlyTone.v});
+$('dlyMix').addEventListener('input',()=>{if(dlyWetG)dlyWetG.gain.value=P.dlyMix.v});
+$('dlyWidth').addEventListener('input',()=>{if(dlyPanL){dlyPanL.pan.value=-P.dlyWidth.v;dlyPanR.pan.value=P.dlyWidth.v}});
+$('revPre').addEventListener('input',()=>{if(preDly)preDly.delayTime.value=P.revPre.v});
+$('revDecay').addEventListener('change',()=>{if(conv)buildReverbIR()});
+$('revDamp').addEventListener('input',()=>{if(dampG)dampG.frequency.value=P.revDamp.v});
+$('revMix').addEventListener('input',()=>{if(revWetG)revWetG.gain.value=P.revMix.v});
+$('sprMix').addEventListener('input',()=>{if(sprWetG)sprWetG.gain.value=P.sprMix.v});
+$('pan1').addEventListener('input',()=>{if(pan1Node&&A)pan1Node.pan.setTargetAtTime(P.pan1.v,A.currentTime,.02)});
+$('pan2').addEventListener('input',()=>{if(pan2Node&&A)pan2Node.pan.setTargetAtTime(P.pan2.v,A.currentTime,.02)});
+$('revWidth').addEventListener('input',()=>{if(widG)widG.gain.value=P.revWidth.v});
+$('distMix').addEventListener('input',()=>{if(distWetG)distWetG.gain.value=P.distMix.v});
+$('distDrive').addEventListener('input',()=>{if(distSh){const n=2048,cu=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;cu[i]=Math.tanh(x*(1+P.distDrive.v*20))}distSh.curve=cu}});
+toggleGen('fxOn','fxOn','fxBlock');
+window.fxKnobChange=function(k){
+ if(k==='sprMix'&&sprWetG)sprWetG.gain.value=P.sprMix.v;
+ if(k==='pan1'&&pan1Node&&A)pan1Node.pan.setTargetAtTime(P.pan1.v,A.currentTime,.02);
+ if(k==='pan2'&&pan2Node&&A)pan2Node.pan.setTargetAtTime(P.pan2.v,A.currentTime,.02);
+};
+function syncSpr(){const sb=$('sprOn');sb.textContent='SPRING '+(P.sprOn.v?'ON':'OFF');sb.classList.toggle('on',!!P.sprOn.v);if(sprInG)sprInG.gain.value=P.sprOn.v}
+$('sprOn').addEventListener('click',()=>{P.sprOn.v=P.sprOn.v?0:1;syncSpr()});
+syncSpr();
+function syncDlyRev(){const db=$('dlyOn'),rb=$('revOn');db.textContent='DELAY '+(P.dlyOn.v?'ON':'OFF');db.classList.toggle('on',!!P.dlyOn.v);if(dlyInG)dlyInG.gain.value=P.dlyOn.v;rb.textContent='REVERB '+(P.revOn.v?'ON':'OFF');rb.classList.toggle('on',!!P.revOn.v);if(revInG)revInG.gain.value=P.revOn.v;syncSpr()}
+$('dlyOn').addEventListener('click',()=>{P.dlyOn.v=P.dlyOn.v?0:1;syncDlyRev()});
+$('revOn').addEventListener('click',()=>{P.revOn.v=P.revOn.v?0:1;syncDlyRev()});
+syncDlyRev();
+const SEQ=[];for(let i=0;i<32;i++)SEQ.push({on:0,a:0,m:1,prob:1,rat:1,vel:.8,oct:0,note:-1,noteOct:0,fmMod:0,foldMod:0});
+const memoryPresets={};
+const PRESET_STORAGE_KEY='energunWestCoastPresets_v1';
+function persistPresets(){try{localStorage.setItem(PRESET_STORAGE_KEY,JSON.stringify(memoryPresets));return true}catch(e){return false}}
+function restorePresets(){try{const raw=localStorage.getItem(PRESET_STORAGE_KEY);if(raw){const parsed=JSON.parse(raw);if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){for(const [name,state] of Object.entries(parsed)){if(state&&typeof state==='object')memoryPresets[name]=state}}}}catch(e){/* storage may be unavailable; in-memory presets still work */}}
+var WC={sel:null,patches:[]};
+function wcDrv(){return Math.pow(P.wcDrive.v,1.5)}
+function wcFmCharacterScale(index){const x=Math.max(0,Math.min(1,index));if(P.wcFmCharacter.v===0)return .72*Math.sqrt(x);if(P.wcFmCharacter.v===2)return .55*x+1.15*x*x;return x; }
+function wcFmIndexValue(index=P.wcIndex.v){return wcFmCharacterScale(index)*P.wcFreq.v*2*wcDrv()}
+function ensureLfo(){if(!A)return;if(!lfoOsc){lfoOsc=A.createOscillator();lfoOut=A.createGain();lfoOut.gain.value=1;lfoOsc.type=['sine','triangle','sawtooth','square'][P.lfoWave.v|0];lfoOsc.frequency.value=P.lfoRate.v;lfoOsc.connect(lfoOut);lfoOsc.start()}lfoOsc.frequency.value=P.lfoRate.v;lfoOsc.type=['sine','triangle','sawtooth','square'][P.lfoWave.v|0]}
+function buildReverbIR(){if(!A||!conv)return;const len=Math.floor(A.sampleRate*P.revDecay.v);const ir=A.createBuffer(2,len,A.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<len;i++){d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5)}}conv.buffer=ir}
+function ensureFx(){if(!A||masterIn)return;masterIn=A.createGain();masterOut=A.createGain();pan1Node=A.createStereoPanner();pan2Node=A.createStereoPanner();pan1G=A.createGain();pan2G=A.createGain();
+pan1Node.pan.value=P.pan1.v;pan2Node.pan.value=P.pan2.v;pan1G.gain.value=.5;pan2G.gain.value=.5;
+masterOut.connect(pan1Node);pan1Node.connect(pan1G);pan1G.connect(A.destination);
+masterOut.connect(pan2Node);pan2Node.connect(pan2G);pan2G.connect(A.destination);dryG=A.createGain();dryG.gain.value=1;masterIn.connect(dryG);dryG.connect(masterOut);
+// DELAY PRO: ping-pong stereo with tone filter in feedback
+dlyL=A.createDelay(2);dlyR=A.createDelay(2);dlyFbG=A.createGain();dlyFbG.gain.value=P.dlyFb.v;dlyToneG=A.createBiquadFilter();dlyToneG.type='lowpass';dlyToneG.frequency.value=P.dlyTone.v;dlyWetG=A.createGain();dlyWetG.gain.value=P.dlyMix.v;dlyPanL=A.createStereoPanner();dlyPanL.pan.value=-P.dlyWidth.v;dlyPanR=A.createStereoPanner();dlyPanR.pan.value=P.dlyWidth.v;
+dlyInG=A.createGain();dlyInG.gain.value=P.dlyOn.v;masterIn.connect(dlyInG);dlyInG.connect(dlyL);dlyL.connect(dlyPanL);dlyPanL.connect(dlyWetG);dlyL.connect(dlyToneG);dlyToneG.connect(dlyFbG);dlyFbG.connect(dlyR);dlyR.connect(dlyPanR);dlyPanR.connect(dlyWetG);dlyR.connect(dlyFbG);dlyFbG.connect(dlyL);dlyWetG.connect(masterOut);
+// REVERB PRO: pre-delay -> conv -> damping -> width -> wet
+preDly=A.createDelay(.5);preDly.delayTime.value=P.revPre.v;conv=A.createConvolver();buildReverbIR();dampG=A.createBiquadFilter();dampG.type='lowpass';dampG.frequency.value=P.revDamp.v;revWetG=A.createGain();revWetG.gain.value=P.revMix.v;widG=A.createGain();widG.gain.value=P.revWidth.v;
+revInG=A.createGain();revInG.gain.value=P.revOn.v;sprInG=A.createGain();sprInG.gain.value=P.sprOn.v;
+springConv=A.createConvolver();
+(function(){
+ const sr=A.sampleRate,len=Math.floor(sr*1.8),buf=A.createBuffer(2,len,sr);
+ for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);
+  for(let i=0;i<len;i++){const t=i/sr;d[i]=(Math.random()*2-1)*Math.pow(1-t/1.8,2.2)*.5;}
+  [.0062,.0118,.0197,.0289,.0413,.0581].forEach((dl,k)=>{const off=Math.floor(dl*sr),g=.55-k*.06;
+   for(let i=off;i<len;i++)d[i]+=d[i-off]*g;});
+ }
+ springConv.buffer=buf;
+})();
+sprWetG=A.createGain();sprWetG.gain.value=P.sprMix.v;
+masterIn.connect(sprInG);sprInG.connect(springConv);springConv.connect(sprWetG);sprWetG.connect(masterOut);
+masterIn.connect(revInG);revInG.connect(preDly);preDly.connect(conv);conv.connect(dampG);dampG.connect(revWetG);revWetG.connect(widG);widG.connect(masterOut);
+// DIST
+distSh=A.createWaveShaper();const n=2048,cu=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;cu[i]=Math.tanh(x*(1+P.distDrive.v*20))}distSh.curve=cu;distWetG=A.createGain();distWetG.gain.value=P.distMix.v;masterIn.connect(distSh);distSh.connect(distWetG);distWetG.connect(masterOut);
+updateDelayTime();
+wcInit();
+}
+function stepDuration(){const base=60000/bpm/4;return base*(st%2===1?1+swing/100:1-swing/100)}
+function scheduleStep(){if(!play)return;tick();timer=setTimeout(scheduleStep,stepDuration())}
+function setBpm(v){bpm=Math.max(40,Math.min(240,Math.round(Number(v)||136)));$('bpmInput').value=bpm;$('bpmRange').value=bpm;if(play){clearTimeout(timer);timer=setTimeout(scheduleStep,stepDuration())}updateDelayTime()}
+$('bpmInput').addEventListener('input',e=>setBpm(e.target.value));
+$('bpmRange').addEventListener('input',e=>setBpm(e.target.value));
+$('lenSelect').addEventListener('change',e=>{len=Number(e.target.value);draw()});
+$('swingRange').addEventListener('input',e=>{swing=Number(e.target.value)});
+function buildStepEditor(){const box=$('stepEditKnobs');box.innerHTML='';
+const onBtn=document.createElement('div');onBtn.className='knob';onBtn.innerHTML='<button type="button" class="btn" id="stepOnBtn" title="Enable or disable selected step">STEP ON / OFF</button><div class="val">Selected step</div>';box.appendChild(onBtn);
+const accBtn=document.createElement('div');accBtn.className='knob';accBtn.innerHTML='<button type="button" class="btn" id="stepAccBtn" title="Toggle accent on selected step">ACCENT</button><div class="val">Selected step</div>';box.appendChild(accBtn);
+const mk=(id,label,min,max,step,val)=>{const d=document.createElement('div');d.className='knob';d.innerHTML='<label>'+label+'</label><input id="'+id+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'"><div class="val"></div>';box.appendChild(d);return d.querySelector('input')};
+const prob=mk('stepProb','PROBABILITY',0.05,1,0.05,1);const rat=mk('stepRat','RATCHET',1,8,1,1);const vel=mk('stepVel','VELOCITY',0.1,1,0.05,0.8);const oct=mk('stepOct','OCTAVE',-2,2,0.2,0);
+const noteBox=document.createElement('div');noteBox.className='knob';noteBox.innerHTML='<label>NOTE</label><select id="stepNote"><option value="-1">— (ROOT)</option>'+NOTE_NAMES.map((n,i)=>'<option value="'+i+'">'+n+'</option>').join('')+'</select>';box.appendChild(noteBox);
+const noteOct=mk('stepNoteOct','NOTE OCTAVE',-2,2,0.2,0);
+const fmMod=mk('stepFmMod','FM MOD',-0.8,2,0.1,0);const foldMod=mk('stepFoldMod','FOLD MOD',-0.5,0.5,0.05,0);
+$('stepOnBtn').onclick=()=>{if(selStep<0)return;SEQ[selStep].on=!SEQ[selStep].on;draw();syncStepEditor()};
+$('stepAccBtn').onclick=()=>{if(selStep<0)return;SEQ[selStep].a=!SEQ[selStep].a;draw();syncStepEditor()};
+prob.addEventListener('input',()=>{if(selStep<0)return;SEQ[selStep].prob=Number(prob.value);draw()});
+rat.addEventListener('input',()=>{if(selStep<0)return;SEQ[selStep].rat=Number(rat.value);draw()});
+vel.addEventListener('input',()=>{if(selStep<0)return;SEQ[selStep].vel=Number(vel.value);draw()});
+oct.addEventListener('input',()=>{if(selStep<0)return;SEQ[selStep].oct=Number(oct.value);draw()});
+$('stepNote').addEventListener('change',e=>{if(selStep<0)return;SEQ[selStep].note=Number(e.target.value);draw()});
+noteOct.addEventListener('input',()=>{if(selStep<0)return;SEQ[selStep].noteOct=Number(noteOct.value);draw()});
+fmMod.addEventListener('input',()=>{if(selStep<0)return;SEQ[selStep].fmMod=Number(fmMod.value);draw()});foldMod.addEventListener('input',()=>{if(selStep<0)return;SEQ[selStep].foldMod=Number(foldMod.value);draw()})}
+function syncStepEditor(){if(selStep<0){$('stepNum').textContent='-';return}const p=SEQ[selStep];$('stepNum').textContent=selStep+1;$('stepOnBtn').classList.toggle('active',!!p.on);$('stepAccBtn').classList.toggle('active',!!p.a);$('stepProb').value=p.prob;$('stepRat').value=p.rat;$('stepVel').value=p.vel;$('stepOct').value=p.oct;$('stepNote').value=p.note;$('stepNoteOct').value=p.noteOct;$('stepFmMod').value=p.fmMod||0;$('stepFoldMod').value=p.foldMod||0}
+buildStepEditor();
+syncStepEditor();
+function draw(){const box=$('seq');box.innerHTML='';for(let i=0;i<16;i++){const p=SEQ[i],d=document.createElement('div');if(i>=len){d.style.opacity=.25}d.className='step'+(p.on?' on':'')+(p.a?' acc':'')+(i===st&&play?' now':'')+(i===selStep?' sel':'');const noteTxt=p.note>=0?NOTE_NAMES[p.note]+(p.noteOct>0?'+':'')+p.noteOct:'ROOT';const fm=Math.max(0,Math.min(1,Math.abs(Number(p.fmMod)||0)/2));const fold=Math.max(0,Math.min(1,Math.abs(Number(p.foldMod)||0)/0.5));const fmText=(Number(p.fmMod)||0).toFixed(1);const foldText=(Number(p.foldMod)||0).toFixed(2);d.innerHTML='<div>'+(p.on?'ON':'-')+'</div><div class="note">'+noteTxt+'</div><div class="prob">'+Math.round(p.prob*100)+'%</div><div class="rat">'+p.rat+'x</div><div class="vel">'+Math.round(p.vel*100)+'</div><div class="oct">OCT '+(p.oct>0?'+':'')+p.oct.toFixed(1)+'</div><div class="step-mod-row"><span class="step-mod-chip '+(Math.abs(Number(p.fmMod)||0)>.001?'fm-active':'')+'">FM '+fmText+'<i class="mod-level"><b class="mod-fill" style="width:'+(fm*100)+'%"></b></i></span><span class="step-mod-chip '+(Math.abs(Number(p.foldMod)||0)>.001?'fold-active':'')+'">FLD '+foldText+'<i class="mod-level"><b class="mod-fill" style="width:'+(fold*100)+'%"></b></i></span></div>';d.onclick=()=>{selStep=i;syncStepEditor();draw()};d.ondblclick=()=>{SEQ[i].on=!SEQ[i].on;draw();syncStepEditor()};d.oncontextmenu=e=>{e.preventDefault();SEQ[i].a=!SEQ[i].a;draw();syncStepEditor()};d.addEventListener('wheel',e=>{e.preventDefault();const dir=e.deltaY<0?1:-1;if(e.ctrlKey||e.metaKey){let v=p.oct+dir*.2;v=Math.max(-2,Math.min(2,v));p.oct=Math.round(v*5)/5}else if(e.shiftKey){p.rat=Math.max(1,Math.min(8,Math.round(p.rat+dir)))}else if(e.altKey){let v=p.vel+dir*.1;p.vel=Math.max(.1,Math.min(1,v))}else{let v=p.prob+dir*.05;p.prob=Math.max(.05,Math.min(1,v))}if(i===selStep)syncStepEditor();draw()},{passive:false});box.appendChild(d)}}
+const masterModDepth=$('masterModDepth');
+masterModDepth.addEventListener('input',()=>{wcMasterModDepth=Number(masterModDepth.value)/100;$('masterModDepthValue').textContent=masterModDepth.value+'%';});
+function syncMotionUi(){ $('motionFmVal').textContent=$('motionFm').value+'%';$('motionFoldVal').textContent=$('motionFold').value+'%';$('motionChaosVal').textContent=$('motionChaos').value+'%';$('motionToggle').textContent=wcMotionOn?'MOTION ON':'MOTION OFF';$('motionToggle').classList.toggle('on',wcMotionOn);if(!wcMotionOn){wcMotionFmNow=0;wcMotionFoldNow=0;wcStepFoldMod=0;wcUpdateFolder()} }
+$('motionFm').addEventListener('input',e=>{wcMotionFm=Number(e.target.value)/100;syncMotionUi()});$('motionFold').addEventListener('input',e=>{wcMotionFold=Number(e.target.value)/100;syncMotionUi()});$('motionChaos').addEventListener('input',e=>{wcMotionChaos=Number(e.target.value)/100;syncMotionUi()});$('motionToggle').addEventListener('click',()=>{wcMotionOn=!wcMotionOn;syncMotionUi()});syncMotionUi();
+
+draw();
+function startWavRecording(){
+ if(!A)A=new(window.AudioContext||window.webkitAudioContext)();
+ if(A.state==='suspended')A.resume();
+ ensureLfo();ensureFx();
+ if(wavRecording)return;
+ wavChunks=[];wavSampleRate=A.sampleRate;
+ wavTap=A.createScriptProcessor(4096,2,2);
+ wavMute=A.createGain();wavMute.gain.value=0;
+ wavTap.onaudioprocess=e=>{
+  if(!wavRecording)return;
+  const left=e.inputBuffer.getChannelData(0),right=e.inputBuffer.numberOfChannels>1?e.inputBuffer.getChannelData(1):left;
+  wavChunks.push({l:new Float32Array(left),r:new Float32Array(right)});
+  e.outputBuffer.getChannelData(0).fill(0);
+  if(e.outputBuffer.numberOfChannels>1)e.outputBuffer.getChannelData(1).fill(0);
+ };
+ masterOut.connect(wavTap);wavTap.connect(wavMute);wavMute.connect(A.destination);
+ wavRecording=true;$('recordBtn').textContent='■ STOP & SAVE WAV';$('recordBtn').classList.add('active');$('recordStatus').textContent='● Recording…';
+}
+function stopWavRecording(){
+ if(!wavRecording)return;
+ wavRecording=false;
+ try{masterOut.disconnect(wavTap);wavTap.disconnect();wavMute.disconnect()}catch(e){}
+ wavTap.onaudioprocess=null;wavTap=null;wavMute=null;
+ $('recordBtn').textContent='● RECORD WAV';$('recordBtn').classList.remove('active');$('recordStatus').textContent='Preparing WAV…';
+ const frames=wavChunks.reduce((n,c)=>n+c.l.length,0);
+ if(!frames){$('recordStatus').textContent='No audio captured';wavChunks=[];return}
+ const quality=$('wavQuality').value;
+ const bits=quality==='32f'?32:Number(quality);
+ const isFloat=quality==='32f';
+ const bytesPerSample=bits/8,channels=2,blockAlign=channels*bytesPerSample;
+ const dataBytes=frames*blockAlign;
+ const buffer=new ArrayBuffer(44+dataBytes),view=new DataView(buffer);
+ const writeStr=(offset,str)=>{for(let i=0;i<str.length;i++)view.setUint8(offset+i,str.charCodeAt(i))};
+ writeStr(0,'RIFF');view.setUint32(4,36+dataBytes,true);writeStr(8,'WAVE');writeStr(12,'fmt ');view.setUint32(16,16,true);
+ view.setUint16(20,isFloat?3:1,true);view.setUint16(22,channels,true);view.setUint32(24,wavSampleRate,true);view.setUint32(28,wavSampleRate*blockAlign,true);view.setUint16(32,blockAlign,true);view.setUint16(34,bits,true);writeStr(36,'data');view.setUint32(40,dataBytes,true);
+ let offset=44;
+ const writeSample=value=>{
+  if(isFloat){view.setFloat32(offset,value,true);offset+=4;return}
+  const v=Math.max(-1,Math.min(1,value));
+  if(bits===16){view.setInt16(offset,v<0?v*32768:v*32767,true);offset+=2}
+  else {let n=Math.round(v<0?v*8388608:v*8388607);if(n<0)n+=16777216;view.setUint8(offset,n&255);view.setUint8(offset+1,(n>>8)&255);view.setUint8(offset+2,(n>>16)&255);offset+=3}
+ };
+ for(const chunk of wavChunks){for(let i=0;i<chunk.l.length;i++){writeSample(chunk.l[i]);writeSample(chunk.r[i])}}
+ wavChunks=[];
+ const blob=new Blob([buffer],{type:'audio/wav'}),stamp=new Date().toISOString().replace(/[:.]/g,'-'),filename='energun-recording-'+stamp+'.wav';
+ (async()=>{try{
+  if(window.showSaveFilePicker && window.top===window.self){const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'WAV audio',accept:{'audio/wav':['.wav']}}]});const writable=await handle.createWritable();await writable.write(blob);await writable.close();$('recordStatus').textContent='WAV saved ✓ ('+(isFloat?'32-bit Float':bits+'-bit PCM')+', '+wavSampleRate+' Hz)'}
+  else{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);$('recordStatus').textContent='WAV downloaded ('+(isFloat?'32-bit Float':bits+'-bit PCM')+', '+wavSampleRate+' Hz)'}
+ }catch(err){if(err&&err.name==='AbortError')$('recordStatus').textContent='Save cancelled';else{$('recordStatus').textContent='Save failed';$('err').textContent='WAV save error: '+(err.message||err)}}})();
+}
+$('recordBtn').onclick=()=>{try{if(wavRecording)stopWavRecording();else startWavRecording()}catch(e){$('err').textContent='WAV recording error: '+e.message}};
+$('playBtn').onclick=()=>{try{if(!A)A=new(window.AudioContext||window.webkitAudioContext)();if(A.state==='suspended')A.resume();ensureLfo();ensureFx();play=!play;$('playBtn').textContent=play?'■ STOP':'▶ PLAY';$('playBtn').classList.toggle('active',play);if(play){st=0;clearTimeout(timer);scheduleStep()}else clearTimeout(timer)}catch(e){$('err').textContent=e.message}};
+function g(n,p,s,e){n.gain.setValueAtTime(0,s);n.gain.linearRampToValueAtTime(p,s+.015);n.gain.setValueAtTime(p,e-.08);n.gain.linearRampToValueAtTime(0,e)}
+function makePulse(ctx,width){const n=64;const real=new Float32Array(n);const imag=new Float32Array(n);for(let i=1;i<n;i++){const th=Math.PI*i*width;real[i]=2/(i*Math.PI)*Math.sin(th)}return ctx.createPeriodicWave(real,imag,{disableNormalization:false})}
+function lfoMod(param,amount,scale){if(P.lfoOn.v&&lfoOut&&amount>0){const m=A.createGain();m.gain.value=amount*scale;lfoOut.connect(m);m.connect(param)}}
+function miniLfo(param,rate,depth,scale,end){if(depth>0){const lo=A.createOscillator();lo.frequency.value=rate;const lg=A.createGain();lg.gain.value=depth*scale;lo.connect(lg);lg.connect(param);lo.start();lo.stop(end)}}
+function metal(vel,acc,oct,note,noteOct){let f;if(note>=0){f=P.mroot.v*Math.pow(2,note/12)*Math.pow(2,noteOct)}else{f=P.mroot.v*Math.pow(2,oct||0)}const t=A.currentTime;const atk=P.mAtk.v,dec=P.mDec.v,hold=P.mHold.v,rel=P.mRel.v,tr=P.mTrDec.v,punch=P.mPunch.v,end=t+atk+dec+hold+rel+.05;const out=A.createGain();out.gain.value=.35*P.mvol.v*vel;out.connect(P.fxOn.v&&masterIn?masterIn:(masterOut||A.destination));const env=A.createGain();const peak=(acc?1.15:1)*(.18+punch*.18)*vel,sus=peak*P.mSus.v;env.gain.setValueAtTime(0,t);env.gain.linearRampToValueAtTime(peak,t+atk);env.gain.linearRampToValueAtTime(sus,t+atk+dec);env.gain.setValueAtTime(sus,t+atk+dec+hold);env.gain.linearRampToValueAtTime(0,t+atk+dec+hold+rel);env.connect(out);const waveNames=['triangle','sawtooth','square','custom'];const wv=waveNames[P.cWave.v|0];const c=A.createOscillator();if(wv==='custom'){c.setPeriodicWave(makePulse(A,P.pWidth.v))}else{c.type=wv}c.frequency.value=f;const c2=A.createOscillator();if(wv==='custom'){c2.setPeriodicWave(makePulse(A,P.pWidth.v))}else{c2.type=wv}c2.frequency.value=f;c2.detune.value=-P.mDet.v;const c3=A.createOscillator();if(wv==='custom'){c3.setPeriodicWave(makePulse(A,P.pWidth.v))}else{c3.type=wv}c3.frequency.value=f;c3.detune.value=P.mDet.v;const o=A.createOscillator();o.type='sine';o.frequency.value=f*P.ratio.v;const og=A.createGain();og.gain.setValueAtTime(f*P.fmod.v*(7+punch*8),t);og.gain.exponentialRampToValueAtTime(Math.max(f*P.fmod.v*.6,1),t+P.fmDecay.v);o.connect(og);og.connect(c.frequency);og.connect(c2.frequency);og.connect(c3.frequency);
+if(P.mFb.v>0){const fbGain=A.createGain();fbGain.gain.value=P.mFb.v*f*.06;const fbDelay=A.createDelay(.005);fbDelay.delayTime.value=.0008;o.connect(fbGain);fbGain.connect(fbDelay);fbDelay.connect(o.frequency)}
+const sh=A.createWaveShaper();const cu=new Float32Array(2048);for(let i=0;i<2048;i++){let x=i/1023.5-1,y=x;for(let k=0;k<3;k++){if(y>1)y=2-y;else if(y<-1)y=-2-y;else break}cu[i]=y*(1-P.fold.v*.35)}sh.curve=cu;const drv=A.createWaveShaper();const dc=new Float32Array(2048);for(let i=0;i<2048;i++){const x=i/1023.5-1;dc[i]=Math.tanh(x*(1+P.mDrive.v*5))}drv.curve=dc;const comb=A.createDelay(.03);comb.delayTime.value=P.cTime.v;const combFb=A.createGain();combFb.gain.value=.25;const combWet=A.createGain();combWet.gain.value=.35;const combDry=A.createGain();combDry.gain.value=.85;const postComb=A.createGain();sh.connect(drv);drv.connect(combDry);drv.connect(comb);comb.connect(combFb);combFb.connect(comb);comb.connect(combWet);combDry.connect(postComb);combWet.connect(postComb);
+const eqIn=A.createGain();const eqOut=A.createGain();
+const bands=[[60,'lowshelf',P.eqSub.v],[150,'peaking',P.eqBass.v],[400,'peaking',P.eqLowMid.v],[1000,'peaking',P.eqMid.v],[3000,'peaking',P.eqPres.v],[8000,'highshelf',P.eqAir.v]];
+let prev=eqIn;bands.forEach(([freq,type,gain])=>{const f2=A.createBiquadFilter();f2.type=type;f2.frequency.value=freq;f2.gain.value=gain*P.eqMix.v;if(type==='peaking')f2.Q.value=1;prev.connect(f2);prev=f2});prev.connect(eqOut);
+const lp=A.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(P.lcut.v+punch*2500+(acc?1200:0),t);lp.frequency.setTargetAtTime(P.lcut.v,t+.005,Math.max(.02,tr));lp.Q.value=0.7+P.mRes.v*13;c.connect(sh);c2.connect(sh);c3.connect(sh);postComb.connect(lp);lp.connect(eqIn);eqOut.connect(env);const l=A.createOscillator();l.frequency.value=P.lr.v;const lg=A.createGain();lg.gain.value=f*P.fmod.v*P.lf.v*4;l.connect(lg);lg.connect(og.gain);const vib=A.createOscillator();vib.frequency.value=5.8;const vg=A.createGain();vg.gain.value=f*P.vd.v*.02;vib.connect(vg);vg.connect(c.frequency);vg.connect(c2.frequency);vg.connect(c3.frequency);c.start(t);c2.start(t);c3.start(t);o.start(t);l.start(t);vib.start(t);c.stop(end);c2.stop(end);c3.stop(end);o.stop(end);l.stop(end);vib.stop(end);
+if(P.subOn.v&&P.subLvl.v>0&&P.subVol.v>0){const sub=A.createOscillator();const subWaves=['sine','triangle','sawtooth'];sub.type=subWaves[P.subWave.v|0];sub.frequency.value=f*Math.pow(2,P.subOct.v);sub.detune.value=P.subDet.v;const subGain=A.createGain();subGain.gain.value=P.subLvl.v*P.subVol.v*2.5;const subFilter=A.createBiquadFilter();subFilter.type='lowpass';subFilter.frequency.value=P.subFilter.v;sub.connect(subFilter);subFilter.connect(subGain);subGain.connect(out);lfoMod(subGain.gain,P.lfoSubLvl.v,.5);miniLfo(subGain.gain,P.subLfoRate.v,P.subLfoDepth.v,.5,end);sub.start(t);sub.stop(end)}
+if(P.fm2On.v&&P.fm2Mix.v>0&&P.fm2Vol.v>0){const c4=A.createOscillator();c4.type='triangle';c4.frequency.value=f;c4.detune.value=P.fm2Det.v;const o2=A.createOscillator();const fm2Waves=['sine','triangle','sawtooth','square'];o2.type=fm2Waves[P.fm2Wave.v|0];o2.frequency.value=f*P.fm2Ratio.v;const og2=A.createGain();og2.gain.setValueAtTime(0,t);og2.gain.linearRampToValueAtTime(f*P.fm2Depth.v*7,t+P.fm2Atk.v);og2.gain.exponentialRampToValueAtTime(Math.max(f*P.fm2Depth.v*.6,1),t+P.fm2Atk.v+P.fm2Decay.v);o2.connect(og2);og2.connect(c4.frequency);lfoMod(og2.gain,P.lfoFm2Depth.v,f*3);miniLfo(og2.gain,P.fm2LfoRate.v,P.fm2LfoDepth.v,f*3,end);if(P.fm2Fb.v>0){const fb2=A.createGain();fb2.gain.value=P.fm2Fb.v*f*.05;o2.connect(fb2);fb2.connect(o2.frequency)}const fm2Gain=A.createGain();fm2Gain.gain.value=P.fm2Mix.v*P.fm2Vol.v*2.5;c4.connect(fm2Gain);fm2Gain.connect(out);lfoMod(fm2Gain.gain,P.lfoFm2Mix.v,.5);c4.start(t);o2.start(t);c4.stop(end);o2.stop(end)}
+if(P.ringOn.v&&P.ringMix.v>0&&P.ringVol.v>0){const ring=A.createOscillator();const ringWaves=['sine','triangle','sawtooth','square'];ring.type=ringWaves[P.ringWave.v|0];ring.frequency.value=f*P.ringRatio.v;ring.detune.value=P.ringDet.v;lfoMod(ring.frequency,P.lfoRingRatio.v,f*.5);const ringGain=A.createGain();ringGain.gain.value=P.ringMix.v*P.ringVol.v;lfoMod(ringGain.gain,P.lfoRingMix.v,.5);miniLfo(ringGain.gain,P.ringLfoRate.v,P.ringLfoDepth.v,.5,end);const ringWet=A.createGain();ringWet.gain.value=P.ringMix.v*P.ringVol.v*2.5;const ringDry=A.createGain();ringDry.gain.value=1-P.ringMix.v*.5;const ringMul=A.createGain();ringMul.gain.value=1;const preRing=A.createGain();preRing.gain.value=1;eqOut.connect(preRing);preRing.connect(ringDry);preRing.connect(ringMul);ring.connect(ringGain);ringGain.connect(ringMul.gain);ringMul.connect(ringWet);const postRing=A.createGain();ringDry.connect(postRing);ringWet.connect(postRing);postRing.connect(out);ring.start(t);ring.stop(end)}else{eqOut.connect(out)}
+if(P.noiseOn.v&&P.noiseLvl.v>0&&P.noiseVol.v>0){const nEnd=t+P.noiseDec.v+.01;const n=A.createBufferSource();const len2=Math.floor(A.sampleRate*P.noiseDec.v+.01*A.sampleRate);const nb=A.createBuffer(1,len2,A.sampleRate);const nd=nb.getChannelData(0);for(let i=0;i<len2;i++)nd[i]=(Math.random()*2-1);n.buffer=nb;const nf=A.createBiquadFilter();nf.type='bandpass';nf.frequency.value=Math.min(8000,P.noiseTone.v);nf.Q.value=P.noiseRes.v;lfoMod(nf.frequency,P.lfoNoiseTone.v,2000);miniLfo(nf.frequency,P.noiseLfoRate.v,P.noiseLfoDepth.v,2000,end);const ng=A.createGain();ng.gain.setValueAtTime(0,t);ng.gain.linearRampToValueAtTime(P.noiseLvl.v*P.noiseVol.v*2.5*(acc?1.2:1),t+P.noiseAtk.v+.001);ng.gain.exponentialRampToValueAtTime(.0001,t+P.noiseDec.v);lfoMod(ng.gain,P.lfoNoiseLvl.v,.5);const pan=A.createStereoPanner();pan.pan.value=P.noisePan.v;n.connect(nf);nf.connect(ng);ng.connect(pan);pan.connect(out);n.start(t);n.stop(nEnd)}}
+function tick(){try{const p=SEQ[st];
+ // Step-synchronised, deliberately bold motion: a moving bipolar wave plus controlled random jumps.
+ if(wcMotionOn){wcMotionPhase+=.73+(1-wcMotionChaos)*.37;const wave=Math.sin(wcMotionPhase)+.42*Math.sin(wcMotionPhase*2.17);const rnd=(Math.random()*2-1)*wcMotionChaos;wcMotionFmNow=Math.max(-1.1,Math.min(1.6,(wave*.48+rnd*.85)*wcMotionFm));wcMotionFoldNow=Math.max(-.48,Math.min(.48,(Math.sin(wcMotionPhase*1.31)*.28+(Math.random()*2-1)*wcMotionChaos*.22)*wcMotionFold));}
+ else{wcMotionFmNow=0;wcMotionFoldNow=0;}
+ if(p.on&&Math.random()<=p.prob){const reps=p.rat;for(let r=0;r<reps;r++){setTimeout(()=>wcTrig(p),r*(60000/bpm/4/reps))}}st=(st+1)%len;draw();const ms=$('motionStatus');if(ms)ms.textContent=wcMotionOn?'LIVE · FM '+wcMotionFmNow.toFixed(2)+' · FOLD '+wcMotionFoldNow.toFixed(2)+' · step-synced chaos':'OFF · manual FM/FOLD step values only';}catch(e){$('err').textContent=e.message}}
+const cv=$('scope'),cx=cv.getContext('2d');let ph=0;function loop(){cv.width=cv.clientWidth;cv.height=cv.clientHeight;cx.clearRect(0,0,cv.width,cv.height);cx.strokeStyle=play?'#4dff88':'#333';cx.lineWidth=2;cx.beginPath();for(let x=0;x<cv.width;x++){const y=cv.height/2+Math.sin(ph+x*.03)*Math.sin((ph+x*.03)*.37)*cv.height*.28;x?cx.lineTo(x,y):cx.moveTo(x,y)}cx.stroke();ph+=play?.12:.01;requestAnimationFrame(loop)}loop();
+function euclid(steps,pulses,rotation){const pattern=[];let bucket=0;for(let i=0;i<steps;i++){bucket+=pulses;if(bucket>=steps){bucket-=steps;pattern.push(1)}else pattern.push(0)}const rot=rotation%steps;return pattern.slice(steps-rot).concat(pattern.slice(0,steps-rot))}
+$('euclidBtn').onclick=()=>{const pulses=Number(prompt('Pulses (сколько нот):','5'));if(!pulses)return;const rotation=Number(prompt('Rotation (сдвиг):','0'))||0;const pat=euclid(len,pulses,rotation);for(let i=0;i<32;i++){SEQ[i].on=i<len&&pat[i]?1:0}draw()};
+// v87: RANDOMIZE every per-step sequencer parameter, while leaving SEQUENCER CONTROL untouched.
+$('randBtn').onclick=()=>{
+ const rnd=(a,b)=>a+Math.random()*(b-a);
+ const pick=a=>a[Math.floor(Math.random()*a.length)];
+ for(let i=0;i<len;i++){
+  const p=SEQ[i];
+  p.on=Math.random()<.62?1:0;
+  p.prob=Math.round(rnd(.25,1)*100)/100;
+  p.rat=pick([1,1,1,1,2,2,3,4]);
+  p.vel=Math.round(rnd(.35,1)*100)/100;
+  p.a=Math.random()<.24?1:0;
+  p.oct=pick([-0.8,-0.4,0,0,0,0.4,0.8]);
+  p.note=Math.random()<.35?-1:Math.floor(Math.random()*12);
+  p.noteOct=pick([-2,-1,0,0,0,1,2]);
+  p.fmMod=Math.round(rnd(-0.8,2)*10)/10;
+  p.foldMod=Math.round(rnd(-0.5,0.5)*100)/100;
+ }
+ // Update the selected step editor and the visible per-step modulation indicators.
+ if(typeof wcUpdateFolder==='function'){wcStepFoldMod=0;wcUpdateFolder()}
+ draw();syncStepEditor();
+};
+$('clearBtn').onclick=()=>{for(let i=0;i<32;i++){SEQ[i].on=0;SEQ[i].a=0;SEQ[i].prob=1;SEQ[i].rat=1;SEQ[i].vel=.8;SEQ[i].oct=0;SEQ[i].note=-1;SEQ[i].noteOct=0;SEQ[i].fmMod=0;SEQ[i].foldMod=0}wcStepFoldMod=0;wcUpdateFolder();draw();syncStepEditor()};
+function refreshPresets(){const s=$('presetSelect');s.innerHTML='<option value="">— select —</option>';Object.keys(memoryPresets).sort().forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;s.appendChild(o)})}
+function currentState(){return {version:1,bpm:bpm,len:len,swing:swing,params:Object.fromEntries(Object.entries(P).map(([k,v])=>[k,v.v])),seq:JSON.parse(JSON.stringify(SEQ))}}
+function applyState(s){if(!s||typeof s!=='object')return;setBpm(s.bpm||136);len=Math.max(1,Math.min(16,Number(s.len)||16));$('lenSelect').value=String(len);swing=s.swing||0;$('swingRange').value=swing;if(s.params)for(const k in s.params){if(P[k]&&typeof s.params[k]==='number'){P[k].v=s.params[k];const selMap={wcComplexMode:'wcComplexModeSelect',wcModWave:'wcModWaveSelect',cWave:'waveSelect',pWidth:'pwRange',subWave:'subWaveSelect',fm2Wave:'fm2WaveSelect',noiseType:'noiseTypeSelect',ringWave:'ringWaveSelect',lfoWave:'lfoWaveSelect',dlySync:'dlySyncSelect',dlyDiv:'dlyDivSelect'};if(selMap[k]&&$(selMap[k])){$(selMap[k]).value=s.params[k]}if(knobEls[k]){knobEls[k].value=s.params[k];knobEls[k].dispatchEvent(new Event('input'))}}}['fx'].forEach(k=>{toggleGen(k+'On',k+'On',k+'Block')});if(typeof syncDlyRev==='function')syncDlyRev();if(Array.isArray(s.seq)){for(let i=0;i<32;i++){if(s.seq[i])SEQ[i]={...SEQ[i],...s.seq[i]}}}draw();syncStepEditor();if(A&&wcMod){wcMod.type=['sine','triangle','sawtooth','square'][P.wcModWave.v|0];wcComplexSync()}}
+$('saveBtn').onclick=async()=>{const name=($('presetName').value||'').trim();if(!name){$('err').textContent='Введите имя пресета';return}
+memoryPresets[name]=currentState();persistPresets();refreshPresets();$('presetSelect').value=name;
+if(window.showSaveFilePicker){try{const h=await window.showSaveFilePicker({suggestedName:name+'.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});const w=await h.createWritable();await w.write(JSON.stringify(currentState(),null,2));await w.close();$('err').textContent='Пресет сохранён: '+h.name}catch(e){$('err').textContent='Сохранено в памяти: '+name}}
+else{$('err').textContent='Сохранено: '+name+(persistPresets()?' · доступно после перезапуска':' · только до закрытия страницы')+' (EXPORT — резервный JSON-файл)'}};
+$('loadBtn').onclick=()=>{const name=$('presetSelect').value;if(!name||!memoryPresets[name]){$('err').textContent='Выберите пресет';return}applyState(JSON.parse(JSON.stringify(memoryPresets[name])));$('presetName').value=name;$('err').textContent='Загружено: '+name};
+$('deleteBtn').onclick=()=>{const name=$('presetSelect').value;if(!name||!memoryPresets[name]){$('err').textContent='Выберите пресет';return}delete memoryPresets[name];persistPresets();refreshPresets();$('err').textContent='Удалено: '+name};
+$('exportBtn').onclick=async()=>{try{const name=($('presetName').value||$('presetSelect').value||'preset').trim().replace(/[^\w\-]+/g,'_')||'preset';const data=JSON.stringify(currentState(),null,2);
+if(window.showSaveFilePicker){const h=await window.showSaveFilePicker({suggestedName:name+'.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});const w=await h.createWritable();await w.write(data);await w.close();$('pathInfo').textContent='EXPORT: сохранён '+h.name;$('err').textContent='Экспортировано: '+h.name}
+else{const blob=new Blob([data],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$('pathInfo').textContent='EXPORT: файл сохранён в Downloads: '+name+'.json';$('err').textContent='Экспортировано: '+name+'.json'}}catch(e){$('err').textContent='Ошибка экспорта: '+e.message}};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const s=JSON.parse(r.result);const name=(file.name||'imported').replace(/\.json$/i,'');memoryPresets[name]=s;persistPresets();refreshPresets();$('presetSelect').value=name;applyState(s);$('presetName').value=name;$('err').textContent='Импортировано: '+name}catch(err){$('err').textContent='Ошибка импорта: '+err.message}};r.onerror=()=>{$('err').textContent='Не удалось прочитать файл'};r.readAsText(file)});
+restorePresets();refreshPresets();
+</script>
+<style id="v49-requested-order">
+/* User-requested vertical signal-workflow layout */
+.main-layout{display:flex!important;flex-direction:column!important;gap:12px!important;align-items:stretch!important}
+.main-layout>.module,.main-layout>.seqmod{width:100%!important;box-sizing:border-box!important;margin:0!important;min-width:0!important}
+.main-layout>.top-controls-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(220px,.7fr)!important;gap:12px!important;align-items:stretch!important}
+.main-layout>.seqmod .seq{grid-template-columns:repeat(16,minmax(0,1fr))!important}
+.main-layout>.fx-eq-row{display:contents!important}
+.main-layout #fxBlock{order:0!important}
+.main-layout #stepEditBlock{order:0!important}
+@media(max-width:760px){.main-layout>.top-controls-row{grid-template-columns:1fr!important}.main-layout>.seqmod .seq{grid-template-columns:repeat(8,minmax(0,1fr))!important}}
+</style>
+<script id="v49-layout-order">
+document.addEventListener('DOMContentLoaded',function(){
+  const rack=document.querySelector('.rack'), main=document.querySelector('.main-layout');
+  if(!rack||!main)return;
+  const wc=document.querySelector('#wcBlock'), fx=document.querySelector('#fxBlock'), eq=document.querySelector('.module.eq'),
+        seq=document.querySelector('.seqmod'), ctl=document.querySelector('.seqctl'), step=document.querySelector('#stepEditBlock'), preset=document.querySelector('.preset-panel');
+  if(!wc||!fx||!eq||!seq||!ctl||!step||!preset)return;
+  const row=document.createElement('div'); row.className='top-controls-row';
+  row.append(ctl);
+  main.replaceChildren(row,seq,wc,fx,eq,step);
+  /* Put the remaining sound-generation modules after the requested core workflow. */
+  const rest=[...rack.querySelectorAll(':scope > section.module')].filter(el=>!el.matches('#wcBlock,#fxBlock,.eq,.seqctl,#stepEditBlock,.preset-panel'));
+  rest.forEach(el=>main.appendChild(el));
+  main.appendChild(preset); // v59: move PRESETS to the very bottom; leave v53 layout otherwise unchanged
+});
+</script>
+
+<style id="v60-single-row-16-steps">
+/* v60: show exactly 16 sequencer pads, always on one horizontal row */
+.seqmod{width:100%!important;min-width:0!important;overflow-x:auto!important;box-sizing:border-box!important}
+.seqmod .seq,#seq{display:grid!important;grid-template-columns:repeat(16,minmax(42px,1fr))!important;grid-auto-flow:column!important;grid-auto-columns:minmax(42px,1fr)!important;gap:4px!important;width:100%!important;min-width:760px!important;box-sizing:border-box!important;overflow:visible!important}
+.seqmod .step{height:42px!important;min-width:0!important;font-size:8px!important}
+@media(max-width:760px){.seqmod .seq,#seq{grid-template-columns:repeat(16,minmax(42px,1fr))!important;min-width:760px!important}.seqmod .step{height:38px!important}}
+</style>
+
+<style id="v70-wavefolder-live-oscilloscopes">
+.wave-scope-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.wave-scope-box{min-width:0;border:1px solid #493b27;border-radius:4px;background:#0b100e;padding:7px}
+.wave-scope-label{display:flex;justify-content:space-between;gap:6px;color:#e9c17e;font:9px/1.3 monospace;letter-spacing:.08em;margin-bottom:5px}
+.wave-scope-label span{color:#8b9b8f}
+.wave-scope-box canvas{display:block;width:100%;height:100px;background:linear-gradient(#101a15,#0a0f0d);border:1px solid #263a2d}
+@media(max-width:560px){.wave-scope-grid{grid-template-columns:1fr}.wave-scope-box canvas{height:90px}}
+</style>
+<script id="v70-wavefolder-scope-renderer">
+function wcDrawScope(canvas,analyser,color){
+ if(!canvas||!analyser)return;const ctx=canvas.getContext('2d');if(!ctx)return;const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#0a100d';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#20352a';ctx.lineWidth=1;ctx.beginPath();for(let x=0;x<w;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,h)}for(let y=0;y<h;y+=25){ctx.moveTo(0,y);ctx.lineTo(w,y)}ctx.stroke();ctx.strokeStyle='#465b4b';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();const data=new Uint8Array(analyser.fftSize);analyser.getByteTimeDomainData(data);ctx.strokeStyle=color;ctx.lineWidth=1.8;ctx.beginPath();for(let i=0;i<data.length;i++){const x=i/(data.length-1)*w,y=(data[i]/255)*h;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();
+}
+function wcStartWavefolderScopes(){if(wcScopeFrame)cancelAnimationFrame(wcScopeFrame);const draw=()=>{wcDrawScope(document.getElementById('wfScopePre'),wcScopePre,'#e9b45e');wcDrawScope(document.getElementById('wfScopePost'),wcScopePost,'#81d6a6');wcScopeFrame=requestAnimationFrame(draw)};draw()}
+</script>
+
+</body></html><style id="v61-sequencer-control-one-line">
+/* Keep every SEQUENCER CONTROL element on one horizontal line */
+.right-column .sequencer-layout>.seqctl{width:100%!important;min-width:0!important;box-sizing:border-box!important;overflow-x:auto!important;overflow-y:hidden!important}
+.right-column .sequencer-layout>.seqctl .buttons{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;width:max-content!important;min-width:100%!important;margin:8px 0 0!important;white-space:nowrap!important;overflow:visible!important}
+.right-column .sequencer-layout>.seqctl .buttons>*{flex:0 0 auto!important;margin-top:0!important;margin-bottom:0!important}
+.right-column .sequencer-layout>.seqctl .btn{padding:6px 9px!important;font-size:10px!important;white-space:nowrap!important}
+.right-column .sequencer-layout>.seqctl .bpm{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:5px!important;padding:4px 6px!important;white-space:nowrap!important}
+.right-column .sequencer-layout>.seqctl .bpm label{white-space:nowrap!important;font-size:9px!important}
+.right-column .sequencer-layout>.seqctl #bpmRange{width:72px!important}
+.right-column .sequencer-layout>.seqctl #swingRange{width:65px!important}
+.right-column .sequencer-layout>.seqctl #bpmInput{width:48px!important;box-sizing:border-box!important}
+.right-column .sequencer-layout>.seqctl #wavQuality{max-width:92px!important;font-size:9px!important}
+.right-column .sequencer-layout>.seqctl #recordStatus{min-width:0!important;max-width:100px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+</style>
+
+<style id="v63-complex-osc-polish">
+.wc #wcKnobs .knob{min-width:0}.wc #wcKnobs .knob label{letter-spacing:.035em}.wc #wcKnobs input[type=range]{accent-color:#e9a23b}.wc #wcKnobs select{max-width:100%}#wcKnobs+div label{color:#d8b36d!important;font-size:9px;letter-spacing:.08em}#wcKnobs+div select{min-height:25px;padding:3px 6px}#wcKnobs+div span{font-size:9px;color:#aeb0b2!important}
+</style>
+
+<style id="v64-complex-osc-separated-module">
+#complexOscModule{margin-top:12px;padding:10px 12px 9px;border:1px solid #6d5730;border-left:3px solid #e9a23b;border-radius:5px;background:linear-gradient(135deg,rgba(38,34,25,.96),rgba(14,19,17,.98));box-shadow:inset 0 1px 0 rgba(255,220,150,.08),0 4px 12px rgba(0,0,0,.2)}
+#complexOscModule .complex-osc-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid rgba(233,162,59,.25);font-size:11px;letter-spacing:.09em;color:#f1d6a1}
+#complexOscModule .complex-new-tag{font-size:8px;font-weight:800;letter-spacing:.12em;color:#17130b;background:#e9a23b;border-radius:2px;padding:3px 5px}
+#complexOscModule .complex-osc-subtitle{margin-left:auto;font-size:9px;color:#a9b9ae;letter-spacing:.04em}
+#complexOscModule .complex-osc-controls{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+#complexOscModule .complex-osc-select{display:flex;flex-direction:column;gap:5px;min-width:110px}
+#complexOscModule .complex-osc-select label{font-size:9px;letter-spacing:.08em;color:#d5b879}
+#complexOscModule select{background:#101714;color:#b8edca;border:1px solid #5b674d;border-radius:3px;padding:5px 7px;font:inherit;min-height:27px}
+#complexOscModule .complex-osc-knobs{display:flex;align-items:flex-start;gap:10px;flex:1;flex-wrap:wrap}
+#complexOscModule .complex-osc-knobs .knob{min-width:76px}
+#complexOscModule .complex-osc-knobs .knob label{color:#e0c58e;font-size:9px;letter-spacing:.04em}
+#complexOscModule input[type=range]{accent-color:#e9a23b}
+#complexOscModule .complex-osc-note{font-size:9px;color:#8d9c91;margin-top:8px;letter-spacing:.025em}
+@media(max-width:600px){#complexOscModule .complex-osc-controls{gap:8px}#complexOscModule .complex-osc-select{flex:1;min-width:100px}#complexOscModule .complex-osc-knobs{flex-basis:100%}}
+</style>
+
+<style id="v65-fm-envelope-style">
+#complexOscModule .complex-env-label{margin-top:9px;padding:7px 9px;border-left:2px solid #e9a23b;background:rgba(233,162,59,.07);color:#e8c98f;font-size:9px;letter-spacing:.06em;text-transform:uppercase}
+#complexOscModule #complexOscKnobs .knob{min-width:78px}
+</style>
+
+
+<style id="v67-complex-osc-multirow-layout">
+/* Multi-row hardware layout: selectors at the top, controls grouped below. */
+#complexOscModule .complex-osc-controls{display:grid;grid-template-columns:repeat(2,minmax(145px,1fr));align-items:start;gap:10px 14px}
+#complexOscModule .complex-osc-select{min-width:0;width:100%}
+#complexOscModule .complex-osc-knobs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(76px,1fr));align-items:start;gap:14px 10px;width:100%;min-width:0}
+#complexOscModule .complex-osc-knobs .knob{min-width:0;width:100%;box-sizing:border-box}
+#complexOscModule .complex-osc-knobs .knob label{display:block;min-height:2.2em;line-height:1.2;overflow-wrap:anywhere}
+#complexOscModule .complex-env-label{margin-top:8px}
+@media(max-width:720px){#complexOscModule .complex-osc-knobs{grid-template-columns:repeat(3,minmax(70px,1fr));gap:12px 8px}}
+@media(max-width:480px){#complexOscModule .complex-osc-controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#complexOscModule .complex-osc-knobs{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px}#complexOscModule .complex-osc-knobs .knob label{min-height:0}}
+</style>
+
+<style id="v82-horizontal-sound-modules">
+/* v82: place the four sound modules side-by-side; compact controls, no audio changes. */
+.sound-module-row{display:grid!important;grid-template-columns:minmax(0,1.2fr) minmax(0,0.933fr) minmax(0,0.933fr) minmax(0,0.933fr)!important;gap:8px!important;align-items:start!important;width:100%!important;min-width:0!important;margin:0 0 12px!important}
+.sound-module-row>#wcBlock,.sound-module-row>.complex-osc-module,.sound-module-row>.wavefolder-module{min-width:0!important;width:100%!important;box-sizing:border-box!important;margin:0!important;padding:8px!important;overflow:hidden}
+.sound-module-row #wcBlock h2{font-size:12px!important;line-height:1.4!important}
+.sound-module-row .knobs,.sound-module-row .complex-osc-knobs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}
+.sound-module-row .wavefolder-controls{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}
+.sound-module-row .wave-scope-grid{grid-template-columns:minmax(0,1fr)!important;gap:5px!important}
+.sound-module-row .wave-scope-box canvas{width:100%!important;height:54px!important}
+.sound-module-row .complex-osc-head,.sound-module-row .wavefolder-head{font-size:10px!important;gap:5px!important;letter-spacing:.04em!important}
+.sound-module-row .complex-osc-note,.sound-module-row .complex-env-label,.sound-module-row .wavefolder-note{font-size:9px!important;line-height:1.3!important}
+.sound-module-row .sw,.sound-module-row select,.sound-module-row .port{font-size:9px!important;padding:2px 4px!important}
+@media(max-width:1100px){.sound-module-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:620px){.sound-module-row{grid-template-columns:minmax(0,1fr)!important}}
+
+/* v91 experimental sequencer motion controls */
+.motion-panel{margin:10px 0;padding:12px;border:1px solid #a34cff;border-radius:10px;background:linear-gradient(135deg,rgba(100,30,160,.16),rgba(10,20,35,.8));}
+.motion-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;color:#e0c5ff;font-size:12px;font-weight:800;letter-spacing:.08em}
+.motion-grid{display:grid;grid-template-columns:repeat(3,minmax(100px,1fr));gap:10px}
+.motion-control{display:flex;flex-direction:column;gap:5px;font-size:10px;color:#d8c9ed}
+.motion-control input{width:100%;min-width:0;accent-color:#c45cff}
+.motion-status{font-size:10px;color:#c7b0e8;margin-top:8px}
+@media(max-width:600px){.motion-grid{grid-template-columns:repeat(2,minmax(90px,1fr))}}
+</style>
+<script id="v83-horizontal-module-placement">
+/* Run after the synth's own setup. Reparent only the four visual modules; audio graph and controls are unchanged. */
+document.addEventListener('DOMContentLoaded',function(){
+  const wc=document.getElementById('wcBlock'), main=document.querySelector('.main-layout');
+  const complex=document.getElementById('complexOscModule'), folder=document.getElementById('wavefolderModule'), lpg=document.getElementById('lpgModule');
+  if(!wc||!main||!complex||!folder||!lpg)return;
+  const row=document.createElement('div'); row.className='sound-module-row';
+  wc.parentNode.insertBefore(row,wc);
+  row.append(wc,complex,folder,lpg);
+});
+</script>
