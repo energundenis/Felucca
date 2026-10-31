@@ -45,7 +45,7 @@ Temporary oscillator settings in the adapter are compile/test scaffolding only. 
 ## 3. Host tests
 
 `tests/metal_complex_fm_test.c` now includes the actual pinned `engine_t` header, the core, and the adapter with a minimal host track/memory shim. It checks:
-- callback pointers and descriptor memory/poly fields;
+- callback pointers and descriptor memory/poly fields, including the mandatory non-resetting `note_on` hook;
 - first-block initialization from zeroed host memory;
 - active render advances phases and delay once;
 - post does not double-advance after active render;
@@ -55,7 +55,19 @@ Temporary oscillator settings in the adapter are compile/test scaffolding only. 
 
 The previous state-machine test now explicitly zeroes its test structs before calling the initialization helper. Production initialization relies on Felucca's documented zeroed per-part pool; it no longer clears the whole feedback ring in the first audio callback.
 
-## 4. Build boundary
+## 4. Note and engine-switch lifecycle audit
+
+Additional source audit of `firmware/src/voice.c` and `firmware/src/engines.c`:
+
+- `voice_start()` calls `e->note_on(t, v)` unconditionally. The adapter therefore provides a no-op hook rather than NULL.
+- On a sounding retrigger, the host restores `voice_t.ph[0..2]` after `note_on` for non-sampled engines. The METAL CORE phase and feedback ring are separate per-part state and are left untouched by the no-op hook.
+- `trk_nvoice()` uses `engine_t.poly` as the cap for POLY and UNISON. `.poly = 1` therefore limits the adapter to one host voice in those modes; MONO/LEGATO continue through the host's existing mono path.
+- During an engine switch, `engine_block()` claims the new engine's memory after the old engine fade. If another memory-using engine owns the region, `eng_mem_claim()` zeroes the new engine's declared `mem` bytes. A memoryless engine does not claim or clear the region, so switching through one preserves the previous memory-using engine's state, matching Felucca's documented memory semantics.
+- The adapter does not add custom note-off or engine-switch hooks. Note release remains the host ADSR's responsibility; the per-part oscillators and feedback delay continue through silent blocks while METAL CORE remains the selected engine.
+
+These are source-audit conclusions, not a target-device test.
+
+## 5. Build boundary
 
 What is tested:
 - C compilation of the adapter against the actual `engine_t` interface;
@@ -74,9 +86,9 @@ Felucca's documented full build needs the JieLi pi32v2 toolchain, AC79 SDK and o
 
 No engine registration, flashing, SysEx, device access, flash write, erase or restore has occurred.
 
-## 5. Next gate
+## 6. Next gate
 
 1. The host callback tests and full `engines.c` syntax-only harness now pass.
-2. Audit note lifecycle and host mode behavior for the one-voice cap, including retrigger and engine switch.
+2. Note/retrigger and one-voice-cap behavior have been source-audited; next audit the parameter handoff and engine-switch persistence in a dedicated host regression.
 3. Resolve the v98 FOLLOW/MOD RATIO discrepancy and freeze parameter semantics.
 4. Only then prepare a separate reviewable integration change. Keep `ENGINES[]` registration and UI changes gated behind explicit review.
