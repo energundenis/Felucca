@@ -24,13 +24,13 @@ static void signed_step(void)
     uint32_t base = pitch_inc(60 * 16);
     int32_t positive = metal_core_fm_instantaneous_step(base, (uint64_t)base, 16384);
     int32_t negative = metal_core_fm_instantaneous_step(base, (uint64_t)base, -16384);
-    int32_t high = metal_core_fm_instantaneous_step(base, (uint64_t)base * 8u, 32767);
-    int32_t low = metal_core_fm_instantaneous_step(base, (uint64_t)base * 8u, -32768);
+    int32_t high = metal_core_fm_instantaneous_step(base, (uint64_t)base * 64u, 32767);
+    int32_t low = metal_core_fm_instantaneous_step(base, (uint64_t)base * 64u, -32768);
 
     check("positive modulator raises instantaneous frequency", (uint32_t)positive > base);
     check("negative modulator lowers instantaneous frequency", negative < (int32_t)base);
     check("FM can reverse carrier direction", negative < (int32_t)base && 
-          metal_core_fm_instantaneous_step(base, (uint64_t)base * 8u, -32768) < 0);
+          metal_core_fm_instantaneous_step(base, (uint64_t)base * 64u, -32768) < 0);
     check("positive instantaneous step is bounded below Nyquist", high == 0x7FFFFFFF);
     check("negative instantaneous step is bounded below negative Nyquist", low == -0x7FFFFFFF);
 
