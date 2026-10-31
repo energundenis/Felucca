@@ -54,7 +54,7 @@ The JSON capture includes firmware version, advertised sequencer dimensions, tra
 Run the pure protocol/codec tests (no FM-1 connection needed):
 
 \`\`\`sh
-python3 -m unittest tests/test_fm1_readonly_probe.py -v
+python3 tests/test_fm1_readonly_probe.py -v
 \`\`\`
 
 These tests validate parsing and the read-only command guard. They do not establish that a particular physical device/firmware build responds correctly; that must be confirmed by a real read-only capture.
