@@ -580,3 +580,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added [CP2.17 optimization audit](ENERGUN_METAL_CORE_CP2_17_OWNENV_LIFECYCLE_OPTIMIZATION.md). CI artifact 13052638568; SHA-256 `449a994f099b6f828028ede92646fb96008ccb4520b005746561087d0f1e2112`.
 - The target-budget metric is a static cost estimate, not cycle-accurate timing or runtime CPU measurement. AC79 cycle benchmark, integrated ENERGUN render tests, per-part memory placement, manual/performance Gate mapping and complete engine integration remain open.
 - No engine registration, parameter/UI/storage/Flash/package changes, factory firmware changes, physical-device writes or flashing. `main` remains untouched.
+
+
+## CP2.18 — VCA engine-integration preparation (2026-10-31)
+
+- Added [CP2.18 VCA integration preparation](ENERGUN_METAL_CORE_CP2_18_VCA_INTEGRATION_PREPARATION.md); preparation commit `55012e8b78fe5593f9347a1aeab8ca1834bbb1a0`.
+- Re-audited the pinned Felucca-Engines API (`d0260074ce100a47675814b7f38d61f11176c926)), current `voice.c` ownenv path, FM6's ownenv implementation pattern, and the per-part `ENG_MEM` ownership model.
+- Proposed VCA placement: eight `eng_metal_vca_t` objects in the METAL CORE part's engine memory, 36 bytes each = 288 bytes per part, not in `voice_t.s[8]` (32 bytes). The final full engine state still requires `ENG_MEM_FITS` and whole-state accounting.
+- Defined callback responsibilities: `note_on` prepares/retriggers the internal contour; `render` processes VCA sample-by-sample after LPG and multiplies the host `m.amp0/amp1` ramp so LFO-to-AMP and engine-switch fade remain active; `done` retires the host voice only after internal VCA idle. Do not use `engine_t.amp()` as a second VCA path.
+- Identified three behavior blockers that must be resolved before wiring the VCA: (1) manual/performance versus sequencer Gate mode mapping; (2) explicit Accent provenance (host velocity is not a reliable substitute for sequencer ACCENT); (3) current host callback exposes Gate state at block entry, not a sub-block note-off sample offset.
+- Added 14 engine-level VCA integration tests covering note lifecycle, retrigger, short Gate, done boundary, stage-4 steal, LFO/fade multiplication, additive output, state indexing, memory, engine switching, voice budget and target cost.
+- CP2.18 is a design/source-audit milestone only. No engine callbacks, registration, DSP render chain, parameter IDs, UI, storage/Flash, firmware package or device state changed. The engine remains unregistered; no device flashing. `main` and factory firmware remain untouched.
+- Next implementation gate: resolve the three behavior blockers, add explicit host Gate-off support to the isolated VCA with tests, then build a VCA-only host integration harness before combining it with the full METAL CORE DSP chain.
