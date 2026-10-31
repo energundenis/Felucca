@@ -78,6 +78,13 @@ static void block_render(void)
     check("wcMod phase advances exactly one block", v.ph[2] == start + CTL * inc);
     check("wcMod block does not write beyond CTL", out[CTL] == 0x2468ACE0);
 
+    memset(&v, 0, sizeof v);
+    metal_core_modulator_block(&v, out, CTL, &m, 0u, MC_MOD_SINE);
+    check("MOD RATIO input clamps to v98 minimum 0.25", v.ph[2] == CTL * metal_core_ratio_increment(m.inc, 1u << 14));
+    memset(&v, 0, sizeof v);
+    metal_core_modulator_block(&v, out, CTL, &m, 17u << 16, MC_MOD_SINE);
+    check("MOD RATIO input clamps to v98 maximum 16.0", v.ph[2] == CTL * metal_core_ratio_increment(m.inc, 16u << 16));
+
     {
         uint32_t before = v.ph[2];
         metal_core_modulator_block(&v, out, 0, &m, 201195u, MC_MOD_SINE);
