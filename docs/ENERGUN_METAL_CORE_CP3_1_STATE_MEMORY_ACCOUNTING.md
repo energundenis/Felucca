@@ -33,7 +33,7 @@ The host already supplies three phase words in `voice_t.ph[3]`. The provisional 
 - one 36-byte VCA state;
 - one 24-byte LPG envelope state.
 
-The compile-time probe's provisional record is 72 bytes per voice:
+The compile-time probe's initial provisional record is 72 bytes per voice:
 - 8 bytes: two additional phase accumulators;
 - 4 bytes: feedback write cursor;
 - 36 bytes: VCA;
@@ -56,7 +56,47 @@ The v98 Complex Oscillator feedback path uses a 3 ms delay. A fixed int32 ring p
 
 The ring memory is part-scoped and indexed by host voice slot. It is statically allocated inside the engine memory request; no render-time allocation is permitted.
 
-## 5. Known subtotal and headroom
+## 5. Filter and FM-envelope state: provisional representation
+
+The protected v98 reference instantiates two independent low-pass biquads in series:
+- the main low-pass filter (`wcFilt`), with user CUTOFF / RESONANCE;
+- the LPG low-pass filter (`wcLpgFilter`), with a per-trigger cutoff transient and return toward main CUTOFF.
+
+They cannot share integrator state. For a bounded fixed-point Direct Form II Transposed implementation, the minimum audio-history state is two 32-bit delay values per biquad. This yields four int32 values = 16 bytes per voice for the two filters. Coefficients are part-scoped / block-updated data, not duplicated per voice in this subtotal. This is a proposed implementation format, not an implemented filter or a target-verified numeric format.
+
+The Complex FM-index envelope is independent from both filters, the LPG gain envelope and the VCA. The v98 source specifies base, peak = base × (1 + FM ENV AMT × 4), attack and decay. A provisional 24-byte record (level, base, peak, attack/decay coefficient or timing fields, remaining counter and phase) is reserved per voice for accounting only. Its exact field semantics and time-constant mapping remain to be frozen before DSP implementation.
+
+Adding these provisional states to the prior 72-byte lower-bound voice record gives:
+- 72 bytes: two extra oscillator phases, feedback cursor, VCA and LPG gain envelope;
+- 16 bytes: two independent biquad history pairs;
+- 24 bytes: Complex FM-index envelope candidate;
+- **112 bytes per voice / 896 bytes per part for eight voice slots.**
+
+Combined with the 3 ms int32 feedback rings, the expanded known subtotal is:
+
+| Sample rate | Provisional voice records | Feedback rings | Expanded subtotal | Remaining in 12,888-byte pool |
+|---:|---:|---:|---:|---:|
+| 44.1 kHz | 896 | 4,256 | 5,152 | 7,736 |
+| 48 kHz | 896 | 4,608 | 5,504 | 7,384 |
+| 96 kHz | 896 | 9,216 | 10,112 | 2,776 |
+| 192 kHz | 896 | 18,432 | 19,328 | exceeds pool by 6,440 |
+
+The 96 kHz configuration now has only 2,776 bytes remaining before per-part coefficient tables, parameter smoothing, alignment, oscillator/wavefolder scratch, and any additional state. Treat 96 kHz as high risk and not approved for V1 until the full part structure and target compiler assertions pass. 44.1 kHz remains the only initial target in the CP1.9 recommendation.
+
+The host reference's BiquadFilter is a Web Audio implementation; the 2-state fixed-point proposal is not asserted bit-equivalent. The fixed-point filter algorithm, coefficient quantization, resonance stability and cutoff modulation must pass LPG-01/LPG-02 before integration.
+
+## 6. Explicitly unbudgeted state
+
+The following cannot yet be honestly assigned exact bytes because the target algorithm/layout is not frozen:
+- per-part filter coefficient caches and cutoff/resonance smoothing;
+- oscillator increment/smoothing and FM/AM mode-transition state;
+- wavefolder oversampling scratch and interpolation history;
+- block-level control snapshots and any per-part modulation values;
+- alignment padding for the final production part-state structure.
+
+Do not hide these in the remaining headroom or count them as zero. The current expanded subtotal is a conservative state inventory candidate, not the complete engine memory requirement.
+
+## 7. Known subtotal and headroom
 
 Combining only the 72-byte provisional record and the 3 ms int32 delay rings:
 
@@ -71,7 +111,7 @@ The 13,344-byte ADPCM-enabled pool adds 456 bytes of headroom, but does not chan
 
 At 96 kHz only 3,096 bytes remain before filter states, FM envelope state, alignment, and any other engine state. 96 kHz remains conditional on completing the full layout and target build assertions; it is not yet approved.
 
-## 6. Retrigger and lifecycle ownership
+## 8. Retrigger and lifecycle ownership
 
 - Host `voice_t.ph[3]` phase continuity is separately preserved by Felucca during retrigger.
 - The two extra METAL oscillator phases, feedback cursor/ring contents, VCA and LPG state live in `engine_t.mem`; the host does not automatically preserve them.
@@ -79,7 +119,7 @@ At 96 kHz only 3,096 bytes remain before filter states, FM envelope state, align
 - VCA retrigger uses cancel-and-hold; LPG retrigger also holds its current level. The feedback delay ring policy is not yet source-verified and must not be assumed to clear or persist.
 - `ownenv=1` remains the approved VCA ownership contract. Host amplitude ramps / engine-switch fades must still be multiplied exactly once.
 
-## 7. Remaining CP3.1 blockers
+## 9. Remaining CP3.1 blockers
 
 1. Freeze the main filter state representation and its fixed-point limits.
 2. Freeze the LPG biquad state representation; the 24-byte LPG envelope is not the LPG filter.
@@ -89,7 +129,7 @@ At 96 kHz only 3,096 bytes remain before filter states, FM envelope state, align
 6. Add compile-time and target-build evidence for the final structure before production engine registration.
 7. Preserve the current `voice_t` ABI and do not allocate dynamically.
 
-## 8. Disposition
+## 10. Disposition
 
 CP3.1 is **partially advanced**, not closed. The exact primitive sizes, five-phase requirement, feedback-ring budget and sample-rate limits are now independently testable. The complete engine memory total and final state ownership remain open.
 
