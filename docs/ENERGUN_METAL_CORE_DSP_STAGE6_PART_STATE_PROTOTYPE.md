@@ -2,7 +2,7 @@
 
 Date: 2026-10-31
 Branch: `metal-core-dsp-stage1-osc`
-Status: isolated per-part state machine implemented and host-tested. Not yet wired to `engine_t.mem`, `engine_t.block`, or `engine_t.post`.
+Status: historical initial state-machine checkpoint. Superseded by DSP Stage 7, which adds an unregistered callback adapter targeting `engine_t.mem`, `engine_t.block`, and `engine_t.post`. See [Stage 7](ENERGUN_METAL_CORE_DSP_STAGE7_FELUCCA_ADAPTER_AUDIT.md).
 
 ## 1. Why a per-part state is required
 
