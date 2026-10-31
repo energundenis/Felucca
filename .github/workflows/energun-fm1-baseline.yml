@@ -1,0 +1,107 @@
+name: ENERGUN FM-1 CORE baseline build
+
+on:
+  push:
+    branches:
+      - energun-metal-core
+    paths:
+      - ".github/workflows/energun-fm1-baseline.yml"
+      - "firmware/**"
+      - "tools/**"
+      - "tests/**"
+      - "build.sh"
+      - "BUILDING.md"
+      - ".gitmodules"
+  pull_request:
+    branches:
+      - energun-metal-core
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: energun-fm1-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: Linux x86-64 firmware build and host regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out branch and pinned submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Record source and submodule revisions
+        run: |
+          git rev-parse HEAD
+          git submodule status --recursive
+          git status --short --branch
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Set up Node.js for web regression tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install build-time Python dependencies
+        run: python -m pip install --upgrade Pillow fonttools
+
+      - name: Install JieLi pi32v2 toolchain
+        run: |
+          sh tools/get_toolchain.sh "$HOME/.jieli"
+          "$HOME/.jieli/toolchain/pi32v2/bin/clang" --version
+
+      - name: Fetch the documented JieLi AC79 SDK
+        run: |
+          git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
+            https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+          test -f "$HOME/fw-AC79_AIoT_SDK/cpu/wl82/tools/uboot.boot"
+          echo "AC79_SDK=$HOME/fw-AC79_AIoT_SDK" >> "$GITHUB_ENV"
+
+      - name: Build unmodified Felucca firmware
+        run: ./build.sh
+
+      - name: Run Felucca host and web regression tests
+        run: tests/run_tests.sh
+
+      - name: Record build outputs and sizes
+        if: always()
+        run: |
+          {
+            echo "## Build outputs"
+            for f in build/felucca.bin build/loader/ota.bin build/felucca.fwsc; do
+              if [ -f "$f" ]; then
+                ls -lh "$f"
+                sha256sum "$f"
+              else
+                echo "Not produced: $f"
+              fi
+            done
+            echo
+            echo "## Toolchain"
+            "$HOME/.jieli/toolchain/pi32v2/bin/clang" --version || true
+            echo
+            echo "## Submodules"
+            git submodule status --recursive || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload experimental build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: energun-fm1-baseline-${{ github.sha }}
+          path: |
+            build/felucca.bin
+            build/loader/ota.bin
+            build/felucca.fwsc
+            build/release-*/SHA256SUMS
+          if-no-files-found: ignore
+          retention-days: 14
