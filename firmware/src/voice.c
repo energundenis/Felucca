@@ -417,8 +417,8 @@ static void trk_note_on_source(track_t *t, uint32_t note, uint32_t vel, uint32_t
         if (i == t->xp_n && t->xp_n < 4u)
             t->xp_n++;
         i = i < t->xp_n ? i : t->xp_n - 1u;             /* (full: the last one is replaced) */
-        t->xp_note[i] = (uint8_t)((note & 0x7Fu) | ((source & 1u) << 7));
-        t->xp_vel[i] = (uint8_t)vel;
+        t->xp_note[i] = (uint8_t)((note & 0x7Fu) | ((source & NOTE_SRC_MASK) << 7));
+        t->xp_vel[i] = (uint8_t)((vel > 127u ? 127u : vel) | ((source & NOTE_META_ACCENT) ? 0x80u : 0u));
         return;
     }
     vel = mod_note(t, note, vel);                       /* the matrix's VEL / KEY / RAND (1.5.6: VEL as a destination) */
@@ -548,7 +548,9 @@ static void engine_block(track_t *t)
             uint32_t n = t->xp_n;
             t->xp_n = 0;
             for (i = 0; i < n; i++)
-                trk_note_on_source(t, t->xp_note[i] & 0x7Fu, t->xp_vel[i], t->xp_note[i] >> 7);
+                trk_note_on_source(t, t->xp_note[i] & 0x7Fu, t->xp_vel[i] & 0x7Fu,
+                                  ((t->xp_note[i] >> 7) & NOTE_SRC_MASK) |
+                                  ((t->xp_vel[i] & 0x80u) ? NOTE_META_ACCENT : 0u));
         }
     }
     eng_mem_claim(t);                                   /* (an engine set directly: power-on, a test) */
