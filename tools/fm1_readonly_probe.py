@@ -19,7 +19,12 @@ from typing import Any
 HEADER = (0x7D, 0x46, 0x4C)
 CMD_INFO = 1
 CMD_TRACK = 27
+CMD_TRACK_DUMP = 29
 CMD_TRACK_STEP = 30
+# Stable Felucca 1.7.0 common parameter IDs, verified against firmware/src/core.h.
+P_ROOT, P_SCALE, P_QUANT, P_SLEN, P_SGATE = 25, 26, 27, 29, 32
+SCALE_NAMES = ["CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", "MPEN", "HARM", "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH"]
+QUANT_NAMES = ["OFF", "SNAP", "WHITE", "SEQ", "SEQ+T"]
 NSTEP_MAX = 64
 NTRACK_MAX = 4
 
@@ -88,6 +93,34 @@ def parse_track(payload: list[int]) -> dict[str, Any]:
     return {"selected_track": selected, "track_count": count, "tracks": tracks}
 
 
+def parse_track_dump(payload: list[int], expected_track: int, parameter_count: int, engine_names: list[str]) -> dict[str, Any]:
+    expected_length = 3 + parameter_count * 2
+    if len(payload) != expected_length or payload[0] != expected_track:
+        raise ValueError("TRACK_DUMP reply has an invalid track or length")
+    engine, preset = payload[1:3]
+    values = [decode_v14(payload[3 + i * 2], payload[4 + i * 2]) for i in range(parameter_count)]
+    if len(values) <= P_SGATE:
+        raise ValueError("TRACK_DUMP does not contain the audited sequencer parameter IDs")
+    root, scale, quant, length, gate = values[P_ROOT], values[P_SCALE], values[P_QUANT], values[P_SLEN], values[P_SGATE]
+    return {
+        "track": expected_track,
+        "engine_id": engine,
+        "engine_name": engine_names[engine] if engine < len(engine_names) else f"ENGINE_{engine}",
+        "preset": preset,
+        "parameter_count": parameter_count,
+        "sequencer_parameters": {
+            "P_ROOT": root,
+            "P_SCALE": scale,
+            "P_SCALE_name": SCALE_NAMES[scale] if 0 <= scale < len(SCALE_NAMES) else "UNKNOWN",
+            "P_QUANT": quant,
+            "P_QUANT_name": QUANT_NAMES[quant] if 0 <= quant < len(QUANT_NAMES) else "UNKNOWN",
+            "P_SLEN": length,
+            "P_SGATE": gate,
+        },
+        "all_parameter_values": values,
+    }
+
+
 def parse_step(payload: list[int]) -> dict[str, Any]:
     # TRACK_STEP reply: track, index, then the 15-byte v1.5.5 step record.
     if len(payload) != 17:
@@ -130,7 +163,7 @@ class ReadOnlyProbe:
         self.timeout = timeout
 
     def request(self, command: int, args: list[int] | None = None) -> list[int]:
-        if command not in (CMD_INFO, CMD_TRACK, CMD_TRACK_STEP):
+        if command not in (CMD_INFO, CMD_TRACK, CMD_TRACK_DUMP, CMD_TRACK_STEP):
             raise ValueError("safety guard: this probe permits read-only commands only")
         args = args or []
         if any(not isinstance(v, int) or v < 0 or v > 127 for v in args):
@@ -174,7 +207,12 @@ class ReadOnlyProbe:
             raise ValueError(f"track must be in the range 0..{ntracks - 1}")
 
         patterns: dict[str, list[dict[str, Any]]] = {}
+        parameter_snapshots: dict[str, dict[str, Any]] = {}
         for t in selected_tracks:
+            dump_payload = self.request(CMD_TRACK_DUMP, [t])
+            parameter_snapshots[str(t)] = parse_track_dump(
+                dump_payload, t, int(info["track_parameter_count"]), info["engines"]
+            )
             steps = []
             for index in range(nstep):
                 payload = self.request(CMD_TRACK_STEP, [t, index])
@@ -196,6 +234,7 @@ class ReadOnlyProbe:
             "track_state": tracks,
             "captured_tracks": selected_tracks,
             "steps_per_track": nstep,
+            "track_parameters": parameter_snapshots,
             "patterns": patterns,
         }
 
