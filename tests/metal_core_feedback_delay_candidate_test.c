@@ -4,11 +4,12 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include "metal_core_feedback_delay_candidate.h"
 #include "eng_metal_core_vca.h"
 
 #define CHECK(c, m) do { if (!(c)) { \
-    fprintf(stderr, "FAIL: %s (line %d)\n", (m), __LINE__); ++failures; \
+    fprintf(stderr, "FAIL: %s (line %d)\\n", (m), __LINE__); ++failures; \
 } } while (0)
 
 static int failures;
@@ -21,12 +22,59 @@ static void feedback_note_on_candidate(test_metal_feedback_delay_t *delay,
         test_metal_feedback_delay_reset(delay);
 }
 
+static int64_t abs_i32(int32_t value)
+{
+    return value < 0 ? -(int64_t)value : (int64_t)value;
+}
+
+/* Test-only closed loop: delayed sample -> gain -> delay input.
+ * Division is intentional here: the harness checks bounded behavior, not
+ * the exact rounding policy of a future production feedback multiplier.
+ */
+static uint32_t run_feedback_loop(uint16_t gain_q15, int32_t impulse,
+                                 int64_t *first_echo, int64_t *tail_peak)
+{
+    test_metal_feedback_delay_t delay;
+    uint32_t n, hash = 2166136261u;
+    *first_echo = 0;
+    *tail_peak = 0;
+    test_metal_feedback_delay_reset(&delay);
+
+    for (n = 0; n < 8192u; ++n) {
+        int32_t delayed = test_metal_feedback_delay_read(&delay);
+        int64_t feedback = ((int64_t)delayed * gain_q15) / 32768;
+        int64_t input = feedback + (n == 0u ? impulse : 0);
+
+        CHECK(input <= INT32_MAX && input >= INT32_MIN,
+              "feedback loop must not overflow int32");
+        if (input > INT32_MAX) input = INT32_MAX;
+        if (input < INT32_MIN) input = INT32_MIN;
+        CHECK(impulse > 0 ? input >= 0 : input <= 0,
+              "feedback loop must preserve signal polarity");
+        CHECK(abs_i32((int32_t)input) <= abs_i32(impulse),
+              "feedback gain below unity must not grow the impulse");
+
+        if (n == 132u || n == 133u) {
+            if (abs_i32((int32_t)feedback) > *first_echo)
+                *first_echo = abs_i32((int32_t)feedback);
+        }
+        if (n >= 2048u && abs_i32((int32_t)feedback) > *tail_peak)
+            *tail_peak = abs_i32((int32_t)feedback);
+
+        hash ^= (uint32_t)(int32_t)input;
+        hash *= 16777619u;
+        test_metal_feedback_delay_write(&delay, (int32_t)input);
+    }
+    return hash;
+}
+
 int main(void)
 {
     test_metal_feedback_delay_t a, b;
     const int32_t impulse = 1 << 28;
+    const uint16_t gains[] = {0u, 8192u, 16384u, 26214u}; /* 0, .25, .5, .8 */
     int32_t out132 = 0, out133 = 0;
-    uint32_t n;
+    uint32_t n, i;
 
     _Static_assert(TEST_METAL_FB_RING_SAMPLES == 133u,
                    "3 ms at 44.1 kHz requires 133 ring slots");
@@ -86,8 +134,37 @@ int main(void)
     CHECK(a.write_index == 0u && a.sample[0] == 0 && a.sample[1] == 0,
           "fresh note after VCA idle must clear stale feedback");
 
+    /* Closed-loop stability at gains 0, .25, .5 and .8, both polarities.
+     * Repeat each run to prove deterministic integer behavior.
+     */
+    for (i = 0; i < sizeof(gains) / sizeof(gains[0]); ++i) {
+        int64_t first_pos, tail_pos, first_neg, tail_neg;
+        uint32_t hash_pos, hash_pos_repeat, hash_neg, hash_neg_repeat;
+        hash_pos = run_feedback_loop(gains[i], INT32_MAX,
+                                     &first_pos, &tail_pos);
+        hash_pos_repeat = run_feedback_loop(gains[i], INT32_MAX,
+                                            &first_echo /* overwritten below */, &tail_neg);
+        /* Re-run with separate outputs to keep positive/negative assertions clear. */
+        hash_neg = run_feedback_loop(gains[i], -INT32_MAX,
+                                     &first_neg, &tail_neg);
+        hash_neg_repeat = run_feedback_loop(gains[i], -INT32_MAX,
+                                             &first_echo /* overwritten below */, &tail_pos);
+        CHECK(hash_pos == hash_pos_repeat && hash_neg == hash_neg_repeat,
+              "feedback loop must be deterministic for a fixed gain and impulse");
+        if (gains[i] == 0u) {
+            CHECK(first_pos == 0 && first_neg == 0 &&
+                  tail_pos == 0 && tail_neg == 0,
+                  "zero feedback gain must produce no echoes");
+        } else {
+            CHECK(first_pos > 0 && first_neg > 0,
+                  "nonzero feedback gain must produce an echo");
+            CHECK(tail_pos < first_pos && tail_neg < first_neg,
+                  "feedback echoes must decay over repeated delay cycles");
+        }
+    }
+
     if (failures) {
-        fprintf(stderr, "CP3.1 feedback delay candidate: %d failures\n", failures);
+        fprintf(stderr, "CP3.1 feedback delay candidate: %d failures\\n", failures);
         return 1;
     }
     puts("CP3.1 feedback delay candidate: PASS (0 failures; host-only, not production DSP)");
