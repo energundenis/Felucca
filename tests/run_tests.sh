@@ -482,6 +482,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "ENERGUN METAL CORE: CP2.23 VCA-only host integration harness" "$OUT/metal_core_vca_harness_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_vca_real_track_adapter_test" tests/metal_core_vca_real_track_adapter_test.c -lm
     run "ENERGUN METAL CORE: CP3.0 adapter against real Felucca track_t" "$OUT/metal_core_vca_real_track_adapter_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_cp3_memory_accounting_test" tests/metal_core_cp3_memory_accounting_test.c
+    run "ENERGUN METAL CORE: CP3.1 lower-bound state and memory accounting" "$OUT/metal_core_cp3_memory_accounting_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_follow_test" tests/metal_core_follow_test.c -lm
     run "ENERGUN METAL CORE: FOLLOW fixed-point pitch mapping and source selector (host-only)" "$OUT/metal_core_follow_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_follow_host_test" tests/metal_core_follow_host_test.c
