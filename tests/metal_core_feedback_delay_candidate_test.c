@@ -3,13 +3,12 @@
  */
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <limits.h>
 #include "metal_core_feedback_delay_candidate.h"
 #include "eng_metal_core_vca.h"
 
 #define CHECK(c, m) do { if (!(c)) { \
-    fprintf(stderr, "FAIL: %s (line %d)\\n", (m), __LINE__); ++failures; \
+    fprintf(stderr, "FAIL: %s (line %d)\n", (m), __LINE__); ++failures; \
 } } while (0)
 
 static int failures;
@@ -164,7 +163,7 @@ int main(void)
     }
 
     if (failures) {
-        fprintf(stderr, "CP3.1 feedback delay candidate: %d failures\\n", failures);
+        fprintf(stderr, "CP3.1 feedback delay candidate: %d failures\n", failures);
         return 1;
     }
     puts("CP3.1 feedback delay candidate: PASS (0 failures; host-only, not production DSP)");
