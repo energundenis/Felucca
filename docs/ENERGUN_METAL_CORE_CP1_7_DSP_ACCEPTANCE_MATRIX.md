@@ -76,13 +76,13 @@ A layer cannot substitute for a later layer.
 |---|---|---|---|
 | LPG-01 | Main filter | cutoff/resonance sweep | bounded stable filter; no coefficient instability or denormal-like stalls |
 | LPG-02 | LPG filter | short/long gates and RESPONSE sweep | transient brightness returns to base cutoff; no resonant spikes |
-| LPG-03 | LPG gain/envelope | DECAY and MODULE VOLUME sweep | reproduce approved v98 shared/independent gain semantics; no competing automation |
+| LPG-03 | LPG gain/envelope | DECAY and MODULE VOLUME sweep | approved Option C: peak = (0.25 + RESPONSE × 0.75) × MODULE VOLUME; DECAY tail unchanged; no competing automation |
 | LPG-04 | VCA normal envelope | ATTACK/DECAY/SUSTAIN/RELEASE, gate lengths | internal contour follows v98 timing without owning host voice lifetime |
 | LPG-05 | METAL envelope | METAL ON/OFF with repeated triggers | 2 ms METAL attack and METAL DECAY selection; normal envelope values retained |
 | LPG-06 | LPG × VCA interaction | independent envelope extremes | bounded multiplication, no clicks at gate/release transitions |
 | LPG-07 | retrigger/legato | repeated note, mono legato, release/retrigger | internal envelopes follow host lifecycle contract and do not hang voices |
 
-**Resolved source fact; V1 behavior still awaits approval:** exact v98 source trace confirms MODULE VOLUME writes the same gain AudioParam as the per-trigger envelope. `wcTrig()` overwrites the knob's base value with the RESPONSE-derived peak, so MODULE VOLUME is not an independent per-step output multiplier. LPG-03 must test the explicitly approved V1 choice: faithful override, independent post-envelope gain, or envelope-peak scaling. See `docs/ENERGUN_METAL_CORE_CP1_8_LPG_VOLUME_SOURCE_TRACE.md`.
+**Resolved and approved V1 behavior:** exact v98 source trace confirms MODULE VOLUME is overwritten by the next trigger. User approved Option C: the per-trigger peak is `(0.25 + RESPONSE × 0.75) × MODULE VOLUME`, with the existing RESPONSE attack and DECAY tail retained. This intentionally corrects the v98 control collision without adding a second gain stage. See `docs/ENERGUN_METAL_CORE_CP1_8_LPG_VOLUME_SOURCE_TRACE.md`.
 
 ## 4. Whole-engine and host integration matrix
 
@@ -153,3 +153,10 @@ Before first DSP source implementation:
 4. Define deterministic test vectors and numerical tolerances.
 5. Confirm per-part and per-voice memory fit.
 6. Keep the engine isolated until host tests pass; register only after a real render implementation exists.
+
+
+## LPG Option C math verification
+
+- Added bounded Q15 helper `firmware/src/eng_metal_core_math.h` with input clamping and rounded multiply.
+- Added host-only transfer tests in `tests/metal_core_lpg_test.c`: RESPONSE endpoints/midpoint, volume mute/half-scale/monotonicity, contour ordering, and out-of-range clamping.
+- This validates peak calculation only, not envelope scheduling, filter response, decay timing, audio output, target CPU, or engine render.
