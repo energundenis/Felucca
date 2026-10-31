@@ -346,3 +346,12 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The source selector encodes the proposed behavior: FOLLOW OFF bypasses step-sequencer pitch to base FREQ; performance-origin pitch remains host-tracked.
 - The helper accepts relative NOTE/OCTAVE values. It does not yet map Felucca's absolute MIDI step notes or receive real host note-source metadata.
 - Direct v98 verification, target CPU cost and engine/render integration remain open. CI validation is pending.
+
+
+## CP2.7 — host note-source provenance audit (2026-10-31)
+
+- Audited Felucca `seq.c`, `voice.c`, `core.h`, and the pinned `Felucca-Engines` callback contract.
+- Identified the four direct note-on ingress paths: sequencer step, step preview via sequencer, arpeggiator, and keyboard/MIDI input.
+- Confirmed a transient track flag alone is insufficient: engine-switch notes are queued, MONO/LEGATO can change pitch without calling engine note_on, and held-note fallback can restore a note of a different origin.
+- Proposed host-owned per-voice and per-held-note source metadata, with pending engine-switch source queued alongside note/velocity. Shared `voice_t` ABI remains unchanged.
+- CP2.7 is a design audit only. CP2.6 CI is still pending; no FOLLOW integration is connected to the render callback.
