@@ -19,6 +19,8 @@ static void check(const char *name, int ok)
 static void test_helpers_and_targets(void)
 {
     int32_t peak, sustain;
+    check("VCA state uses the expected 36-byte aligned layout",
+          sizeof(eng_metal_vca_t) == 36u);
     check("time conversion at 44.1 kHz is rounded to nearest sample",
           eng_metal_vca_us_to_samples(44100u, 5000u) == 221u);
     check("zero sample rate/time produces zero samples",
