@@ -364,6 +364,15 @@ static void metal_core_feedback_delay_reset(metal_core_feedback_state_t *state, 
         state->sample[voice][i] = 0;
 }
 
+/* Read the next delayed sample without consuming the ring slot. The feedback
+ * renderer needs it before choosing this sample's signed wcMod phase increment. */
+static inline int32_t metal_core_feedback_delay_peek(const metal_core_feedback_state_t *state,
+                                                      uint32_t voice)
+{
+    if (!state || voice >= NVOICE) return 0;
+    return state->sample[voice][state->write[voice]];
+}
+
 /* One-sample delay primitive. Returns the oldest sample, stores the new input,
  * and advances the ring. Feedback gain/routing remain external so this helper
  * cannot accidentally introduce an unbounded feedback loop by itself. */
@@ -498,14 +507,14 @@ static void metal_core_complex_fm_feedback_pair_block(
         int32_t mod_step, mod, delayed, fb_step, carrier_step;
         int32_t osc1, osc2;
 
-        mod_step = metal_core_modulator_signed_step(mod_inc, 0);
-        mod = metal_core_modulator_sample_signed(phm, mod_step, mod_wave);
-        delayed = metal_core_feedback_delay_tick(state, voice, mod);
+        delayed = metal_core_feedback_delay_peek(state, voice);
         feedback_current = metal_core_feedback_smooth_q15(feedback_current,
                                                            feedback_q15);
         fb_step = metal_core_feedback_modulator_step(osc1_inc, delayed,
                                                        feedback_current);
         mod_step = metal_core_modulator_signed_step(mod_inc, fb_step);
+        mod = metal_core_modulator_sample_signed(phm, mod_step, mod_wave);
+        (void)metal_core_feedback_delay_tick(state, voice, mod);
 
         /* Sample the current modulator phase before advancing it with the
          * feedback-controlled step, matching the AudioParam feedback graph. */
