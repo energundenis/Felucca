@@ -254,3 +254,12 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The 3 ms Complex feedback delay needs 133 int32 samples per voice at 44.1 kHz: 4,256 bytes for eight slots per part. At 96 kHz this grows to 9,216 bytes; at 192 kHz it alone requires 18,432 bytes and exceeds the current part pool.
 - Direct use of `voice_t.s[8]` is too tight for five phases, two independent filter stages, envelope state and feedback cursor. Preferred proposal is a typed per-voice state record plus delay rings in `engine_t.mem`, with no shared `voice_t` ABI change. A conservative 64-byte record ×8 plus delay rings totals about 4,768 bytes at 44.1 kHz.
 - This is a budget proposal only. Host-vs-engine VCA envelope ownership, exact filter topology, sample-rate support, and final state fields remain open. No code, memory request, ABI or target budget changed.
+
+
+## CP1.10 — fixed-point oscillator primitive audit (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_10_OSCILLATOR_PRIMITIVE_AUDIT.md` (commit `42910fd3a674982d57e1a3f4193901bb9d97c55b`).
+- Audited the pinned Felucca `dsp.c` and table generator: reusable `osc_sine`, `osc_tri`, polyBLEP `osc_saw`, `osc_pulse`, `pitch_inc` and `cents_inc` already exist as static fixed-point primitives.
+- Mapped the five independent v98 oscillator phase sources and the waveform roles. No need to add a new public oscillator API or float math to the target.
+- Flagged polyBLEP division cost and high-rate FM increment bounds for target worst-case measurement; triangle aliasing and sample-rate table consistency need explicit tests.
+- Defined isolated oscillator test cases; no engine source, tests, IDs, UI, storage, firmware package, Flash or device state changed.
