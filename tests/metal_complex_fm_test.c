@@ -269,6 +269,8 @@ static void part_state_lifecycle(void)
     memset(aout, 0, sizeof aout);
     memset(bout, 0, sizeof bout);
     memset(discard, 0, sizeof discard);
+    memset(&active, 0, sizeof active);
+    memset(&split, 0, sizeof split);
     metal_core_part_state_init(&active);
     metal_core_part_state_init(&split);
 
