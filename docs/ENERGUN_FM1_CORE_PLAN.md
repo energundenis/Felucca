@@ -568,3 +568,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - CP2.15 target compile, ABI and object-inspection gates are passed. Actual AC79 cycle timing, integrated per-voice memory placement, audio render/lifecycle tests, and manual/performance Gate mapping remain open.
 - CI emitted non-fatal compiler warnings, including a sequence-point warning at `tests/input_test.c:47`; this is recorded for separate review and was not modified in this milestone.
 - No engine registration, parameter/UI/storage/flash changes, factory firmware changes, device writes or flashing. `main` remains untouched.
+
+
+## CP2.17 — ownenv lifecycle hot-path optimization and regression evidence (2026-10-31)
+
+- Optimized the shared `track_render()` own-envelope path in `firmware/src/voice.c`; implementation commit tested: `35768068d51130d83535207241bd46fac4147d3c`.
+- The optimized path bypasses host ADSR for ordinary engine-owned voices, preserves host `env_tick()` for stage-4 shared-voice steal fade, and uses the engine `done()` callback for normal ownenv voice retirement. The non-ownenv path retains its original behavior.
+- The change addresses the target-cost regression from run 41227210331 (`mix_part` cost 4351 vs budget 3549) without raising the budget.
+- CI run [41229095524](https://github.com/energundenis/Felucca/actions/runs/41229095524) completed successfully on branch `energun-metal-core`. `mix_part` cost is now **3431 / 3549**, below budget; this is 920 cost units (~21.1%) lower than the failed run. Previous successful pre-lifecycle run 41225293878 measured 3649.
+- FM6 ownenv regression passed, including the test that its engine-controlled Release outlives the fastest host ADSR Release. Isolated METAL CORE VCA suite: 20 checks, 0 failures. AC79 VCA target compile, full host regression, web tests and backup web tests passed.
+- Added [CP2.17 optimization audit](ENERGUN_METAL_CORE_CP2_17_OWNENV_LIFECYCLE_OPTIMIZATION.md). CI artifact 13052638568; SHA-256 `449a994f099b6f828028ede92646fb96008ccb4520b005746561087d0f1e2112`.
+- The target-budget metric is a static cost estimate, not cycle-accurate timing or runtime CPU measurement. AC79 cycle benchmark, integrated ENERGUN render tests, per-part memory placement, manual/performance Gate mapping and complete engine integration remain open.
+- No engine registration, parameter/UI/storage/Flash/package changes, factory firmware changes, physical-device writes or flashing. `main` remains untouched.
