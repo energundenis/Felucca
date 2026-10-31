@@ -155,6 +155,22 @@ static inline void eng_metal_vca_trigger(eng_metal_vca_t *vca,
     vca->phase = ENG_METAL_VCA_ATTACK;
 }
 
+/* Explicit host Gate-off event (MIDI Note Off or sequencer step end).
+ * Safe to call once at a render-block boundary; repeated calls during Release
+ * do not restart or alter the Release trajectory. The next process() advances
+ * the first Release sample from the instantaneous held level.
+ */
+static inline void eng_metal_vca_gate_off(eng_metal_vca_t *vca)
+{
+    if (!vca || vca->phase == ENG_METAL_VCA_IDLE ||
+        vca->phase == ENG_METAL_VCA_RELEASE)
+        return;
+    vca->gate_remaining = 0u;
+    vca->target_q16 = ENG_METAL_VCA_Q16_FLOOR;
+    vca->coefficient_q30 = vca->release_coefficient_q30;
+    vca->phase = ENG_METAL_VCA_RELEASE;
+}
+
 /* One sample. Gate-off is evaluated before Decay, so a coincident or later
  * Decay event can never reopen the envelope after Release has started.
  */
