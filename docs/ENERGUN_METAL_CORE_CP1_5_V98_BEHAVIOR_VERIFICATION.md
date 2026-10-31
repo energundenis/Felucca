@@ -79,3 +79,8 @@ Before CP1 can close:
 5. Keep flash-sector allocation blocked until the full FM-1 V1.5 device dump is audited.
 
 No parameter IDs, engine ABI, project format, storage, flash, firmware package or device state changed.
+
+
+## 7. V1 decision update — LPG MODULE VOLUME (2026-10-31)
+
+The source-level findings above remain the description of v98. They do not describe the selected V1 behavior. The user approved **Option C**: at each trigger, `peakLpg = (0.25 + RESPONSE × 0.75) × MODULE VOLUME`. Keep one LPG gain stage; retain the RESPONSE attack and DECAY tail. This deliberately corrects the v98 shared-AudioParam overwrite collision. The bounded Q15 peak helper and its host test are in `firmware/src/eng_metal_core_math.h` and `tests/metal_core_lpg_test.c`; CI validation is tracked in the project plan.
