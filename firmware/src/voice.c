@@ -406,7 +406,7 @@ static void mono_remove(track_t *t, uint32_t note)
     t->nmono = (uint8_t)k;
 }
 
-static void trk_note_on(track_t *t, uint32_t note, uint32_t vel, uint32_t source)
+static void trk_note_on_source(track_t *t, uint32_t note, uint32_t vel, uint32_t source)
 {
     uint32_t any = 0, i, mode = trk_vmode(t);
     if (t->p[P_MUTE])
@@ -458,6 +458,12 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel, uint32_t source
         else                                            /* LEGATO / UNISON: glide only between held notes */
             mono_play(t, want, vel, !sounding, sounding && (t->p[P_GLIDE] != 0 || t->slide_glide), mono_source_for(t, want));
     }
+}
+
+/* Backward-compatible host note-on: callers without explicit provenance are performance notes. */
+static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
+{
+    trk_note_on_source(t, note, vel, NOTE_SRC_PERFORMANCE);
 }
 
 static void trk_note_off(track_t *t, uint32_t note)
@@ -542,7 +548,7 @@ static void engine_block(track_t *t)
             uint32_t n = t->xp_n;
             t->xp_n = 0;
             for (i = 0; i < n; i++)
-                trk_note_on(t, t->xp_note[i] & 0x7Fu, t->xp_vel[i], t->xp_note[i] >> 7);
+                trk_note_on_source(t, t->xp_note[i] & 0x7Fu, t->xp_vel[i], t->xp_note[i] >> 7);
         }
     }
     eng_mem_claim(t);                                   /* (an engine set directly: power-on, a test) */

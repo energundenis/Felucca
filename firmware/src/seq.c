@@ -294,7 +294,7 @@ static __attribute__((noinline)) void arp_chord(track_t *t, const uint32_t *list
             t->arp_ch[i - 1u] = (uint8_t)nt;
         if (rec_on(t))
             rec_note(t, nt, 100);
-        trk_note_on(t, nt, 100, NOTE_SRC_PERFORMANCE);
+        trk_note_on_source(t, nt, 100, NOTE_SRC_PERFORMANCE);
     }
 }
 
@@ -449,7 +449,7 @@ static __attribute__((noinline)) void arp_fire(track_t *t, uint32_t period)
         t->arp_note = (uint8_t)list[j];
         if (rec_on(t))
             rec_note(t, t->arp_note, 100);           /* recording: what the arp plays */
-        trk_note_on(t, t->arp_note, 100, NOTE_SRC_PERFORMANCE);
+        trk_note_on_source(t, t->arp_note, 100, NOTE_SRC_PERFORMANCE);
     }
 }
 
@@ -677,7 +677,7 @@ static void input_on(track_t *t, uint32_t note, uint32_t vel)
     if (t->p[P_AMODE])
         arp_add(t, note);
     else
-        trk_note_on(t, note, vel, NOTE_SRC_PERFORMANCE);
+        trk_note_on_source(t, note, vel, NOTE_SRC_PERFORMANCE);
 }
 
 static int midi_note_held(const track_t *t, uint32_t note);
@@ -1028,7 +1028,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
         seq_release(t);
     for (i = 0; i < m; i++)
         if (!((sk >> i) & 1u))
-            trk_note_on(t, nn[i], vv[i], NOTE_SRC_SEQUENCER);
+            trk_note_on_source(t, nn[i], vv[i], NOTE_SRC_SEQUENCER);
     if (slide_in)                                   /* release what is not held over */
         for (i = 0; i < t->seq_n; i++) {
             for (j = 0; j < m && nn[j] != t->seq_notes[i]; j++)

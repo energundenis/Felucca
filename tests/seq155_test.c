@@ -611,7 +611,7 @@ static int note_source_provenance(void)
     ui_power_on();
     t = &trk[0];
     t->p[P_VOICE] = V_POLY;
-    trk_note_on(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
+    trk_note_on_source(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
     found = 0;
     for (i = 0; i < NVOICE; i++)
         if (t->v[i].active && t->v[i].note == 60u) {
@@ -620,7 +620,7 @@ static int note_source_provenance(void)
         }
     bad += check("FOLLOW provenance: live/performance note marks its poly voice", found);
 
-    trk_note_on(t, 67u, 100u, NOTE_SRC_SEQUENCER);
+    trk_note_on_source(t, 67u, 100u, NOTE_SRC_SEQUENCER);
     found = 0;
     for (i = 0; i < NVOICE; i++)
         if (t->v[i].active && t->v[i].note == 67u) {
@@ -632,8 +632,8 @@ static int note_source_provenance(void)
     ui_power_on();
     t = &trk[0];
     t->p[P_VOICE] = V_LEGATO;
-    trk_note_on(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
-    trk_note_on(t, 64u, 100u, NOTE_SRC_SEQUENCER);
+    trk_note_on_source(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
+    trk_note_on_source(t, 64u, 100u, NOTE_SRC_SEQUENCER);
     bad += check("FOLLOW provenance: MONO stack keeps source beside each held note",
                  t->nmono == 2u &&
                  t->mono_source[0] == NOTE_SRC_PERFORMANCE &&
@@ -646,8 +646,8 @@ static int note_source_provenance(void)
     ui_power_on();
     t = &trk[0];
     t->p[P_VOICE] = V_LEGATO;
-    trk_note_on(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
-    trk_note_on(t, 60u, 100u, NOTE_SRC_SEQUENCER);
+    trk_note_on_source(t, 60u, 100u, NOTE_SRC_PERFORMANCE);
+    trk_note_on_source(t, 60u, 100u, NOTE_SRC_SEQUENCER);
     bad += check("FOLLOW provenance: same-pitch MONO retrigger updates active source",
                  t->nmono == 1u &&
                  t->mono_source[0] == NOTE_SRC_SEQUENCER &&
@@ -712,7 +712,7 @@ static int note_source_provenance(void)
     t = &trk[0];
     t->p[P_VOICE] = V_POLY;
     t->xf_on = 1u;
-    trk_note_on(t, 81u, 90u, NOTE_SRC_SEQUENCER);
+    trk_note_on_source(t, 81u, 90u, NOTE_SRC_SEQUENCER);
     found = t->xp_n == 1u && t->xp_note[0] == (uint8_t)(81u | 0x80u);
     bad += check("FOLLOW provenance: engine-switch queue stores source with pending note", found);
     trk_note_off(t, 81u);
