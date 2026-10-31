@@ -113,7 +113,7 @@ For METAL CORE, the chosen VCA must therefore apply Velocity/Accent itself. The 
 
 ## 7. Source-derived edge cases requiring explicit tests / resolution
 
-- **Short gate vs Attack:** V98 schedules Release at `t0 + gate` even if `gate < max(5 ms, attackTime)`. The later-scheduled Decay target can then occur after the Release event. This can produce a non-intuitive envelope event order for long non-METAL Attack or very short Gate. Do not silently normalize the order; add a regression fixture and decide whether V1 should preserve the reference ordering or use a safe bounded rule.
+- **Short gate vs Attack — RESOLVED by CP1.16:** V98 can schedule Decay after Release when Gate is shorter than Attack. V1 selects Option B: Release begins at Gate-off from the instantaneous level, and any Decay event scheduled after Gate-off is cancelled/suppressed. No post-Release reopening is permitted. See `ENERGUN_METAL_CORE_CP1_16_SHORT_GATE_VCA_DECISION.md`.
 - **SUSTAIN = 0:** V98 clamps sustain target to 0.0001, not exact zero.
 - **Accent headroom:** peak may be 1.18 × LEVEL × velocity. Fixed-point range and final mixer headroom must be checked.
 - **Retrigger:** must hold the current envelope value, cancel stale future segments and schedule a new contour.
@@ -125,16 +125,16 @@ For METAL CORE, the chosen VCA must therefore apply Velocity/Accent itself. The 
 
 1. Read the pinned Felucca-Engines submodule header/API at the exact submodule SHA and record `engine_t` callbacks and `voice_t` gate/velocity semantics.
 2. Decide the FM-1 mapping for V98 sequencer and manual modes.
-3. Resolve the short-gate/long-attack event-order case with an explicit compatibility rule.
+3. **RESOLVED by CP1.16:** short Gate takes priority over a later Decay event; no post-Release reopening.
 4. Define sample-rate-independent one-pole coefficient generation (outside sample loop) and fixed-point formats.
-5. Build a pure isolated VCA module and deterministic fixtures against the equations above.
+5. Build a pure isolated VCA module and deterministic fixtures against the equations above, including CP1.16 event suppression.
 6. Add lifecycle, retrigger, velocity/accent and voice-steal tests.
 7. Update per-voice state/memory budget, then measure target CPU before any render integration.
 
 ## 9. Status and safety
 
 - CP1.14 architecture choice remains RESOLVED: V98-compatible engine-owned VCA, no host-ADSR cascade.
-- CP1.15 source trace is RECORDED; numeric sample-domain implementation is NOT STARTED.
+- CP1.15 source trace is RECORDED; CP1.16 short-Gate rule is RESOLVED as Option B; numeric sample-domain implementation is NOT STARTED.
 - CP1 overall remains OPEN.
 - No firmware code, engine registration, parameter IDs, UI, persistent storage, Flash allocation, package, factory firmware or physical FM-1 state changed.
 - `main` remains untouched.
@@ -154,3 +154,10 @@ Verified API details:
 The API verification gate is therefore RESOLVED for this exact pinned submodule revision. It does not yet prove the best VCA implementation strategy or target CPU cost. A sample-domain VCA may be applied in the engine render loop; alternatively the optional `amp` callback can provide a control-rate Q15 value for the host's block amplitude ramp. Select one after deterministic accuracy tests, and do not multiply both paths.
 
 The current host source calls `done()` before `render()`. If a sample-domain envelope reaches silence during a render block, the host can observe completion on the next control tick; test and document this block-boundary behavior to prevent clicks or premature voice reuse.
+
+
+## 11. CP1.16 short-Gate decision
+
+The user selected Option B: preserve the V98 envelope character but prevent a pending Decay segment from reopening the VCA after Gate-off / Release has begun. Release starts at Gate-off from the instantaneous current level, even if Attack is incomplete; any Decay event scheduled after Gate-off is cancelled/suppressed. Retrigger during Release holds the current level and starts a new contour.
+
+Decision record: [CP1.16 short-Gate VCA decision](ENERGUN_METAL_CORE_CP1_16_SHORT_GATE_VCA_DECISION.md). This resolves the specification question only; implementation and regression evidence remain pending.
