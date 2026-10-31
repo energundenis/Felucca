@@ -160,3 +160,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Detailed v98 signal path includes main filter, LPG filter/gain, voice VCA and METAL ring tap; the simplified top-level chain must not erase these tap points.
 - CP1.2 is a reconciliation audit only. No DSP, IDs, engine registration, sidecar, package, or hardware writes.
 - CP1 remains open until the full control inventory and V1 include/defer list are reconciled and approved.
+
+
+## CP1.3 — complete v98 V1 parameter inventory (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_3_COMPLETE_PARAMETER_INVENTORY.md`; initial commit `5589fa69e686e17d4be08102afde90c30059d3de`, followed by correction `0df8566965e334149643326fe9fac1f1be6a1a3a`.
+- Inspected the protected Library reference HTML directly, including its parameter object, UI selectors, and signal graph.
+- Corrected the earlier 35-control estimate to **37 independent V1 sound controls**: 8 OSCILLATORS/SYNTH VOICE, 11 Complex Oscillator, 2 METAL-specific, 5 Wavefolder, 2 main filter, 3 LPG, 5 voice VCA/ADSR, and 1 final WEST COAST VOLUME.
+- Added COMPLEX MODULE VOLUME and WEST COAST VOLUME, both absent from the former inventory. Flagged conflicting v98 output-gain assignments (VOLUME×12 vs VOLUME×5) for calibration.
+- Identified a v98 inconsistency: the FM CHARACTER parameter object defaults to METALLIC (2), while the selector markup marks CLASSIC (1) selected. Effective runtime default must be verified before freezing.
+- Deferred RING2, SPREAD pending routing proof, custom LFO/RANDOM/SLEW, full patch bay, and prototype DRONE/SEQ / WEST COAST ON controls (map to Felucca host lifecycle/enable).
+- Host ADSR reuse remains conditional; P_LEVEL and P_DETUNE retain host semantics and are not substitutes for internal module controls.
+- No IDs, editor pages, sidecar, flash addresses, firmware code, package, or hardware state changed. CP1 remains open pending inventory/scope approval, reference gain/default calibration, host ADSR parity, and storage design.
