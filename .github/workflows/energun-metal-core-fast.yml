@@ -1,0 +1,54 @@
+name: ENERGUN METAL CORE fast regression
+
+on:
+  push:
+    branches:
+      - energun-metal-core
+  pull_request:
+    branches:
+      - energun-metal-core
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: energun-metal-core-fast-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metal-core-host:
+    name: Focused Metal Core host tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Python and cache build dependencies
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+          cache: pip
+
+      - name: Install header-generation dependencies
+        run: python -m pip install --upgrade Pillow fonttools
+
+      - name: Set up host compiler
+        run: |
+          cc --version
+          python3 --version
+
+      - name: Run focused ENERGUN METAL CORE regression
+        run: sh tests/run_metal_core_fast.sh
+
+      - name: Upload focused test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: energun-metal-core-fast-${{ github.sha }}
+          path: build/metal-core-fast/
+          if-no-files-found: ignore
+          retention-days: 14
