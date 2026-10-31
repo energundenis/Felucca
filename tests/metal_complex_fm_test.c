@@ -255,12 +255,103 @@ static void feedback_step_bounds(void)
     check("wcMod feedback step clamps below negative Nyquist", lo == -0x7FFFFFFF);
 }
 
+
+static void feedback_zero_exact(void)
+{
+    voice_t a, b;
+    metal_core_feedback_state_t state;
+    int32_t ref[CTL], got[CTL];
+    uint32_t base = pitch_inc(60 * 16), block, i;
+    int same = 1;
+    memset(&a, 0, sizeof a); memset(&b, 0, sizeof b);
+    memset(&state, 0, sizeof state);
+    a.ph[0] = b.ph[0] = 0x10293847u;
+    a.ph[1] = b.ph[1] = 0x56473829u;
+    a.ph[2] = b.ph[2] = 0xABCDEF01u;
+    for (block = 0; block < 12; block++) {
+        metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
+            MC_OSC_SAW, MC_MOD_SINE, 24000, 32767, MC_FM_CHAR_METALLIC, 12000);
+        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+            201195u, MC_OSC_SAW, MC_MOD_SINE, 24000, 32767,
+            MC_FM_CHAR_METALLIC, 12000, 0, &state, 0);
+        for (i = 0; i < CTL; i++) if (ref[i] != got[i]) same = 0;
+    }
+    check("zero FM FEEDBACK is sample-exact against the no-feedback path",
+        same && a.ph[0] == b.ph[0] && a.ph[1] == b.ph[1] && a.ph[2] == b.ph[2]);
+    check("zero feedback smoother remains exactly zero", state.feedback_q15[0] == 0);
+}
+
+static void feedback_route_and_delay(void)
+{
+    voice_t a, b;
+    metal_core_feedback_state_t state;
+    int32_t ref[CTL], got[CTL];
+    uint32_t base = pitch_inc(48 * 16), block, i;
+    uint32_t full_blocks = MC_FEEDBACK_DELAY_SAMPLES / CTL;
+    uint32_t partial = MC_FEEDBACK_DELAY_SAMPLES % CTL;
+    int pre_delay_same = 1, boundary_same = 1, bounded = 1;
+    memset(&a, 0, sizeof a); memset(&b, 0, sizeof b);
+    memset(&state, 0, sizeof state);
+    a.ph[0] = b.ph[0] = 0x13572468u;
+    a.ph[1] = b.ph[1] = 0x24681357u;
+    a.ph[2] = b.ph[2] = 0x31415926u;
+
+    for (block = 0; block < full_blocks; block++) {
+        metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
+            MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC, 16384);
+        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+            201195u, MC_OSC_SAW, MC_MOD_SINE, 26000, 32767,
+            MC_FM_CHAR_METALLIC, 16384, 26214, &state, 0);
+        for (i = 0; i < CTL; i++) if (ref[i] != got[i]) pre_delay_same = 0;
+    }
+    check("feedback route is silent before the full 3 ms delay",
+        pre_delay_same && a.ph[2] == b.ph[2]);
+
+    metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
+        MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC, 16384);
+    metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+        201195u, MC_OSC_SAW, MC_MOD_SINE, 26000, 32767,
+        MC_FM_CHAR_METALLIC, 16384, 26214, &state, 0);
+    for (i = 0; i < partial; i++) if (ref[i] != got[i]) boundary_same = 0;
+    check("first feedback appears only after the configured delay", boundary_same);
+
+    for (block = 0; block < 80; block++) {
+        metal_core_complex_fm_pair_block(&a, ref, CTL, base, base, 201195u,
+            MC_OSC_SAW, MC_MOD_SINE, 26000, 32767, MC_FM_CHAR_METALLIC, 16384);
+        metal_core_complex_fm_feedback_pair_block(&b, got, CTL, base, base,
+            201195u, MC_OSC_SAW, MC_MOD_SINE, 26000, 32767,
+            MC_FM_CHAR_METALLIC, 16384, 26214, &state, 0);
+        for (i = 0; i < CTL; i++)
+            if (got[i] < -65535 || got[i] > 65535) bounded = 0;
+    }
+    check("delayed feedback changes wcMod phase", b.ph[2] != a.ph[2]);
+    check("feedback output remains within pre-fold oscillator headroom", bounded);
+    check("feedback amount remains within v98 0..0.8 range",
+        state.feedback_q15[0] >= 0 && state.feedback_q15[0] <= 26214);
+}
+
+static void feedback_step_bounds(void)
+{
+    uint32_t base = pitch_inc(60 * 16);
+    int32_t positive = metal_core_feedback_modulator_step(base, 32767, 26214);
+    int32_t negative = metal_core_feedback_modulator_step(base, -32768, 26214);
+    check("positive delayed feedback raises wcMod frequency", positive > 0);
+    check("negative delayed feedback lowers wcMod frequency", negative < 0);
+    check("wcMod feedback step clamps below positive Nyquist",
+        metal_core_modulator_signed_step(base, INT32_MAX) == 0x7FFFFFFF);
+    check("wcMod feedback step clamps below negative Nyquist",
+        metal_core_modulator_signed_step(base, INT32_MIN) == -0x7FFFFFFF);
+}
+
 int main(void)
 {
     signed_step();
     bypass_exact();
     active_fm();
     extreme_registers();
+    feedback_zero_exact();
+    feedback_route_and_delay();
+    feedback_step_bounds();
     feedback_zero_exact();
     feedback_route_and_delay();
     feedback_step_bounds();
