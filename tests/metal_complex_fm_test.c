@@ -227,8 +227,13 @@ static void feedback_step_bounds(void)
     uint32_t base = pitch_inc(60 * 16);
     int32_t positive = metal_core_feedback_modulator_step(base, 32767, 26214);
     int32_t negative = metal_core_feedback_modulator_step(base, -32768, 26214);
+    uint32_t tracked = pitch_inc(72 * 16);
+    int32_t panel_scale = metal_core_feedback_modulator_step(base, 16384, 26214);
+    int32_t tracked_scale = metal_core_feedback_modulator_step(tracked, 16384, 26214);
     check("positive delayed feedback raises wcMod frequency", positive > 0);
     check("negative delayed feedback lowers wcMod frequency", negative < 0);
+    check("feedback scaling uses panel FREQ, independently of FOLLOW pitch",
+          panel_scale < tracked_scale);
     check("wcMod feedback step clamps below positive Nyquist",
         metal_core_modulator_signed_step(base, INT32_MAX) == 0x7FFFFFFF);
     {
