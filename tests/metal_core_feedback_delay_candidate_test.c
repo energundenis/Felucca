@@ -5,12 +5,21 @@
 #include <stdio.h>
 #include <string.h>
 #include "metal_core_feedback_delay_candidate.h"
+#include "eng_metal_core_vca.h"
 
 #define CHECK(c, m) do { if (!(c)) { \
     fprintf(stderr, "FAIL: %s (line %d)\n", (m), __LINE__); ++failures; \
 } } while (0)
 
 static int failures;
+
+/* Candidate note-on policy: VCA non-idle means sounding retrigger / steal. */
+static void feedback_note_on_candidate(test_metal_feedback_delay_t *delay,
+                                       uint8_t previous_vca_phase)
+{
+    if (previous_vca_phase == ENG_METAL_VCA_IDLE)
+        test_metal_feedback_delay_reset(delay);
+}
 
 int main(void)
 {
@@ -61,6 +70,21 @@ int main(void)
     test_metal_feedback_delay_reset(&a);
     CHECK(b.sample[0] == 7654321 && b.write_index == 1u,
           "per-voice reset must not affect a different ring");
+
+    /* VCA phase is a candidate discriminator for the prior voice lifecycle. */
+    test_metal_feedback_delay_reset(&a);
+    test_metal_feedback_delay_write(&a, 111111);
+    test_metal_feedback_delay_write(&a, 222222);
+    feedback_note_on_candidate(&a, ENG_METAL_VCA_ATTACK);
+    CHECK(a.write_index == 2u && a.sample[0] == 111111 &&
+          a.sample[1] == 222222,
+          "active retrigger must preserve feedback history");
+    feedback_note_on_candidate(&a, ENG_METAL_VCA_RELEASE);
+    CHECK(a.write_index == 2u && a.sample[0] == 111111,
+          "released-but-sounding steal must preserve feedback history");
+    feedback_note_on_candidate(&a, ENG_METAL_VCA_IDLE);
+    CHECK(a.write_index == 0u && a.sample[0] == 0 && a.sample[1] == 0,
+          "fresh note after VCA idle must clear stale feedback");
 
     if (failures) {
         fprintf(stderr, "CP3.1 feedback delay candidate: %d failures\n", failures);
