@@ -479,3 +479,14 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The procedure is recorded in [docs/ENERGUN_METAL_CORE_CP1_13_FM_CHARACTER_STARTUP_DECISION.md](ENERGUN_METAL_CORE_CP1_13_FM_CHARACTER_STARTUP_DECISION.md), commit `de02677300781954318f057914b404c914ca63ae`.
 - Parameter #12 remains open pending evidence; the other 36 inventory controls are unaffected. This approval authorizes verification only, not firmware/V98 changes, parameter IDs, storage, Flash allocation or device writes.
 - CP1 remains open; main and factory firmware remain untouched.
+
+## CP1.13 — V98 FM CHARACTER source verification complete (2026-10-31)
+
+- The user uploaded the original `energun_metal_core_v98_reference.html` to the root of `energun-metal-core`; reference upload commit: `bfa66551cb5767b9554d1a2d3487a14105b078df`. The reference file was inspected without modification.
+- Source trace found `P.wcFmCharacter.v = 2` (METALLIC), while the static HTML select initially marks CLASSIC. This creates a pre-audio UI display mismatch only.
+- The Play/WAV initialization paths call `ensureFx()`, which calls `wcInit()`; `wcInit()` calls `wcComplexSync()`, which synchronizes the selector from `P.wcFmCharacter.v`. After audio initialization, the selector therefore displays METALLIC.
+- `wcFmIndexValue()` calls `wcFmCharacterScale()`, and that calculation reads `P.wcFmCharacter.v`: value 2 uses the METALLIC curve, value 1 CLASSIC, and value 0 SMOOTH. The engine calculation does not read the HTML select directly.
+- Presets are restored into the preset list but are not automatically applied at page load. An explicitly loaded preset can subsequently change the mode.
+- **Resolved V1 default for parameter #12: METALLIC (value 2).** Keep all three modes and their source-defined response curves. Do not edit the original V98 file to remove the static-markup mismatch.
+- Updated [CP1.13 decision record](ENERGUN_METAL_CORE_CP1_13_FM_CHARACTER_STARTUP_DECISION.md) in commit `9b784b609f9203fac2638177cc214b74fa9a9122`.
+- This closes only the FM CHARACTER default decision. CP1 as a whole remains open; source inspection is not physical-device audio validation. No firmware, parameter IDs, UI, storage, Flash, factory firmware, physical FM-1 or `main` branch changed.
