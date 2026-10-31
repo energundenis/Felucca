@@ -46,7 +46,7 @@ static void metal_core_adapter_render(track_t *t, voice_t *v,
         n = CTL;
 
     /* Fixed probe settings only. The approved EDIT map is not applied here. */
-    metal_core_part_render(s, voice, n, m->inc, m->inc, m->inc,
+    metal_core_part_render(s, voice, n, m->inc, m->inc, pitch_inc(60 * 16),
         1u << 16, MC_OSC_SAW, MC_MOD_SINE, 8192, 16384,
         MC_FM_CHAR_METALLIC, 8192, 0);
 
