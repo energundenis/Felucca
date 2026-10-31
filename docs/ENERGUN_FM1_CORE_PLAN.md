@@ -194,3 +194,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Found LPG MODULE VOLUME shares the same gain node as the per-trigger LPG envelope. It is a stored value but not an independent post-envelope output stage; preserve shared-node semantics or approve a deliberate redesign.
 - Host ADSR reuse is not approved: v98 normal and METAL trigger schedules, VCA peak/velocity/accent scaling and sixteenth-note gate are distinct from the host voice-lifecycle ADSR. Keep v98 normal ADSR + VCA peak as internal controls for now; private bank remains 13 values.
 - No parameter IDs, ABI, project/storage format, sidecar, flash, firmware package or device state changed. CP1 remains open pending scope approval, LPG behavior decision, signal map and safe sidecar/recovery design.
+
+
+## CP1.6 — detailed v98 signal map (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_6_DETAILED_SIGNAL_MAP.md` (commit `33cca68deafdd57b94924600e7caa54e438dbff5`).
+- Documented OSC1/Complex and OSC2 direct paths separately: OSC2 joins at the shared TIMBRE/folder input and bypasses COMPLEX MODULE VOLUME; both pass through both folder stages and WAVEFOLDER MODULE VOLUME.
+- Confirmed detailed order: main LPF → LPG filter → shared LPG gain/envelope → internal voice VCA → post-VCA METAL ring AM → WEST COAST VOLUME (stable ×5) → EQ → host master/effects/stereo.
+- Confirmed METAL ring is post-VCA amplitude modulation, not a pre-folder oscillator mix. METAL RATIO controls both METAL FM and ring oscillator frequencies.
+- Confirmed deferred RING2 is a separate branch with a stage-1 tap and folder-output dry path, rejoining at main filter; it is not the METAL ring path.
+- Added gain/headroom regression requirements for fixed-point port. No DSP code, parameter IDs, engine registration, storage, Flash or hardware changes.
