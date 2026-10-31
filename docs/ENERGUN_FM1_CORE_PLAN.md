@@ -523,3 +523,14 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Decision record: [CP1.16 short-Gate VCA decision](ENERGUN_METAL_CORE_CP1_16_SHORT_GATE_VCA_DECISION.md).
 - Updated CP1.15 source specification and VCA-11 in the DSP acceptance matrix.
 - This closes the short-Gate specification decision only. VCA implementation, deterministic tests, CPU/RAM measurement and render integration remain pending. No firmware code, engine registration, UI, storage, Flash, package, factory firmware, physical FM-1 or main branch changed.
+
+
+## CP2.13 — first isolated METAL CORE VCA model (2026-10-31)
+
+- Added `firmware/src/eng_metal_core_vca.h`: isolated sample-domain Q16/Q30 envelope state machine; no engine registration or audio callback connection.
+- Added `tests/metal_core_vca_test.c` and registered it in `tests/run_tests.sh` for host CI.
+- Initial coverage: parameter target scaling (Velocity/Accent), Attack, scheduled Decay, Sustain, Release, retrigger hold, zero Gate and CP1.16 short-Gate priority.
+- Coefficients are prepared outside the sample loop; the sample loop has no floating point, division or allocation. Current coefficient is a Q30 reciprocal approximation to the ideal exponential and needs quantified accuracy comparison.
+- Status: source/test added; CI result pending. VCA-01..VCA-21 are not all proven by this initial test.
+- Remaining before integration: high-precision reference comparison, complete edge-case matrix, manual-mode vs sequencer-mode source mapping, per-voice RAM and target CPU measurements, and decision between sample-domain render multiplication and host `amp()` callback. Do not connect both paths.
+- No device writes/flashing, factory firmware changes, Flash allocation, package changes or `main` branch changes.
