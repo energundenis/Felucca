@@ -235,3 +235,82 @@ static inline int32_t metal_core_complex_fm_depth_q15(int32_t index_q15,
     int32_t drive = metal_core_west_coast_drive_q15(drive_q15);
     return mulq15(curve, drive);
 }
+
+
+/* ------------------------------------------------ Audio-rate Complex FM carrier --- */
+
+/* v98 applies FM by changing OSC1's instantaneous frequency. The signed
+ * phase step allows the modulator to pull the carrier through zero and
+ * reverse its direction. The magnitude is bounded below Nyquist so the
+ * polyBLEP saw remains inside its valid increment range. */
+static inline int32_t metal_core_fm_instantaneous_step(uint32_t base_inc,
+                                                        uint64_t deviation_inc,
+                                                        int32_t mod_sample_q15)
+{
+    int64_t deviation = ((int64_t)deviation_inc * mod_sample_q15) >> 15;
+    int64_t step = (int64_t)base_inc + deviation;
+    if (step > 0x7FFFFFFFLL)
+        step = 0x7FFFFFFFLL;
+    else if (step < -0x7FFFFFFFLL)
+        step = -0x7FFFFFFFLL;
+    return (int32_t)step;
+}
+
+/* Signed-frequency form of the main oscillator sampler. Waveform value is
+ * still a function of phase; only the BLEP width uses the absolute step. */
+static inline int32_t metal_core_osc_sample_signed(uint32_t phase, int32_t step, uint32_t wave)
+{
+    uint32_t inc = step < 0 ? (uint32_t)(-(int64_t)step) : (uint32_t)step;
+    return metal_core_osc_sample(phase, inc, wave);
+}
+
+/* Full v98 Complex FM -> OSC1 path plus the independent OSC2 direct-audio
+ * source. This stage intentionally holds FM feedback at zero and does not
+ * apply the FM trigger envelope; those are separate follow-up stages.
+ *
+ * All increments are supplied by the caller so FOLLOW/base-FREQ selection
+ * and OSC2 cents conversion can be audited independently before engine
+ * parameter IDs are assigned.
+ */
+static void metal_core_complex_fm_pair_block(voice_t *v, int32_t *pre_fold, uint32_t n,
+                                             uint32_t osc1_inc, uint32_t osc2_inc,
+                                             uint32_t mod_ratio_q16, uint32_t osc_wave,
+                                             uint32_t mod_wave, int32_t fm_index_q15,
+                                             int32_t west_coast_drive_q15, uint32_t character,
+                                             int32_t osc2_level_q15)
+{
+    uint32_t i, ph1, ph2, phm, mod_inc;
+    int32_t level, depth;
+    uint64_t deviation_inc;
+
+    if (!v || !pre_fold || !n)
+        return;
+    if (n > CTL)
+        n = CTL;
+    if (mod_ratio_q16 < (1u << 14))
+        mod_ratio_q16 = 1u << 14;
+    else if (mod_ratio_q16 > (16u << 16))
+        mod_ratio_q16 = 16u << 16;
+
+    mod_inc = metal_core_ratio_increment(osc1_inc, mod_ratio_q16);
+    level = clamp(osc2_level_q15, 0, 32767);
+    depth = metal_core_complex_fm_depth_q15(fm_index_q15, west_coast_drive_q15, character);
+    deviation_inc = ((uint64_t)osc1_inc * 2u * (uint32_t)depth) >> 15;
+
+    ph1 = v->ph[0];
+    ph2 = v->ph[1];
+    phm = v->ph[2];
+    for (i = 0; i < n; i++) {
+        int32_t mod = metal_core_modulator_sample(phm, mod_inc, mod_wave);
+        int32_t step = metal_core_fm_instantaneous_step(osc1_inc, deviation_inc, mod);
+        int32_t osc1 = metal_core_osc_sample_signed(ph1, step, osc_wave);
+        int32_t osc2 = metal_core_osc_sample(ph2, osc2_inc, osc_wave);
+        pre_fold[i] = osc1 + mulq15(osc2, level);
+        ph1 += (uint32_t)step;
+        ph2 += osc2_inc;
+        phm += mod_inc;
+    }
+    v->ph[0] = ph1;
+    v->ph[1] = ph2;
+    v->ph[2] = phm;
+}
