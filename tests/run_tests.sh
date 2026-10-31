@@ -472,6 +472,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "ENERGUN METAL CORE: reusable fixed-point oscillator primitives (host-only)" "$OUT/metal_core_osc_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_lpg_test" tests/metal_core_lpg_test.c
     run "ENERGUN METAL CORE: LPG MODULE VOLUME Option C peak math (host-only)" "$OUT/metal_core_lpg_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_lpg_timing_test" tests/metal_core_lpg_timing_test.c
+    run "ENERGUN METAL CORE: LPG timing and filter target math (host-only)" "$OUT/metal_core_lpg_timing_test"
     # SLICE is in the standard build (firmware/src/core.h): its test always runs (after #22 by andreahaku)
     if grep -q '^#define SLC_BREAK_BPM ' build/gen/felucca_samples.h; then
         mkdir -p build/slice_demo
