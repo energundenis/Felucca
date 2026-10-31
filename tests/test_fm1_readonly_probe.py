@@ -34,6 +34,17 @@ class ProbeCodecTests(unittest.TestCase):
         self.assertEqual(result["tracks"][1]["mute"], True)
         self.assertEqual(result["tracks"][1]["armed"], True)
 
+
+    def test_track_dump_parameter_values(self):
+        # track 0, engine 0, preset 0, P_COUNT=33 values all encoded as zero
+        payload = [0, 0, 0] + [0, 64] * 33
+        result = probe.parse_track_dump(payload, 0, 33, ["ANALOG"])
+        self.assertEqual(result["engine_name"], "ANALOG")
+        self.assertEqual(result["sequencer_parameters"]["P_ROOT"], 0)
+        self.assertEqual(result["sequencer_parameters"]["P_SCALE"], 0)
+        self.assertEqual(result["sequencer_parameters"]["P_QUANT_name"], "OFF")
+        self.assertEqual(result["sequencer_parameters"]["P_SLEN"], 0)
+
     def test_step_reply(self):
         # track 0, step 7, one note C3 (48), NOTE, accent, velocity 127,
         # no drum hits, chance 100, ratchet 1, nudge 0, no condition.
