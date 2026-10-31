@@ -138,3 +138,19 @@ For METAL CORE, the chosen VCA must therefore apply Velocity/Accent itself. The 
 - CP1 overall remains OPEN.
 - No firmware code, engine registration, parameter IDs, UI, persistent storage, Flash allocation, package, factory firmware or physical FM-1 state changed.
 - `main` remains untouched.
+
+## 10. Pinned Felucca-Engines API verification (CP1.15 follow-up)
+
+The host repository pins `firmware/engines` to submodule commit `d0260074ce100a47675814b7f38d61f11176c926` (Felucca-Engines). The exact header `src/felucca_engine.h` at that commit was inspected; header blob SHA: `8e4dd5d5e1ec22f4a1a897ad15e783c42349037a`.
+
+Verified API details:
+
+- `engine_t.amp(track_t *, voice_t *, int32_t adsr)` is an optional callback called once per control tick. It receives the host ADSR value in Q15 after `env_tick()` and returns Q15 amplitude.
+- `engine_t.ownenv = 1` means the engine's envelopes own voice amplitude: host ADSR is not applied, host velocity multiplication is not applied, ENV modulation source is zero, and the voice remains active until `done()` returns true.
+- `engine_t.done(track_t *, voice_t *)` is called once per control tick before the render callback. It is the engine's responsibility to report completion only after its own Release is finished.
+- `voice_t` exposes `gate`, `active`, `vel`, `mvel`, `stage`, `env` and `env_out`. The header documents `note_on` on voice start/retrigger and the `vmod_t` amplitude ramp `amp0 → amp1`.
+- Existing FM6 demonstrates `.ownenv = 1` and `.done = fm6_done`; its completion callback checks its own per-voice note/envelope state.
+
+The API verification gate is therefore RESOLVED for this exact pinned submodule revision. It does not yet prove the best VCA implementation strategy or target CPU cost. A sample-domain VCA may be applied in the engine render loop; alternatively the optional `amp` callback can provide a control-rate Q15 value for the host's block amplitude ramp. Select one after deterministic accuracy tests, and do not multiply both paths.
+
+The current host source calls `done()` before `render()`. If a sample-domain envelope reaches silence during a render block, the host can observe completion on the next control tick; test and document this block-boundary behavior to prevent clicks or premature voice reuse.
