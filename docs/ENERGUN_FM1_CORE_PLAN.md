@@ -328,3 +328,12 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The resolved `vmod_t.inc` pitch also includes host pitch modulation, so simply ignoring it with FOLLOW OFF would incorrectly suppress live performance pitch and unrelated modulation.
 - Proposed a host-owned per-voice provenance contract and deterministic FOLLOW-01..08 acceptance tests. Exact v98 base-frequency mapping and arpeggiator/preview policy remain to be verified.
 - Documentation-only milestone. No host source, shared engine ABI, DSP code, engine registration, IDs, UI, storage, package or device state changed.
+
+
+## CP2.5 reference-copy follow-up — FOLLOW pitch mapping (2026-10-31)
+
+- Inspected the available Library file `energun_westcoast_synth_v99_metal_core_vcf_testA.html`, which identifies itself as an experimental copy based on v98 while preserving the original v98.
+- The v99-derived step mapping is `FREQ × 2^(NOTE/12) × 2^(NOTE OCTAVE)`; ROOT uses `FREQ × 2^OCTAVE`. NOTE is a semitone offset from base FREQ, not an absolute MIDI note number.
+- The v99 copy has two issues requiring explicit V1 handling: its trigger hard-codes Complex MOD ratio to 1.5 despite the independent MOD RATIO control; and FOLLOW OFF does not restore base FREQ, leaving the last followed frequency until another frequency update.
+- The original v98 file was not present in the currently searchable Library scope, so these findings are labelled v99-derived and are not claimed as direct v98 verification.
+- The CP2.5 audit remains a design gate; no pitch-selection code or host note-source metadata has been added.
