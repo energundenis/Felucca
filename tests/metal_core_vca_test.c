@@ -172,12 +172,80 @@ static void test_retrigger_and_zero_gate(void)
           after < before + 1000);
 }
 
+static void test_explicit_gate_off(void)
+{
+    eng_metal_vca_t vca, once, twice;
+    uint32_t i;
+    int32_t held, a, b;
+    int monotonic = 1;
+
+    eng_metal_vca_reset(&vca);
+    eng_metal_vca_trigger(&vca, 60000, 9000, 220u, 441u,
+                          13230u, 200000u, 8820u);
+    for (i = 0; i < 100u; ++i)
+        eng_metal_vca_process(&vca);
+    held = vca.level_q16;
+    eng_metal_vca_gate_off(&vca);
+    check("explicit Gate-off immediately selects Release at the held level",
+          vca.phase == ENG_METAL_VCA_RELEASE &&
+          vca.level_q16 == held &&
+          vca.target_q16 == ENG_METAL_VCA_Q16_FLOOR &&
+          vca.decay_remaining > 0u);
+    a = eng_metal_vca_process(&vca);
+    check("first sample after explicit Gate-off descends from current level",
+          a < held && a > ENG_METAL_VCA_Q16_FLOOR);
+
+    once = vca;
+    twice = vca;
+    eng_metal_vca_gate_off(&once);
+    eng_metal_vca_gate_off(&twice);
+    eng_metal_vca_gate_off(&twice);
+    for (i = 0; i < 32u; ++i) {
+        a = eng_metal_vca_process(&once);
+        b = eng_metal_vca_process(&twice);
+        if (a != b || once.phase != twice.phase)
+            monotonic = 0;
+    }
+    check("duplicate Gate-off does not restart or alter Release",
+          monotonic);
+
+    for (i = 0; i < 100000u && !eng_metal_vca_done(&vca); ++i) {
+        int32_t previous = vca.level_q16;
+        int32_t value = eng_metal_vca_process(&vca);
+        if (value > previous)
+            monotonic = 0;
+    }
+    check("explicit short Gate suppresses pending Decay until silent",
+          monotonic && eng_metal_vca_done(&vca) && vca.level_q16 == 0);
+
+    eng_metal_vca_gate_off(&vca);
+    check("Gate-off on an idle VCA is harmless",
+          eng_metal_vca_done(&vca) && vca.level_q16 == 0);
+
+    eng_metal_vca_reset(&vca);
+    eng_metal_vca_trigger(&vca, 50000, 8000, 220u, 441u,
+                          13230u, 100000u, 8820u);
+    for (i = 0; i < 40u; ++i)
+        eng_metal_vca_process(&vca);
+    eng_metal_vca_gate_off(&vca);
+    for (i = 0; i < 20u; ++i)
+        eng_metal_vca_process(&vca);
+    held = vca.level_q16;
+    eng_metal_vca_trigger(&vca, 55000, 10000, 220u, 441u,
+                          13230u, 100000u, 8820u);
+    a = eng_metal_vca_process(&vca);
+    check("MIDI/sequencer retrigger after Gate-off holds level without zero reset",
+          vca.phase == ENG_METAL_VCA_ATTACK &&
+          a >= held && a - held < 1000);
+}
+
 int main(void)
 {
     test_helpers_and_targets();
     test_attack_decay_sustain_release();
     test_short_gate_priority();
     test_retrigger_and_zero_gate();
+    test_explicit_gate_off();
     printf("metal VCA: %s (%d failures)\n",
            failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
