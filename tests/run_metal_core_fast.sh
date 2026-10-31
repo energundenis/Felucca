@@ -18,6 +18,13 @@ compile_test() {
     echo "== Compile $name"
     "$CC" -O2 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o "$OUT/$name" "$source" "$@"
 }
+compile_test_strict() {
+    name="$1"
+    source="$2"
+    shift 2
+    echo "== Strict compile $name (-std=c11 -Wall -Wextra -Werror)"
+    "$CC" -std=c11 -O2 -Wall -Wextra -Werror -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o "$OUT/$name" "$source" "$@"
+}
 run_test() {
     name="$1"
     echo "== Run $name"
@@ -51,7 +58,7 @@ run_test metal_core_vca_real_track_adapter
 compile_test metal_core_cp3_memory_accounting tests/metal_core_cp3_memory_accounting_test.c
 run_test metal_core_cp3_memory_accounting
 
-compile_test metal_core_feedback_delay_candidate tests/metal_core_feedback_delay_candidate_test.c
+compile_test_strict metal_core_feedback_delay_candidate tests/metal_core_feedback_delay_candidate_test.c
 run_test metal_core_feedback_delay_candidate
 
 compile_test metal_core_follow tests/metal_core_follow_test.c -lm
