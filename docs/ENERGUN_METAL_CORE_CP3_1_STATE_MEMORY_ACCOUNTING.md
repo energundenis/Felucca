@@ -45,11 +45,11 @@ This is a lower-bound state record, not the final production `metal_voice_state_
 
 ## 4. Complex FM feedback delay
 
-The v98 Complex Oscillator feedback path uses a 3 ms delay. A fixed int32 ring per voice has the following conservative sample counts (ceil of 3 ms × sample rate):
+The v98 Complex Oscillator feedback path uses a 3 ms delay. The actual FM-1 audio clock is derived from `firmware/src/audio.c`: `DAC_TICKS=544` at 24 MHz, or 44,117.647 frames/s. A fixed int32 ring per voice has the following conservative sample counts (ceil of 3 ms × sample rate):
 
 | Sample rate | Samples per voice | Bytes per voice | Eight-voice delay bytes |
 |---:|---:|---:|---:|
-| 44.1 kHz | 133 | 532 | 4,256 |
+| 44.117647 kHz (FM-1) | 133 | 532 | 4,256 |
 | 48 kHz | 144 | 576 | 4,608 |
 | 96 kHz | 288 | 1,152 | 9,216 |
 | 192 kHz | 576 | 2,304 | 18,432 |
@@ -76,7 +76,7 @@ Combined with the 3 ms int32 feedback rings, the expanded *candidate subtotal* i
 
 | Sample rate | Provisional voice records | Feedback rings | Expanded subtotal | Remaining in 12,888-byte pool |
 |---:|---:|---:|---:|---:|
-| 44.1 kHz | 896 | 4,256 | 5,152 | 7,736 |
+| 44.117647 kHz (FM-1) | 896 | 4,256 | 5,152 | 7,736 |
 | 48 kHz | 896 | 4,608 | 5,504 | 7,384 |
 | 96 kHz | 896 | 9,216 | 10,112 | 2,776 |
 | 192 kHz | 896 | 18,432 | 19,328 | exceeds pool by 6,440 |
@@ -102,7 +102,7 @@ Combining only the 72-byte provisional record and the 3 ms int32 delay rings (ex
 
 | Sample rate | Voice records | Delay rings | Lower-bound subtotal | Remaining in 12,888-byte pool |
 |---:|---:|---:|---:|---:|
-| 44.1 kHz | 576 | 4,256 | 4,832 | 8,056 |
+| 44.117647 kHz (FM-1) | 576 | 4,256 | 4,832 | 8,056 |
 | 48 kHz | 576 | 4,608 | 5,184 | 7,704 |
 | 96 kHz | 576 | 9,216 | 9,792 | 3,096 |
 | 192 kHz | 576 | 18,432 | 19,008 | exceeds pool by 6,120 |
@@ -308,3 +308,26 @@ Added `tests/metal_core_feedback_delay_target_probe.c` and wired it into the ful
 The workflow archives the target object disassembly and symbol table alongside the existing VCA probes. It checks that all three probe symbols are present. This is a repeatable target-compiler/code-generation inspection gate; it does not run on FM-1 hardware, link into firmware, measure ISR wall-clock timing, or prove a full-engine CPU budget. Inspect the archived disassembly for helper calls (especially 64-bit multiply support) and instruction count before deciding whether the production feedback multiplier should remain 64-bit or be redesigned.
 
 The probe reuses the host-only candidate ring header strictly for compile-time arithmetic inspection. It is not included by production source and does not authorize integration.
+
+
+## 19. Exact FM-1 I2S clock and corrected 3 ms interpolation fraction (2026-11-01)
+
+The direct board-audio timing anchor is in `firmware/src/audio.c`:
+
+```c
+#define DAC_TICKS 544u /* TIMER4 ticks per I2S frame (24 MHz / 44,117.6 Hz) */
+```
+
+Therefore the source-derived nominal frame rate is:
+
+```text
+24,000,000 / 544 = 44,117.6470588 frames/s
+0.003 × 44,117.6470588 = 132.3529412 samples
+fraction = 0.3529412
+Q15 fraction = round(0.3529412 × 32768) = 11565
+near / far interpolation weights = 21203 / 32768 and 11565 / 32768
+```
+
+This supersedes the earlier provisional 44,100 Hz / 132.3-sample assumption in Sections 13 and 15. The 133-slot ring capacity and 532-byte per-voice storage do not change, but the interpolation split changes from 0.7 / 0.3 to approximately 0.64706 / 0.35294. The host candidate header and impulse assertions have been corrected accordingly.
+
+The audio source constant is stronger evidence than the earlier `HALF_FRAMES` comment, but remains a source-derived nominal rate rather than a measured runtime clock on physical hardware. The production delay candidate remains host-only and unapproved: AC79 code-generation review, production arithmetic saturation/overflow tests, v98 response comparison and actual callback CPU timing are still required.
