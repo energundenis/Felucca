@@ -80,7 +80,7 @@ static void bypass_exact(void)
 static void active_fm(void)
 {
     voice_t v;
-    int32_t out[CTL + 1];
+    int32_t out[CTL + 1], ref[CTL];
     uint32_t base = pitch_inc(60 * 16), mod_inc, i;
     int different = 0, bounded = 1;
 
@@ -91,6 +91,13 @@ static void active_fm(void)
     v.ph[2] = 0x31415926u;
     mod_inc = metal_core_ratio_increment(base, 201195u);
     out[CTL] = 0x1234ABCD;
+    {
+        voice_t baseline;
+        memset(&baseline, 0, sizeof baseline);
+        baseline.ph[0] = 0x13572468u;
+        baseline.ph[1] = 0x24681357u;
+        metal_core_osc_pair_block(&baseline, ref, CTL, &(vmod_t){.inc = base, .pitch16 = 60 * 16}, MC_OSC_SAW, 0, 16384);
+    }
 
     metal_core_complex_fm_pair_block(&v, out, CTL, base, base, 201195u,
                                      MC_OSC_SAW, MC_MOD_SINE, 26000, 32767,
@@ -98,7 +105,7 @@ static void active_fm(void)
     for (i = 0; i < CTL; i++) {
         if (out[i] < -65535 || out[i] > 65535)
             bounded = 0;
-        if (out[i] != metal_core_osc_sample(0x13572468u + i * base, base, MC_OSC_SAW))
+        if (out[i] != ref[i])
             different = 1;
     }
     check("active FM changes the carrier waveform", different);
