@@ -34,3 +34,7 @@ jobs:
         run: cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_fm_modulator_test tests/metal_fm_modulator_test.c
       - name: Run Complex Oscillator modulator tests
         run: build/metal_fm_modulator_test
+      - name: Compile Complex FM curve tests
+        run: cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_fm_curve_test tests/metal_fm_curve_test.c
+      - name: Run Complex FM curve tests
+        run: build/metal_fm_curve_test
