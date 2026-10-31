@@ -49,7 +49,23 @@ Proposed V1 behavior, pending confirmation against the protected v98 reference:
 - Arpeggiator and step preview: keep a distinct source classification until their exact FOLLOW policy is confirmed.
 - Host tune, pitch bend and other pitch modulation remain independently testable; FOLLOW must not accidentally disable unrelated host modulation.
 
-The exact frequency-anchor formula for converting the base FREQ and a sequencer MIDI note into a tracked oscillator frequency must be verified against the protected v98 source before it is frozen. Do not assume that A4/MIDI 69 is the reference anchor without that source check.
+## 4A. Reference-copy formula and discrepancies
+
+The available Library copy `energun_westcoast_synth_v99_metal_core_vcf_testA.html` explicitly identifies itself as a separate experimental copy based on v98 and says the original v98 remains unchanged. It is useful behavioral evidence, but it is not a byte-for-byte v98 source.
+
+Its `wcTrig(p)` FOLLOW block gives the note mapping:
+
+- If `p.note >= 0`: `f = FREQ × 2^(p.note / 12) × 2^(p.noteOct)`.
+- If `p.note < 0`: `f = FREQ × 2^(p.oct || 0)`.
+- `FREQ` is the base oscillator frequency in Hz. NOTE is a semitone offset (0..11) from that base; NOTE OCTAVE is an additional octave offset. ROOT uses the separate OCTAVE value.
+- The step trigger updates OSC1 and OSC2 to `f`; the Complex modulator is set to `f × 1.5` in this v99 copy; RING2 is set to `f × RING RATIO`; when METAL is ON, METAL FM and METAL ring are set to `f × METAL RATIO`.
+
+Two discrepancies must not be copied blindly:
+
+1. The v99 trigger uses a hard-coded Complex-modulator ratio of 1.5 even though the parameter inventory and control handler expose a separate MOD RATIO (default 3.07). This conflicts with the documented independent MOD RATIO control and needs direct v98 verification / a deliberate V1 decision.
+2. The v99 trigger only writes tracked frequencies inside `if (FOLLOW && p)`. Turning FOLLOW OFF does not itself restore base FREQ; oscillator frequencies can remain at the last followed note. The accepted signal-flow contract requires FOLLOW OFF to restore/use base FREQ, so V1 must explicitly implement that behavior rather than inherit this stale-frequency condition.
+
+The exact original v98 file was not found in the currently searchable Library scope during this audit. The formula above is therefore recorded as v99-derived evidence, not as a direct v98 source assertion. Do not use MIDI 69 as a reference anchor: the available reference-copy formula is relative to the stored base FREQ.
 
 ## 5. Required deterministic tests
 
@@ -66,6 +82,6 @@ The exact frequency-anchor formula for converting the base FREQ and a sequencer 
 
 ## 6. Entry gate
 
-No FOLLOW DSP helper or engine render change is made in this audit. The next implementation step is a narrowly scoped host provenance design and tests, followed by an isolated bounded pitch-selection helper. The exact v98 frequency mapping and arpeggiator/preview policy must be verified before the helper is treated as final.
+No FOLLOW DSP helper or engine render change is made in this audit. The next implementation step is a narrowly scoped host provenance design and tests, followed by an isolated bounded pitch-selection helper. The v99-derived mapping is now documented in §4A: base FREQ × semitone ratio × octave ratio (or base FREQ × step OCTAVE for ROOT). Direct v98 verification is still open, as are the MOD RATIO discrepancy and arpeggiator/preview policy. The implementation must restore base FREQ when FOLLOW is switched OFF; the v99 copy leaves the last followed frequency in place.
 
 No engine registration, parameter ID, UI, storage format, firmware package, factory image, Flash or physical device state changed.
