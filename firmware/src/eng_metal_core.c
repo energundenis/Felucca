@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * ENERGUN METAL CORE — isolated fixed-point DSP development.
  *
- * This file is not included by engines.c and is not a registered/playable
- * engine yet. Implemented and host-tested subsystems:
+ * This file is included by engines.c for an unregistered compile-test adapter.
+ * It is not present in ENGINES[] and is not a selectable/playable engine. Implemented and host-tested subsystems:
  *   - OSC1 / OSC2 direct-audio pair;
  *   - independent wcMod source and FM CHARACTER / WEST COAST DRIVE curves;
  *   - audio-rate Complex FM carrier path, including signed-frequency BLEP;
@@ -555,14 +555,14 @@ typedef char metal_core_part_memory_fits[
 
 static void metal_core_part_state_init(metal_core_part_state_t *s)
 {
-    uint32_t i;
     if (!s) return;
+    /* The host's per-part pool is zeroed at boot and whenever another engine
+     * claims it. Do not clear the delay ring here on the audio ISR path. */
     s->phase[0] = s->phase[1] = s->phase[2] = 0;
     s->delay_write = 0;
     s->advanced_this_block = 0;
     s->configured = 0;
     s->feedback_q15 = 0;
-    for (i = 0; i < MC_FEEDBACK_DELAY_SAMPLES; i++) s->delay[i] = 0;
     s->osc1_inc = s->osc2_inc = s->feedback_ref_inc = 0;
     s->ratio_q16 = 1u << 16;
     s->osc_wave = MC_OSC_SAW;
@@ -649,7 +649,7 @@ static void metal_core_part_render(metal_core_part_state_t *s, int32_t *out,
                                    int32_t osc2_level_q15, int32_t feedback_q15)
 {
     uint32_t i;
-    if (!s || !out || !n) return;
+    if (!s || !out || !n || s->advanced_this_block) return;
     if (n > CTL) n = CTL;
     metal_core_part_configure(s, osc1_inc, osc2_inc, feedback_ref_inc,
         ratio_q16, osc_wave, mod_wave, fm_index_q15, drive_q15, character,
