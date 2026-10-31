@@ -101,3 +101,61 @@ static void metal_core_osc_pair_block(voice_t *v, int32_t *pre_fold, uint32_t n,
     v->ph[0] = ph1;
     v->ph[1] = ph2;
 }
+
+
+/* ------------------------------------------------ Complex Oscillator source (wcMod) --- */
+
+enum {
+    MC_MOD_SINE = 0,
+    MC_MOD_TRIANGLE = 1,
+    MC_MOD_SAW = 2,
+    MC_MOD_SQUARE = 3
+};
+
+/* wcMod's independent waveform set. Felucca's pulse primitive is half-scale
+ * by design; double it here so the Complex Oscillator's SQUARE is full Q15. */
+static inline int32_t metal_core_modulator_sample(uint32_t phase, uint32_t inc, uint32_t wave)
+{
+    switch (wave) {
+    case MC_MOD_TRIANGLE:
+        return osc_tri(phase);
+    case MC_MOD_SAW:
+        return osc_saw(phase, inc);
+    case MC_MOD_SQUARE:
+        return clamp(osc_pulse(phase, inc, 0x80000000u) * 2, -32768, 32767);
+    case MC_MOD_SINE:
+    default:
+        return osc_sine(phase);
+    }
+}
+
+/* MOD RATIO is 0.25..16.0 in Q16. Compute once per block, not per sample.
+ * The phase increment is capped just below Nyquist so an extreme ratio cannot
+ * wrap the unsigned phase step and reverse the oscillator direction. */
+static inline uint32_t metal_core_ratio_increment(uint32_t base_inc, uint32_t ratio_q16)
+{
+    uint64_t scaled = ((uint64_t)base_inc * ratio_q16) >> 16;
+    return scaled > 0x7FFFFFFFu ? 0x7FFFFFFFu : (uint32_t)scaled;
+}
+
+/* Render wcMod into a Q15 scratch block. This stage creates only the
+ * independent modulator signal; FM / AM routing, character/index scaling,
+ * feedback, and the FM trigger envelope are deliberately separate stages. */
+static void metal_core_modulator_block(voice_t *v, int32_t *mod_out, uint32_t n,
+                                       const vmod_t *m, uint32_t ratio_q16, uint32_t wave)
+{
+    uint32_t i, ph, inc;
+
+    if (!v || !mod_out || !m || !n)
+        return;
+    if (n > CTL)
+        n = CTL;
+
+    inc = metal_core_ratio_increment(m->inc, ratio_q16);
+    ph = v->ph[2];
+    for (i = 0; i < n; i++) {
+        mod_out[i] = metal_core_modulator_sample(ph, inc, wave);
+        ph += inc;
+    }
+    v->ph[2] = ph;
+}
