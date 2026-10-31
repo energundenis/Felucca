@@ -556,3 +556,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The exact MIDI/sequencer Gate, retrigger/ratchet, manual-mode, and block-boundary lifecycle mappings remain open.
 - No engine registration, UI, parameter IDs, storage, flash layout, firmware image changes, or device writes. The target compile probe is not linked into the firmware.
 - CP2.15 target compile result is pending its triggered CI run. No target cycle benchmark is claimed.
+
+
+## CP2.16 — AC79 VCA code-generation and CI evidence audit (2026-10-31)
+
+- Added [CP2.16 AC79 VCA code-generation audit](ENERGUN_METAL_CORE_CP2_16_AC79_VCA_CODEGEN_AUDIT.md).
+- GitHub Actions run [41225293878](https://github.com/energundenis/Felucca/actions/runs/41225293878) completed successfully at source SHA `cf9e6cba31f3795780cfb8114c5f9b6a8a7d126a`; artifact 13052121394 was downloaded and inspected.
+- Full Host/Web/backup regression passed. The isolated VCA suite reported 20 checks and 0 failures. Regression reported 98 golden renders unchanged, 0 health failures, 0 voice/routing failures, 0 CPU budget entries and 0 crashes.
+- AC79 `pi32v2` object confirms `sizeof(eng_metal_vca_t)==36`; `eng_metal_vca_process` occupies 184 bytes in the probe object and emits one wide multiply/accumulate instruction with no separate arithmetic helper symbol. The 32-sample wrapper loops over 32 sample calls.
+- Baseline Felucca build report: image 513,756 B; `.data + .bss` 61,908 / 73,728 B; pool 326,208 / 368,640 B. These values are for unmodified Felucca and do not include an integrated ENERGUN engine.
+- CP2.15 target compile, ABI and object-inspection gates are passed. Actual AC79 cycle timing, integrated per-voice memory placement, audio render/lifecycle tests, and manual/performance Gate mapping remain open.
+- CI emitted non-fatal compiler warnings, including a sequence-point warning at `tests/input_test.c:47`; this is recorded for separate review and was not modified in this milestone.
+- No engine registration, parameter/UI/storage/flash changes, factory firmware changes, device writes or flashing. `main` remains untouched.
