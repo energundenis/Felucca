@@ -42,3 +42,17 @@ jobs:
         run: cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_complex_fm_test tests/metal_complex_fm_test.c
       - name: Run audio-rate Complex FM tests
         run: build/metal_complex_fm_test
+      - name: Compile feedback delay tests at 44.1 kHz
+        run: |
+          cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_feedback_delay_test tests/metal_feedback_delay_test.c
+      - name: Run feedback delay tests at 44.1 kHz
+        run: build/metal_feedback_delay_test
+      - name: Generate 96 kHz engine tables
+        run: |
+          mkdir -p build/gen96
+          python3 firmware/engines/tools/gen_engine_tables.py --fs 96000 build/gen96/felucca_tables.h
+      - name: Compile feedback delay tests at 96 kHz
+        run: |
+          cc -O2 -w -std=c99 -Ibuild/gen96 -o build/metal_feedback_delay_test_96 tests/metal_feedback_delay_test.c
+      - name: Run feedback delay tests at 96 kHz
+        run: build/metal_feedback_delay_test_96
