@@ -43,9 +43,9 @@ Sound-engine direction: ENERGUN METAL CORE V1
 - [x] Record the exact HEAD SHA of `energun-metal-core`: `4ea3ed85877a8a7f241ecfdb5c9604686309a0c8` (2026-10-31 audit).
 - [x] Compare ancestry and changed files with `main` and the separate DSP-stage branch; the working branch is 77 commits ahead of `main` and 0 behind it.
 - [x] Inventory DSP code: the working branch contains only the unregistered scaffold. A separate branch, `metal-core-dsp-stage1-osc` (HEAD `cf22f01b23f618feda65ccde85b0503fccacc7b0`), contains OSC/FM/feedback prototypes, per-part state, an unregistered callback adapter, tests, and stage reports. It has diverged from `energun-metal-core` (86 commits on its side and 1 commit on the working-branch side after their merge base); none of that implementation is present in the working branch. No cherry-pick/port has been performed.
-- [ ] Verify the checked-out `firmware/engines` and `firmware/bsp` submodule SHAs against the parent repository's gitlink pins using the new recursive CI checkout.
-- [ ] Build unmodified Felucca using the new Linux x86-64 GitHub Actions workflow (no user Mac required).
-- [ ] Record baseline test results, firmware size, RAM use, and CPU/audio-render budget from CI evidence.
+- [x] Verify the checked-out `firmware/engines` and `firmware/bsp` submodule SHAs against the parent repository's gitlink pins using the recursive CI checkout (run 41160651604; exact SHAs recorded below).
+- [x] Build unmodified Felucca using the Linux x86-64 GitHub Actions workflow (run 41160651604; clean target build).
+- [x] Record baseline test results, firmware/package sizes, and existing-engine CPU/audio-render budget from CI evidence. RAM headroom remains unmeasured and is explicitly open.
 - Exit criteria: reproducible clean baseline build and an evidence-based branch/code inventory.
 
 ### Phase 1 — Sound-engine specification
@@ -215,3 +215,22 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Recorded current status honestly: existing scaffold test checks only isolation; ENERGUN DSP and host integration tests do not yet exist; no render symbol is present for target budget; physical tests not started.
 - Flagged unresolved LPG MODULE VOLUME source-semantics conflict between CP1.5 and LPG design 02 as an explicit blocker for the LPG-03 expected result.
 - No DSP, engine registration, parameter IDs, storage, Flash or device changes.
+
+
+## Remote baseline CI — completed run (2026-10-31)
+
+- Workflow run: [41160651604](https://github.com/energundenis/Felucca/actions/runs/41160651604), conclusion **success**.
+- CI source commit: `d6452c1935c96e7c51048e7eb506898dd88277ce`. The current branch HEAD is `854815462ef420221f902fd0c73baf264fa5ec66`; comparison confirms all 15 commits after the CI source are documentation-only (no firmware, tests, workflow, submodule, or build-script changes). Therefore the passing baseline build covers the current firmware source tree.
+- Recursive submodules checked out exactly:
+  - `firmware/engines`: `d0260074ce100a47675814b7f38d61f11176c926`
+  - `firmware/bsp`: `5942e68b89ab9ccd23f2c541d712ca38fe635f11`
+- Environment setup passed: Python/Pillow/fontTools, Node, JieLi pi32v2 toolchain, and documented AC79 SDK.
+- `./build.sh`: success. Produced:
+  - `build/felucca.bin`: 513,532 bytes
+  - `build/loader/ota.bin`: 7,130 bytes
+  - `build/felucca.fwsc`: 610,286 bytes, package identity `FM-1_900`
+- `tests/run_tests.sh`: **ALL HOST TESTS PASSED**, including web tests and web backup tests. The browser emulator was skipped because Emscripten is not installed on the runner; this is reported as a skip, not a pass.
+- Target disassembly cost check passed under existing +10% budgets. Examples: `analog_render` cost 614 vs budget 585; `mix_part` 3649 vs 3549; both within configured tolerance. All listed target functions were reported ok. This is the Felucca baseline, not an ENERGUN render measurement (Metal Core has no render symbol yet).
+- Artifact: [baseline build evidence](https://github.com/energundenis/Felucca/actions/runs/41160651604/artifacts/13027043947), artifact ID `13027043947`, 946,537 bytes, SHA-256 `fe3b1e45914aa1cead94e5449dc1864ec48f8e964ae6f80aa4a02a36f77d9355`, retention through 2026-11-14.
+- RAM headroom is not reported by this workflow and remains an open measurement. No firmware was flashed; artifact is build evidence only.
+- CP0 recursive submodule verification and clean baseline build/regression gate are complete. Physical-device validation and ENERGUN-specific DSP cost remain future work.
