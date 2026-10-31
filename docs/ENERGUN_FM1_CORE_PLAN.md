@@ -234,3 +234,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Artifact: [baseline build evidence](https://github.com/energundenis/Felucca/actions/runs/41160651604/artifacts/13027043947), artifact ID `13027043947`, 946,537 bytes, SHA-256 `fe3b1e45914aa1cead94e5449dc1864ec48f8e964ae6f80aa4a02a36f77d9355`, retention through 2026-11-14.
 - RAM headroom is not reported by this workflow and remains an open measurement. No firmware was flashed; artifact is build evidence only.
 - CP0 recursive submodule verification and clean baseline build/regression gate are complete. Physical-device validation and ENERGUN-specific DSP cost remain future work.
+
+
+## CP1.8 — LPG MODULE VOLUME exact source trace (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_8_LPG_VOLUME_SOURCE_TRACE.md` (commit `aaa4f92e31c3e9a7235157658282591901a71789`).
+- Materialized and inspected the protected v98 reference HTML itself, not just the previous notes.
+- Resolved the apparent conflict: the MODULE VOLUME handler writes `wcLpgGain.gain`, but `wcTrig()` holds and overwrites that same AudioParam with `0.25 + RESPONSE × 0.75` and the decay envelope. Thus MODULE VOLUME is not an independent per-step gain in v98.
+- Corrected `docs/ENERGUN_METAL_CORE_LPG_DESIGN_02_V98_FAITHFUL.md` (commit `239efdd810dfbf595d3b044c0118ca72abc7d1c5`) and updated CP1.7 matrix language (see current matrix revision).
+- Documented three explicit V1 choices: faithful compatibility, separate post-envelope gain, or scaling the LPG envelope peak. Recommended the latter as a listening candidate, but no behavior was selected or implemented.
+- No DSP, UI, IDs, ABI, storage, Flash, firmware package or hardware changes.
