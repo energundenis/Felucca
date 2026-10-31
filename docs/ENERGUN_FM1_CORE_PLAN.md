@@ -431,3 +431,15 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added host adapter tests against Felucca's generated pitch table for all MIDI notes 0..127, monotonicity, source/FOLLOW combinations, host pitch offset retention and invalid inputs.
 - Target CPU cost of 64-bit division and render integration remain open gates.
 - CP2.12 implementation CI pending.
+
+
+## AC79 SDK reproducible fetch and cache (2026-10-31)
+
+- Pinned the exact JieLi release tag `AC79NN_SDK_V1.2.1_2023-12-13` to commit `d179b4484759423312073f5fbb232501aa491047`.
+- The release tag is listed by the official Gitee repository; its abbreviated commit is `d179b44`. The full commit was resolved from the matching annotated tag object (`b02c8c9354c077238ccbf764e36eff53782e1c16`) present in two public mirrors.
+- CI continues to fetch from the official Gitee remote; no unofficial mirror is used as a build source.
+- Added an exact-commit GitHub Actions cache, cache validation, detached checkout and mandatory full-SHA verification.
+- Cache miss fetches the explicit release tag with HTTP/1.1, low-speed protection, three bounded attempts and backoff. The job fails clearly if the official source cannot provide the pinned revision.
+- Cache key includes OS and full commit SHA, so SDK revisions cannot be silently mixed.
+- SDK cache is saved independently before firmware compilation. Build source, firmware logic, package identity and device state are unchanged.
+- Validation pending in the CI run triggered by this workflow update.

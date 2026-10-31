@@ -20,6 +20,11 @@ on:
 permissions:
   contents: read
 
+env:
+  AC79_SDK_TAG: AC79NN_SDK_V1.2.1_2023-12-13
+  AC79_SDK_COMMIT: d179b4484759423312073f5fbb232501aa491047
+  AC79_SDK_URL: https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git
+
 concurrency:
   group: energun-fm1-baseline-${{ github.ref }}
   cancel-in-progress: true
@@ -59,12 +64,80 @@ jobs:
           sh tools/get_toolchain.sh "$HOME/.jieli"
           "$HOME/.jieli/toolchain/pi32v2/bin/clang" --version
 
-      - name: Fetch the documented JieLi AC79 SDK
+      - name: Restore pinned JieLi AC79 SDK cache
+        id: ac79-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/fw-AC79_AIoT_SDK
+          key: ${{ runner.os }}-ac79-sdk-${{ env.AC79_SDK_COMMIT }}
+
+      - name: Fetch and verify pinned JieLi AC79 SDK
+        id: ac79-sdk
+        timeout-minutes: 65
         run: |
-          git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
-            https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
-          test -f "$HOME/fw-AC79_AIoT_SDK/cpu/wl82/tools/uboot.boot"
-          echo "AC79_SDK=$HOME/fw-AC79_AIoT_SDK" >> "$GITHUB_ENV"
+          set -euo pipefail
+          SDK_DIR="$HOME/fw-AC79_AIoT_SDK"
+          EXPECTED_COMMIT="$AC79_SDK_COMMIT"
+
+          if [ -d "$SDK_DIR/.git" ]; then
+            CACHED_COMMIT="$(git -C "$SDK_DIR" rev-parse HEAD)"
+            if [ "$CACHED_COMMIT" != "$EXPECTED_COMMIT" ]; then
+              echo "Cached SDK commit mismatch: $CACHED_COMMIT"
+              rm -rf "$SDK_DIR"
+            fi
+          elif [ -e "$SDK_DIR" ]; then
+            rm -rf "$SDK_DIR"
+          fi
+
+          if [ ! -d "$SDK_DIR/.git" ]; then
+            mkdir -p "$SDK_DIR"
+            git -C "$SDK_DIR" init
+            git -C "$SDK_DIR" remote add origin "$AC79_SDK_URL"
+
+            FETCHED=0
+            for ATTEMPT in 1 2 3; do
+              echo "AC79 SDK fetch attempt $ATTEMPT/3 (pinned tag: $AC79_SDK_TAG)"
+              if timeout 20m git -C "$SDK_DIR" \
+                -c http.version=HTTP/1.1 \
+                -c http.lowSpeedLimit=1024 \
+                -c http.lowSpeedTime=60 \
+                fetch --depth=1 --no-tags origin \
+                "refs/tags/$AC79_SDK_TAG:refs/tags/$AC79_SDK_TAG"; then
+                FETCHED=1
+                break
+              fi
+              echo "Fetch attempt $ATTEMPT failed."
+              if [ "$ATTEMPT" -lt 3 ]; then
+                sleep $((ATTEMPT * 15))
+              fi
+            done
+
+            if [ "$FETCHED" -ne 1 ]; then
+              echo "::error::Unable to fetch the pinned AC79 SDK tag after 3 attempts."
+              exit 1
+            fi
+
+            git -C "$SDK_DIR" checkout --detach "$EXPECTED_COMMIT"
+          fi
+
+          ACTUAL_COMMIT="$(git -C "$SDK_DIR" rev-parse HEAD)"
+          if [ "$ACTUAL_COMMIT" != "$EXPECTED_COMMIT" ]; then
+            echo "::error::AC79 SDK revision mismatch. Expected $EXPECTED_COMMIT, got $ACTUAL_COMMIT"
+            exit 1
+          fi
+
+          test -f "$SDK_DIR/cpu/wl82/tools/uboot.boot"
+          echo "Verified AC79 SDK commit: $ACTUAL_COMMIT"
+          git -C "$SDK_DIR" log -1 --format='SDK commit: %H%nSDK subject: %s'
+          echo "AC79_SDK=$SDK_DIR" >> "$GITHUB_ENV"
+
+      - name: Save pinned JieLi AC79 SDK cache
+        if: steps.ac79-sdk.outcome == 'success' && steps.ac79-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ~/fw-AC79_AIoT_SDK
+          key: ${{ runner.os }}-ac79-sdk-${{ env.AC79_SDK_COMMIT }}
 
       - name: Build unmodified Felucca firmware
         run: ./build.sh
