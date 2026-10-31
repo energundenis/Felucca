@@ -139,11 +139,21 @@ static void test_host_pitch_delta(void)
           got == 1650000u);
 
 
+    /* The host increments are synthetic Q0.32 values with C4 = 2,000,000.
+     * MIDI 0 is 1/32 C4; MIDI 127 is 47.9458265x C4. Keep the ratios
+     * independent from the phase-increment result so endpoint fixtures cannot
+     * accidentally encode a second, incorrect octave scaling.
+     */
+    check("MIDI 0 endpoint ratio is exactly 1/32 of C4",
+          eng_metal_follow_inc_ratio_q24(reference, 62500u) ==
+              (ENG_METAL_FOLLOW_Q24_ONE / 32u));
     got = eng_metal_follow_host_phase_inc(base, 48000u, 1, 1,
                                            reference, 62500u, 62500u);
     check("MIDI 0 endpoint maps below C4 without octave clamp",
           got == 31250u);
 
+    check("MIDI 127 endpoint ratio represents 67 semitones above C4",
+          eng_metal_follow_inc_ratio_q24(reference, 95891653u) == 804397487u);
     got = eng_metal_follow_host_phase_inc(base, 48000u, 1, 1,
                                            reference, 95891653u, 95891653u);
     check("MIDI 127 endpoint maps above C4 without octave clamp",
