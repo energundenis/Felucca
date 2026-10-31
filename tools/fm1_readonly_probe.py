@@ -156,6 +156,11 @@ class ReadOnlyProbe:
         info_payload = self.request(CMD_INFO)
         track_payload = self.request(CMD_TRACK)
         info = parse_info(info_payload)
+        if not info["version"].startswith("FELUCCA "):
+            raise RuntimeError(
+                "This probe targets the Felucca SysEx protocol only. "
+                "Factory M-VAVE firmware V1.5 compatibility is not established; stopping before TRACK/step queries."
+            )
         tracks = parse_track(track_payload)
         nstep = min(int(info["steps_per_track"]), NSTEP_MAX)
         ntracks = min(int(tracks["track_count"]), NTRACK_MAX)
