@@ -139,16 +139,16 @@ int main(void)
      */
     for (i = 0; i < sizeof(gains) / sizeof(gains[0]); ++i) {
         int64_t first_pos, tail_pos, first_neg, tail_neg;
+        int64_t repeat_first, repeat_tail;
         uint32_t hash_pos, hash_pos_repeat, hash_neg, hash_neg_repeat;
         hash_pos = run_feedback_loop(gains[i], INT32_MAX,
                                      &first_pos, &tail_pos);
         hash_pos_repeat = run_feedback_loop(gains[i], INT32_MAX,
-                                            &first_echo /* overwritten below */, &tail_neg);
-        /* Re-run with separate outputs to keep positive/negative assertions clear. */
+                                            &repeat_first, &repeat_tail);
         hash_neg = run_feedback_loop(gains[i], -INT32_MAX,
                                      &first_neg, &tail_neg);
         hash_neg_repeat = run_feedback_loop(gains[i], -INT32_MAX,
-                                             &first_echo /* overwritten below */, &tail_pos);
+                                             &repeat_first, &repeat_tail);
         CHECK(hash_pos == hash_pos_repeat && hash_neg == hash_neg_repeat,
               "feedback loop must be deterministic for a fixed gain and impulse");
         if (gains[i] == 0u) {
