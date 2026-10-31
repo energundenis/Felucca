@@ -40,7 +40,7 @@ The adapter:
 
 The adapter descriptor `ENG_METAL_CORE_ADAPTER` is deliberately not inserted into `ENGINES[]`. No engine index, preset, editor protocol, parameter mapping, or UI has changed.
 
-Temporary oscillator settings in the adapter are compile/test scaffolding only. The feedback reference is a fixed panel-FREQ placeholder independent of the note's tracked pitch, so the adapter does not regress the audited v98 feedback scaling. This is not a user-adjustable panel parameter and does not resolve the FOLLOW/MOD RATIO discrepancy. These settings do not define the approved E0..E7 map and must be replaced after parameter semantics and audio calibration are approved.
+Temporary oscillator settings in the adapter are compile/test scaffolding only. The feedback reference is a fixed panel-FREQ placeholder independent of the note's tracked pitch, so the adapter does not regress the audited v98 feedback scaling. The user approved Option A: the adapter's FOLLOW-ON probe now uses fixed MOD RATIO 1.5 (Q16 98304), independent of any panel MOD RATIO. This is still test scaffolding: FOLLOW OFF's real panel-FREQ × MOD RATIO path and the actual panel-FREQ feedback input are not yet connected to controls. These settings do not define the approved E0..E7 map and must be replaced after parameter semantics and audio calibration are approved.
 
 ## 3. Host tests
 
@@ -90,5 +90,5 @@ No engine registration, flashing, SysEx, device access, flash write, erase or re
 
 1. The host callback tests and full `engines.c` syntax-only harness now pass.
 2. Note/retrigger and one-voice-cap behavior have been source-audited; next audit the parameter handoff and engine-switch persistence in a dedicated host regression.
-3. Resolve the v98 FOLLOW/MOD RATIO discrepancy using [Decision 01](ENERGUN_METAL_CORE_FOLLOW_MOD_RATIO_DECISION_01.md), then freeze parameter semantics.
+3. Implement the approved FOLLOW OFF panel-FREQ × MOD RATIO path and connect the true panel-FREQ feedback reference, then freeze parameter semantics. FOLLOW ON fixed 1.5 is approved in [Decision 01](ENERGUN_METAL_CORE_FOLLOW_MOD_RATIO_DECISION_01.md).
 4. Only then prepare a separate reviewable integration change. Keep `ENGINES[]` registration and UI changes gated behind explicit review.
