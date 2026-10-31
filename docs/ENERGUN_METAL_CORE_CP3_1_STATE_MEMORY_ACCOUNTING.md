@@ -129,7 +129,34 @@ At 96 kHz only 3,096 bytes remain before filter states, FM envelope state, align
 6. Add compile-time and target-build evidence for the final structure before production engine registration.
 7. Preserve the current `voice_t` ABI and do not allocate dynamically.
 
-## 10. Disposition
+
+## 11. v98 filter source trace and state-layout decision (2026-11-01)
+
+Exact reference source inspection confirms:
+- `wcFilt` is a Web Audio `BiquadFilterNode`, type `lowpass`; its frequency is initialized from CUTOFF and Q from RESONANCE.
+- CUTOFF changes schedule `wcFilt.frequency.setTargetAtTime(..., 20 ms)`; RESONANCE changes schedule `wcFilt.Q.setTargetAtTime(..., 20 ms)`.
+- Sequencer Accent temporarily raises the main-filter cutoff to at most 1.15 × base cutoff (capped at 12 kHz), then schedules a return at 65% of Gate. Without Accent, the trigger schedules the base cutoff with a 10 ms time constant.
+- `wcLpgFilter` is a second independent Web Audio `BiquadFilterNode`, type `lowpass`, initialized at 1,800 Hz and Q=0.7.
+- The LPG RESPONSE control handler also directly schedules the LPG filter frequency to 500 + RESPONSE × 7,500 Hz (25 ms). On trigger, the LPG automation cancels its pending frequency events, sets the transient target to min(12 kHz, CUTOFF × (1.25 + RESPONSE × 3.75)), then returns toward max(100 Hz, CUTOFF). LPG filter return event and time constant are separate from LPG gain-envelope timing.
+- The two filters are serial and independent; one filter's history cannot be reused for the other.
+
+**Important correction to the budget interpretation:** Web Audio specifies behavior, not the target C structure or state topology. The reference does not establish that a fixed-point port must use Direct Form II Transposed, nor does it establish coefficient precision, state width, saturation, or the exact number of persistent words. The 16-byte figure in Section 5 is therefore a *candidate* (two int32 history words per mono biquad × two filters), not a source-proven or implementation-exact memory requirement. Keep it in the candidate subtotal only; do not use it as a final compile-time engine-state contract.
+
+The 24-byte FM-index envelope entry is likewise a candidate accounting record, not an implemented state type. The reference scheduling semantics are confirmed: base = current FM INDEX after character/drive scaling and modulation offsets; peak = base × (1 + FM ENV AMT × 4); attack begins after the sequencer trigger offset `ea`, with tau max(2 ms, ea/3); return to base begins at `ea + ed`, with tau max(5 ms, ed/3). The FM-index envelope is independent of voice VCA and LPG gain envelope. Exact fixed-point interpolation and storage layout remain a target design decision.
+
+### CP3.1 filter implementation gate
+
+Before the 16-byte candidate can be accepted, the port must select and test:
+1. mono per-voice topology and the exact biquad realization (e.g. DF2T);
+2. coefficient format/range and stable low-pass coefficient generation across supported CUTOFF / RESONANCE values;
+3. state format, saturation and numeric headroom;
+4. block-rate coefficient update / parameter smoothing, preserving the source's distinct 10/20/25 ms automation behaviors where applicable;
+5. retrigger cancellation/hold behavior for both filter cutoff trajectories;
+6. target compiler structure size and worst-case render cost.
+
+No filter DSP was added in this increment. No final engine-state size is approved.
+
+## 12. Disposition
 
 CP3.1 is **partially advanced**, not closed. The exact primitive sizes, five-phase requirement, feedback-ring budget and sample-rate limits are now independently testable. The complete engine memory total and final state ownership remain open.
 
