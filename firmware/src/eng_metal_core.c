@@ -163,3 +163,75 @@ static void metal_core_modulator_block(voice_t *v, int32_t *mod_out, uint32_t n,
     }
     v->ph[2] = ph;
 }
+
+
+/* ------------------------------------------------ Complex FM character / drive curves --- */
+
+enum {
+    MC_FM_CHAR_SMOOTH = 0,
+    MC_FM_CHAR_CLASSIC = 1,
+    MC_FM_CHAR_METALLIC = 2
+};
+
+/* Bounded integer square root. Used only at control/block rate, never in the
+ * per-sample loop. Input and result are unsigned Q15 values. */
+static inline uint32_t metal_core_isqrt_u32(uint32_t x)
+{
+    uint32_t op = x, res = 0, one = 1u << 30;
+    while (one > op)
+        one >>= 2;
+    while (one) {
+        if (op >= res + one) {
+            op -= res + one;
+            res = (res >> 1) + one;
+        } else {
+            res >>= 1;
+        }
+        one >>= 2;
+    }
+    return res;
+}
+
+static inline int32_t metal_core_sqrt_q15(int32_t x)
+{
+    x = clamp(x, 0, 32767);
+    return (int32_t)metal_core_isqrt_u32((uint32_t)x << 15);
+}
+
+/* v98 character curves, returned as extended Q15 (METALLIC reaches 1.70):
+ *   SMOOTH   = 0.72 * sqrt(index)
+ *   CLASSIC  = index
+ *   METALLIC = 0.55 * index + 1.15 * index^2
+ */
+static inline int32_t metal_core_fm_character_q15(int32_t index_q15, uint32_t character)
+{
+    int32_t index = clamp(index_q15, 0, 32767);
+    switch (character) {
+    case MC_FM_CHAR_SMOOTH:
+        return mulq15(23593, metal_core_sqrt_q15(index));   /* 0.72 */
+    case MC_FM_CHAR_CLASSIC:
+        return index;
+    case MC_FM_CHAR_METALLIC:
+    default:
+        return mulq15(18022, index) + mulq15(37683, mulq15(index, index)); /* 0.55 + 1.15 x^2 */
+    }
+}
+
+/* wcDrv() = WEST COAST DRIVE ^ 1.5. The result is Q15 and remains separate
+ * from the WAVEFOLDER DRIVE control. */
+static inline int32_t metal_core_west_coast_drive_q15(int32_t drive_q15)
+{
+    int32_t drive = clamp(drive_q15, 0, 32767);
+    return mulq15(drive, metal_core_sqrt_q15(drive));
+}
+
+/* Effective Complex FM depth before the v98 FREQ x 2 deviation term. The
+ * result is extended Q15 because METALLIC can exceed unity. */
+static inline int32_t metal_core_complex_fm_depth_q15(int32_t index_q15,
+                                                       int32_t drive_q15,
+                                                       uint32_t character)
+{
+    int32_t curve = metal_core_fm_character_q15(index_q15, character);
+    int32_t drive = metal_core_west_coast_drive_q15(drive_q15);
+    return mulq15(curve, drive);
+}
