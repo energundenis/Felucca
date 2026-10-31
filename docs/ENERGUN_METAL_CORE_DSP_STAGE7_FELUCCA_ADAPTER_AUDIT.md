@@ -58,23 +58,24 @@ The previous state-machine test now explicitly zeroes its test structs before ca
 
 What is tested:
 - C compilation of the adapter against the actual `engine_t` interface;
+- syntax-only compilation of the real `firmware/src/engines.c` translation unit, using Felucca's actual include order, pinned engine submodule, host preamble (`libc.c`, `core.h`) and generated host tables/sample/FM6 headers;
 - callback sequencing through host tests;
 - fixed-point DSP regressions at 44.1 and 96 kHz.
 
 What is not tested:
-- the complete `engines.c` / `felucca.c` firmware translation unit in the JieLi target toolchain;
+- the complete `felucca.c` firmware translation unit in the JieLi target toolchain;
+- code generation/ABI under JieLi's pi32v2 clang (the `engines.c` check above is host-compiler syntax-only);
 - full firmware image/package build;
 - target CPU and RAM measurements;
 - actual FM-1 hardware or audio output.
 
-Felucca's documented full build needs the JieLi pi32v2 toolchain, AC79 SDK and other prerequisites; those are not available through this host-only CI workflow. The source include in `engines.c` is therefore an integration placement, not evidence of a successful target build.
+Felucca's documented full build needs the JieLi pi32v2 toolchain, AC79 SDK and other prerequisites; those are not available through this host-only CI workflow. The source include in `engines.c` now passes a host-compiler syntax-only check in the real source include order. This is stronger than the adapter shim test, but it is still not evidence of a successful target build.
 
 No engine registration, flashing, SysEx, device access, flash write, erase or restore has occurred.
 
 ## 5. Next gate
 
-1. Confirm this adapter's host CI run passes.
-2. Add a compile-only harness for the complete engine source include order if feasible without requiring the target SDK.
-3. Audit note lifecycle and host mode behavior for the one-voice cap, including retrigger and engine switch.
-4. Resolve the v98 FOLLOW/MOD RATIO discrepancy and freeze parameter semantics.
-5. Only then prepare a separate reviewable integration change. Keep `ENGINES[]` registration and UI changes gated behind explicit review.
+1. The host callback tests and full `engines.c` syntax-only harness now pass.
+2. Audit note lifecycle and host mode behavior for the one-voice cap, including retrigger and engine switch.
+3. Resolve the v98 FOLLOW/MOD RATIO discrepancy and freeze parameter semantics.
+4. Only then prepare a separate reviewable integration change. Keep `ENGINES[]` registration and UI changes gated behind explicit review.
