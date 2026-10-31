@@ -41,7 +41,7 @@ OSC2 is a direct-audio source. It is not the Complex FM modulator. FOLLOW and ME
 | 9 | MODULATION | FM / AM | FM | Selects Complex FM or AM path |
 | 10 | MOD RATIO | 0.25–16 | 3.07 | Independent wcMod frequency ratio |
 | 11 | MOD OSC WAVE | SINE / TRIANGLE / SAW / SQUARE | SINE | Complex modulator waveform |
-| 12 | FM CHARACTER | SMOOTH / CLASSIC / METALLIC | METALLIC | FM-index response curve |
+| 12 | FM CHARACTER | SMOOTH / CLASSIC / METALLIC | Stored value: METALLIC (2); UI markup selects CLASSIC (1) | FM-index response curve; initialization mismatch requires resolution |
 | 13 | FM INDEX | 0–1 | 0 | Complex FM base depth |
 | 14 | AM DEPTH | 0–1 | 0 | Complex AM depth |
 | 15 | FM FEEDBACK | 0–0.8 | 0 | Dedicated delayed feedback amount; reference delay 3 ms |
@@ -50,7 +50,7 @@ OSC2 is a direct-audio source. It is not the Complex FM modulator. FOLLOW and ME
 | 18 | ENV DECAY | 0.01–3 s | 0.25 s | Complex FM-index envelope decay |
 | 19 | COMPLEX MODULE VOLUME | 0–1 | 1 | Complex oscillator output level |
 
-This is **11**, not 10: COMPLEX MODULE VOLUME is a separate v98 control and was missing from the previous 35-control inventory. MOD RATIO (3.07 default) must never be aliased to METAL RATIO (4.20 default).
+This is **11**, not 10: COMPLEX MODULE VOLUME is a separate v98 control and was missing from the previous 35-control inventory. MOD RATIO (3.07 default) must never be aliased to METAL RATIO (4.20 default). The source parameter object initializes FM CHARACTER to value 2 (METALLIC), while the HTML selector markup marks CLASSIC (value 1) as selected; treat this as an unresolved v98 UI/state initialization inconsistency and verify the effective runtime state before freezing the default.
 
 ### C. METAL-specific ratio / envelope — 2 controls
 
