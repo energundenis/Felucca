@@ -2,6 +2,8 @@
 
 This is the first computer-side integration step for ENERGUN GENERATIVE SEQUENCER V0.3.
 
+**Firmware compatibility:** this probe targets the Felucca SysEx editor protocol (the audited source branch reports Felucca 1.7.0). Compatibility with the factory M-VAVE firmware V1.5 is not established. Do not install firmware or run this tool on the stock device just to make the probe work. The tool stops after INFO if the reported version is not a Felucca build.
+
 ## Safety scope
 
 `tools/fm1_readonly_probe.py` sends only:
