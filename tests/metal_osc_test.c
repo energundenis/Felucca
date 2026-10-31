@@ -2,10 +2,11 @@
  * ENERGUN METAL CORE — isolated OSC subsystem tests.
  * Runs against the exact Felucca host DSP tables and primitives.
  */
-#define main hostsim_main
-#include "hostsim.c"
-#undef main
-
+#define NVOICE 8
+#define NPART 4
+#include "../firmware/engines/src/felucca_engine.h"
+#include "felucca_tables.h"
+#include "../firmware/engines/src/dsp.c"
 #include "../firmware/src/eng_metal_core.c"
 
 #include <stdio.h>
@@ -120,9 +121,11 @@ static void detune_and_bounds(void)
     check("zero detune preserves the host phase increment exactly", base == m.inc);
     check("positive OSC2 cents detune raises its phase increment", detuned > base);
 
-    m.fine = 13;
-    check("OSC2 detune retains host fine tuning", metal_core_osc2_increment(&m, 7) >
-          metal_core_osc2_increment(&m, 7) - 1u);
+    {
+        uint32_t detune_without_fine = metal_core_osc2_increment(&m, 7);
+        m.fine = 13;
+        check("OSC2 detune retains host fine tuning", metal_core_osc2_increment(&m, 7) > detune_without_fine);
+    }
 
     memset(&v, 0, sizeof v);
     memset(out, 0, sizeof out);
@@ -134,10 +137,13 @@ static void detune_and_bounds(void)
     metal_core_osc_pair_block(&v, out, 0, &m, MC_OSC_SINE, 0, 0);
     check("zero-length block leaves oscillator phases unchanged",
           v.ph[0] == CTL * m.inc && v.ph[1] == CTL * metal_core_osc2_increment(&m, 7));
-    metal_core_osc_pair_block(0, out, CTL, &m, MC_OSC_SINE, 0, 0);
-    metal_core_osc_pair_block(&v, 0, CTL, &m, MC_OSC_SINE, 0, 0);
-    metal_core_osc_pair_block(&v, out, CTL, 0, MC_OSC_SINE, 0, 0);
-    check("null arguments are safely ignored", 1);
+    {
+        uint32_t p0 = v.ph[0], p1 = v.ph[1];
+        metal_core_osc_pair_block(0, out, CTL, &m, MC_OSC_SINE, 0, 0);
+        metal_core_osc_pair_block(&v, 0, CTL, &m, MC_OSC_SINE, 0, 0);
+        metal_core_osc_pair_block(&v, out, CTL, 0, MC_OSC_SINE, 0, 0);
+        check("null arguments are safely ignored", v.ph[0] == p0 && v.ph[1] == p1);
+    }
 }
 
 int main(void)
