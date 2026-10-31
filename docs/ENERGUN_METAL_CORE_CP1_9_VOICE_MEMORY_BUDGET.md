@@ -105,3 +105,10 @@ Before coding:
 5. Measure target CPU after a real render function exists.
 
 No shared ABI, voice structure, engine memory request, DSP source, parameter ID, storage format, firmware package, Flash address or device state changed.
+
+## CP1.14 update — VCA ownership decision superseded (2026-10-31)
+
+The earlier recommendation above to compare host ADSR first and defer envelope ownership is superseded by the user-approved CP1.14 decision. V1 direction is now a V98-compatible engine-owned METAL CORE VCA, with no host-ADSR × internal-VCA cascade. Felucca remains responsible for voice allocation and lifecycle coordination. Exact API semantics (`ownenv=1` / `done()`), V98 timing/scaling trace, sample-domain implementation, per-voice memory update, tests and target CPU measurement remain mandatory and open.
+
+Authoritative decision: [CP1.14 VCA ownership decision](ENERGUN_METAL_CORE_CP1_14_VCA_OWNERSHIP_DECISION.md), commit `90ac36e6ac95df6b7bc2723f4d6d38ec1cc08bae`.
+
