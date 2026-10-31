@@ -151,6 +151,10 @@ static void metal_core_modulator_block(voice_t *v, int32_t *mod_out, uint32_t n,
     if (n > CTL)
         n = CTL;
 
+    if (ratio_q16 < (1u << 14))
+        ratio_q16 = 1u << 14;
+    else if (ratio_q16 > (16u << 16))
+        ratio_q16 = 16u << 16;
     inc = metal_core_ratio_increment(m->inc, ratio_q16);
     ph = v->ph[2];
     for (i = 0; i < n; i++) {
