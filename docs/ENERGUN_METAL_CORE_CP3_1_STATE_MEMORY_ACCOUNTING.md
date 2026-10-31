@@ -161,3 +161,49 @@ No filter DSP was added in this increment. No final engine-state size is approve
 CP3.1 is **partially advanced**, not closed. The exact primitive sizes, five-phase requirement, feedback-ring budget and sample-rate limits are now independently testable. The complete engine memory total and final state ownership remain open.
 
 No production engine registration, parameter IDs, persistence changes, audio graph connection, factory firmware modification, firmware package, physical device write or flash was performed.
+
+
+## 13. Sample-rate anchor and fractional feedback-delay requirement (2026-11-01)
+
+A direct host-source check of `firmware/src/core.h` finds:
+
+```c
+#define HALF_FRAMES 128 /* I2S half buffer: 2.9 ms at 44.1 kHz */
+```
+
+This is source evidence that the FM-1/Felucca audio path is designed around a nominal 44.1 kHz rate. It is stronger than treating 44.1 kHz as an undocumented guess, but the comment is not a runtime sample-rate query and does not prove every possible board/build configuration. Keep the initial V1 budget at 44.1 kHz; before freezing the production engine, confirm the actual I2S clock / sample-rate configuration in the board and audio-driver sources. Do not silently generalize the 44.1 kHz budget to 48 kHz or higher.
+
+At 44.1 kHz, the v98 3 ms Complex FM delay corresponds to:
+
+```text
+0.003 s × 44,100 samples/s = 132.3 samples
+```
+
+Consequences:
+- A 133-sample int32 ring is the minimum straightforward storage capacity for the 3 ms delay at 44.1 kHz (532 bytes per voice; 4,256 bytes for eight voices).
+- A plain integer read offset of 133 samples would be 3.016 ms, not exactly 3 ms.
+- The reference uses a time-based Web Audio DelayNode, so the target implementation must account for the fractional 0.3-sample component if faithful 3 ms timing is required.
+- Linear interpolation is a possible low-cost candidate, not a source-proven requirement. The read convention, interpolation quality, fixed-point fraction and CPU cost remain open until measured.
+- The existing 133-sample memory subtotal remains a capacity estimate. Any interpolation state must be included in the final typed layout (it may be representable in a fractional cursor and need not require another sample buffer).
+
+### Feedback state lifecycle — evidence boundary
+
+The v98 design audit confirms that the 3 ms delay belongs to the Complex Oscillator modulator feedback loop, not METAL FM and not the wavefolder. It does not establish the exact target voice-allocation lifecycle or whether the reference clears a delay line on every note trigger.
+
+Therefore no reset/persist policy is frozen yet:
+- active-voice retrigger must be distinguished from fresh allocation / reuse of an idle voice slot;
+- the host preserves `voice_t.ph[3]` on retrigger, but does not preserve engine-memory ring contents for the engine;
+- the target engine must explicitly implement whichever policy the reference behavior and host lifecycle require;
+- a test must cover stale feedback energy after voice reuse, continuity on active retrigger, and release/retirement.
+
+Do not clear the ring or preserve it across all note-ons by assumption. First inspect the protected v98 note/voice lifecycle and the Felucca allocator path together, then encode the result as a testable contract.
+
+### Updated CP3.1 sub-gate
+
+1. Confirm actual board I2S sample rate from source / build configuration.
+2. Choose a 132.3-sample 3 ms delay implementation (or document a measured equivalent).
+3. Freeze active-retrigger versus fresh-slot ring lifecycle.
+4. Add host tests for fractional delay response, bounded feedback gain (0..0.8), stale-state isolation and deterministic reset.
+5. Recalculate exact memory and target render cost using the selected delay representation.
+
+This section adds no DSP implementation and does not close CP3.1.
