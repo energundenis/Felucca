@@ -106,10 +106,10 @@ Recommended next artifact: add a JSON pattern export to a *new versioned copy* o
 
 ## 7. Integration order
 
-1. Run the read-only probe and verify INFO / TRACK / TRACK_STEP against the physical FM-1.
-2. Add versioned JSON export to a copy of V0.3; do not edit the accepted V0.3 baseline.
-3. Implement and test a pure offline converter: V0.3 JSON → 64 FM-1 step records + parameter plan.
-4. Show a dry-run diff of current versus generated track data; no device writes.
+1. The read-only probe in `tools/fm1_readonly_probe.py` targets the Felucca 1.7.0 SysEx protocol, not factory M-VAVE V1.5. Do not run it on the stock firmware. First obtain the full factory V1.5 dump and verify a recovery method. Only after explicit approval to use a compatible Felucca development build should the probe be run against the physical device.
+2. A separate bridge copy now exists at `energundenis/energun-generative-sequencer:versions/v0.3-fm1-bridge.html`. It adds JSON export; the accepted `versions/v0.3.html` remains unchanged.
+3. The offline converter in `tools/fm1_pattern_dryrun.py` creates 64 candidate TRACK_STEP frames and a symbolic parameter plan. It does not open MIDI ports or transmit anything.
+4. Review the dry-run against a full read-only before-image of the intended track. Confirm that the target is a note-based synth track, not DRUM / SLICE, and review the accent mapping and quantizer behavior.
 5. Only after the user's explicit approval and the required factory V1.5 dump + verified recovery method, design a reversible write test on a disposable track.
 6. Test Gate separately; do not assume MOTION hardware support from host tests.
 
