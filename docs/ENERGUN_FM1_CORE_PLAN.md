@@ -149,3 +149,14 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Engine registration remains pending; IDs are append-only and optional SLICE/ADPCM builds must be preserved.
 - Corrected stale FOLLOW/METAL scaffold comment to OSCILLATORS / SYNTH VOICE (not FOLD), comment-only commit `d6452c1935c96e7c51048e7eb506898dd88277ce`.
 - CP1.1 is an audit milestone only; no DSP algorithm, parameter ID, engine registration, storage format, runtime UI, or hardware state changed.
+
+
+## CP1.2 — v98 reference/control reconciliation (2026-10-31)
+
+- Added `docs/ENERGUN_METAL_CORE_CP1_2_REFERENCE_RECONCILIATION.md` (commit `d836cdcb8dfa4faf18d0636db783abda43e5cebe`).
+- Confirmed distinct OSC1, OSC2 direct-audio, Complex FM/AM modulator, METAL FM modulator, METAL ring oscillator, and deferred RING2 oscillator roles.
+- Confirmed independent MOD RATIO (3.07 default) and METAL RATIO (4.20 default), separate FM/AM controls, feedback, FM envelope, METAL trigger decay, two-stage fold, main filter and three-control LPG.
+- Identified a control-inventory discrepancy: the reported 35 controls omit at least COMPLEX MODULE VOLUME and WEST COAST VOLUME. The v98 source also has conflicting output-volume assignments that require calibration. Therefore 35 is not a frozen parameter count.
+- Detailed v98 signal path includes main filter, LPG filter/gain, voice VCA and METAL ring tap; the simplified top-level chain must not erase these tap points.
+- CP1.2 is a reconciliation audit only. No DSP, IDs, engine registration, sidecar, package, or hardware writes.
+- CP1 remains open until the full control inventory and V1 include/defer list are reconciled and approved.
