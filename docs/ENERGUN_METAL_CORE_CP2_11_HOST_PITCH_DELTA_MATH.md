@@ -55,3 +55,8 @@ The host-increment method does not use the CP2.9 NOTE/OCTAVE clamp. It derives t
 ## 7. Scope boundary
 
 No engine registration, parameter ID, UI, preset/storage layout, package, factory image or device state changed.
+
+
+## CP2.12 host adapter audit note
+
+The follow-on host adapter contract is documented in `docs/ENERGUN_METAL_CORE_CP2_12_HOST_FOLLOW_ADAPTER_CONTRACT.md`. It uses the host-owned per-voice source tag, `v->note` as the target note, and final `m->inc` as the numerator. Source audit confirms `m->inc` already includes residual fine pitch and modulation-matrix pitch. A wrapper must validate the voice index and use the same generated `pitch_inc()` table / `FS` as the host. 64-bit division cost remains unmeasured and is a hard gate before audio-callback integration.

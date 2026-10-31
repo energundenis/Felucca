@@ -411,3 +411,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added representative MIDI 0 and MIDI 127 host-increment ratio tests to prove the proposed CP2.11 path does not apply CP2.9's -2..+2 octave clamp.
 - Removed an unused Nyquist temporary; the Q0.32 Nyquist ceiling remains the fixed `0x80000000` phase increment.
 - CI for the amended CP2.11 implementation is pending.
+
+
+## CP2.12 — host FOLLOW adapter contract (2026-10-31)
+
+- Audited Felucca's callback inputs and note lifecycle in `voice.c`, `mod.c`, `core.h`, and `engines.c`.
+- Defined the wrapper inputs: track, active voice, final vmod, base phase increment and FOLLOW state.
+- Confirmed host source provenance is per voice; `v->note` is target note, `v->pitch_cur` is glide state, and final `m->inc` already contains fine pitch and modulation-matrix changes.
+- Defined PERFORMANCE / SEQUENCER+FOLLOW ON / SEQUENCER+FOLLOW OFF behavior and safety/index checks.
+- Added test gates for real host pitch tables, all MIDI notes, glide and pitch modulation, lifecycle, target CPU and Nyquist.
+- Documentation only; adapter code/render integration remains pending. CP2.11 CI run `41210894867` is still running at source HEAD `d12d7a3f3eccedf6e347e66a1b68a00aad07631a`.
