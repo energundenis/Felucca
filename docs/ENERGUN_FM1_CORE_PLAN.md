@@ -281,3 +281,20 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - Added isolated bounded Q15 helper `firmware/src/eng_metal_core_math.h` and host test `tests/metal_core_lpg_test.c`; wired the test into `tests/run_tests.sh`.
 - This is math-level implementation only. It is not connected to `eng_metal_core.c`, does not register the engine, and does not change IDs, UI, persistence, package or device state.
 - CP1.11 decision is recorded; host-test and CI validation remain pending until the workflow completes.
+
+
+## CP2.2 — LPG Option C peak math (2026-10-31)
+
+- Added `eng_metal_lpg_peak_q15()` in `firmware/src/eng_metal_core_math.h` and host test `tests/metal_core_lpg_test.c`.
+- Tests cover RESPONSE endpoints/midpoint, MODULE VOLUME mute/half/monotonicity, response contour ordering and input clamping.
+- Integrated into `tests/run_tests.sh`. CI validation is pending; do not mark passed until the latest run for the current source revision succeeds.
+- Math helper is not connected to the engine render callback.
+
+
+## CP2.3 — LPG timing and filter target math (2026-10-31)
+
+- Added `eng_metal_lpg_timing_q15()` and bounded helper functions in `firmware/src/eng_metal_core_math.h`.
+- Ported the v98 timing relationships into integer sample counts: LPG attack, gate-limited tail, gain decay time constant, transient filter cutoff, filter return time and filter return time constant.
+- Added `tests/metal_core_lpg_timing_test.c` and integrated it into `tests/run_tests.sh`.
+- The test is host-only and checks schedule math; it does not execute audio-rate envelopes or filter updates, produce reference renders, measure target CPU, or register the engine.
+- CI validation is pending. Do not mark CP2.3 passed until the latest CI run completes successfully.
