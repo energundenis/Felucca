@@ -469,3 +469,13 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - The document is a review package only. It does not treat recommendations as user approval and does not assign IDs, alter firmware, allocate flash or change device state.
 - Remaining user decision gates are the V1 scope/deferred list, access allocation, and layered VCA behavior. Remaining evidence gates include sidecar migration/backup tests, full FM-1 V1.5 dump audit before sector selection, and append-only engine-ID verification across optional builds.
 - CP1 remains open. No change to `main`, factory firmware or physical FM-1.
+
+
+## CP1.13 — FM CHARACTER startup verification decision accepted (2026-10-31)
+
+- User accepted the verification-first procedure for the V98 FM CHARACTER initialization mismatch.
+- Do not choose CLASSIC or METALLIC from preference or from a single source declaration. Trace the protected V98 startup sequence, final UI selector state and actual FM-index/render read.
+- Retain the effective V98 startup/render mode as the V1 default if UI and DSP agree. If they disagree, document the mismatch and obtain an explicit resolution before freezing the default.
+- The procedure is recorded in [docs/ENERGUN_METAL_CORE_CP1_13_FM_CHARACTER_STARTUP_DECISION.md](ENERGUN_METAL_CORE_CP1_13_FM_CHARACTER_STARTUP_DECISION.md), commit `de02677300781954318f057914b404c914ca63ae`.
+- Parameter #12 remains open pending evidence; the other 36 inventory controls are unaffected. This approval authorizes verification only, not firmware/V98 changes, parameter IDs, storage, Flash allocation or device writes.
+- CP1 remains open; main and factory firmware remain untouched.
