@@ -63,7 +63,7 @@ static void test_attack_decay_sustain_release(void)
 
     /* tau attack = 220 samples (5 ms); decay begins at 441 samples (10 ms). */
     eng_metal_vca_trigger(&vca, 50000, 12000, 220u, 441u,
-                          13230u, 70000u, 8820u);
+                          13230u, 150000u, 8820u);
     for (i = 0; i < 220u; ++i)
         value = eng_metal_vca_process(&vca);
     check("Attack rises monotonically to approximately 63 percent at one tau",
@@ -80,7 +80,7 @@ static void test_attack_decay_sustain_release(void)
           vca.phase == ENG_METAL_VCA_DECAY &&
           vca.level_q16 > 0 && vca.target_q16 == 12000);
 
-    for (i = 0; i < 60000u && vca.phase != ENG_METAL_VCA_SUSTAIN; ++i)
+    for (i = 0; i < 100000u && vca.phase != ENG_METAL_VCA_SUSTAIN; ++i)
         eng_metal_vca_process(&vca);
     check("Decay converges exactly to Sustain",
           vca.phase == ENG_METAL_VCA_SUSTAIN &&
