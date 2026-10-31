@@ -21,7 +21,8 @@
  * until the control/value-retention design is finalized.
  *
  * FOLLOW and METAL requirements:
- *   - independent ON/OFF controls on the FOLD page;
+ *   - independent ON/OFF controls in the OSCILLATORS / SYNTH VOICE block
+ *     (not on the FOLD page);
  *   - OFF bypasses only the corresponding processing stage;
  *   - OFF preserves the associated amount/value;
  *   - ON restores processing using the retained amount/value.
