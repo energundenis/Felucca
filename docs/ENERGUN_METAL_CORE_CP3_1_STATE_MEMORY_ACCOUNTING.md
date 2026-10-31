@@ -276,3 +276,23 @@ Extended `metal_core_feedback_delay_candidate_test.c` to include the actual `eng
 The test compiled and passed locally; it is now part of both the full host suite and the fast 11-test lane. This supports the candidate use of the previous VCA phase as an engine-owned lifecycle discriminator, since `voice_start()` overwrites host `active/stage` before calling `note_on()`.
 
 This is still an adapter test, not a production callback. It does not prove every mono/legato/voice-steal transition or the protected v98 graph's node lifetime. Those remain acceptance tests for the real integration stage.
+
+
+## 17. Host-only closed-loop feedback stability regression (2026-11-01)
+
+Extended `tests/metal_core_feedback_delay_candidate_test.c` with a test-only closed-loop harness around the provisional 132.3-sample delay:
+
+- feedback gains: 0, 0.25, 0.5 and approximately 0.8 (Q15);
+- positive and negative full-scale impulses;
+- 8,192 sample iterations per case;
+- checks for int32 bounds, polarity preservation, no growth above the initial impulse, echo decay, and deterministic repeated output;
+- zero gain must produce no echoes; nonzero gains must produce echoes whose late tail is below the first echo.
+
+The loop harness uses an int64 intermediate and integer division to isolate the delay/gain stability property. It deliberately does **not** define the production feedback multiplier's rounding or saturation policy. The test remains host-only and is part of the existing CP3.1 feedback candidate test; it does not add a separate CI job or change the fast-lane test count (11).
+
+This is bounded-loop evidence for the candidate ring at nominal 44.1 kHz, not proof of audible stability, equivalence to the protected v98 Web Audio DelayNode, AC79 callback timing, or production DSP safety. The ring/interpolation implementation remains unapproved for production until:
+1. the candidate is compared with the v98 reference impulse and repeated-feedback response;
+2. the actual AC79 target compiler code generation and worst-case render cost are measured;
+3. the full engine state and fixed-point gain path pass target-side overflow and clipping tests.
+
+No production DSP, engine registration, parameter map, persistence, audio graph, hardware access, or firmware flashing was changed by this regression increment.
