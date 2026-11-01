@@ -21,16 +21,18 @@ typedef struct {
     int32_t z1, z2;
 } test_metal_biquad_state_t;
 
-/* Signed round-to-nearest, ties away from zero; division is by a constant. */
+/* Signed round-to-nearest, ties away from zero, without 64-bit division.
+ * product magnitude is bounded by 2^62 for int32 x int32, so negation and
+ * the half-unit bias remain inside int64_t. The shifts operate on positive
+ * values only; no implementation-defined negative right shift is used.
+ */
 static inline int64_t test_metal_biquad_mul_q30(int32_t coefficient_q30,
                                                  int32_t sample)
 {
     int64_t product = (int64_t)coefficient_q30 * sample;
     if (product >= 0)
-        return (product + TEST_METAL_BIQUAD_Q30_HALF) /
-               TEST_METAL_BIQUAD_Q30_ONE;
-    return (product - TEST_METAL_BIQUAD_Q30_HALF) /
-           TEST_METAL_BIQUAD_Q30_ONE;
+        return (product + TEST_METAL_BIQUAD_Q30_HALF) >> 30;
+    return -(((-product) + TEST_METAL_BIQUAD_Q30_HALF) >> 30);
 }
 
 static inline int32_t test_metal_biquad_sat32(int64_t value,
