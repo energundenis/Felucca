@@ -3,7 +3,7 @@
 Date: 2026-11-01  
 Branch: `energun/cp3-1-biquad-prototype-01`  
 Base: `daae06e84c5710e0ed5703c5af38afde927b1ed8`  
-Status: isolated host prototype; **not production DSP, not registered, and not a frozen engine-state ABI**.
+Status: isolated host prototype; **not production DSP, not registered, and not a frozen engine-state ABI**. Latest optimization head requires fresh exact-HEAD host and AC79 code-generation evidence.
 
 ## 1. Scope
 
