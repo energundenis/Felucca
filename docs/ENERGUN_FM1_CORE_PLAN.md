@@ -752,3 +752,16 @@ The user accepted the proposed dependency-aware execution order. This is the con
 - **E:** physical Flash safety separately confirmed from full dump/recovery audit.
 
 This accepted order is a planning decision only. It does not claim any of these tasks are completed, assign stable parameter IDs, approve Flash sectors or authorize device writes.
+
+
+## Parallel execution model — accepted (2026-11-02)
+
+The user accepted the parallel work model. Run three independent lanes concurrently where tool/CI execution permits:
+
+- **CP1.4 architecture/storage:** CP1.4.1 control-table freeze is the lead task; CP1.4.3 Private API/UI-path audit and CP1.4.4 P_MC Motion Lock audit may proceed in parallel against current source. Sidecar design follows the preliminary table freeze. Backup/Restore audit may run alongside Sidecar design; implementation waits for schema agreement.
+- **CP2 DSP qualification:** continue isolated DSP, oscillator, filter, VCA, memory and target-resource qualification independently. Do not represent isolated primitive tests as a complete engine.
+- **CP3 host/audio integration:** continue MIDI/Sequencer dispatch, voice allocation/modes, Gate/Accent and VCA lifecycle tests independently.
+
+CP1.4.2 follows preliminary control-table agreement; CP1.4.6–1.4.7 follow Sidecar schema agreement; CP1.4.8–1.4.10 follow stable persistence format. CP1.4.11 remains a separate physical-Flash safety gate requiring the complete FM-1 V1.5 dump and verified recovery route.
+
+This records accepted scheduling/dependencies, not evidence that tasks are currently running continuously or completed. Start/verify each concrete job through its actual GitHub/CI action and report status with commit/workflow evidence. No change to the restrictions on `main`, factory firmware, physical Flash, or device flashing.
