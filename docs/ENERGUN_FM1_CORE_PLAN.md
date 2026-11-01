@@ -717,3 +717,38 @@ Status: **logical architecture adopted as the working V1 baseline; CP1.4 remains
 CP1.4 may be marked **closed at the logical/software-architecture level** only after the control table, access/edit path, Motion Lock policy, Sidecar schema, preset/archive migration and host/emulator transaction tests are complete and reviewed. Physical Flash allocation is a separate later safety gate and is not required to close the logical architecture, but it must remain blocked until the full device dump and recovery analysis are available.
 
 No firmware implementation, stable parameter ID assignment, Sidecar byte layout, Flash address, device write or factory-firmware change is claimed by this planning update.
+
+
+## CP1.4 execution order — accepted (2026-11-02)
+
+The user accepted the proposed dependency-aware execution order. This is the controlling sequence for CP1.4:
+
+1. **CP1.4.1 — Freeze the 37-control table:** classify 8 Engine EDIT, 16 common P_MC and 13 private values; record ownership, type, units, ranges, defaults and enum encodings.
+2. **CP1.4.2 — Parameter encoding and compatibility audit:** verify ID namespace, Felucca limits, project/preset serialization and legacy compatibility before assigning stable IDs.
+3. **CP1.4.3 — Private parameter API/UI path:** define per-part read/write/edit/display behavior for all 13 private values; never store persistent patch data in volatile DSP memory.
+4. **CP1.4.4 — P_MC Motion Lock:** add explicit whitelist/range handling and regression tests; keep discrete/private values excluded in V1.
+5. **CP1.4.5 — Sidecar schema:** define version, project identity/generation, payload, length, CRC and A/B state.
+6. **CP1.4.6 — Sidecar size/capacity:** calculate exact encoded size and logical capacity; no physical sector selection.
+7. **CP1.4.7 — A/B transactions:** define atomic write ordering and test interruption, CRC failure, stale generation, missing/corrupt data and fallback.
+8. **CP1.4.8 — Project/preset integration:** cover four stored projects, live autosave and user presets; base projects must still load when Sidecar is missing/invalid.
+9. **CP1.4.9 — Backup/restore integration:** version archive representation and maintain legacy restore behavior.
+10. **CP1.4.10 — Full migration/regression:** test old/new projects, presets, archives, failure recovery and compatibility.
+11. **CP1.4.11 — Physical Flash audit:** obtain the full FM-1 V1.5 dump and verify loader/recovery constraints before any sector selection.
+
+### Parallel work policy
+
+- Start CP1.4.1 immediately. In parallel, audit the Private API/UI path and current Motion Lock implementation because these audits can proceed against the existing source without freezing the final parameter IDs.
+- Begin Sidecar design only after the preliminary control table is frozen.
+- Audit Backup/Restore in parallel with Sidecar design; implement archive changes only after the schema is stable.
+- Start A/B and migration tests after the record format is agreed.
+- Keep independent CP2 DSP qualification and CP3 host/lifecycle regression work moving in parallel. Do not block those lanes on CP1.4 unless a concrete shared interface dependency is found.
+
+### Checkpoints and closure
+
+- **A:** 37-control table and allocation frozen.
+- **B:** Private access path and Sidecar schema defined.
+- **C:** persistence, restore and migration tests pass.
+- **D:** CP1.4 closed at software-architecture level after review.
+- **E:** physical Flash safety separately confirmed from full dump/recovery audit.
+
+This accepted order is a planning decision only. It does not claim any of these tasks are completed, assign stable parameter IDs, approve Flash sectors or authorize device writes.
