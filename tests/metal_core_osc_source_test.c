@@ -27,7 +27,7 @@ static void measure_wave(uint32_t waveform, const char *name,
     uint32_t phase = 0u, i;
     int32_t lo = INT_MAX, hi = INT_MIN;
     int64_t sum = 0;
-    for (i = 0; i < 4096u; ++i) {
+    for (i = 0; i < 4410u; ++i) {
         int32_t y = eng_metal_osc_next(&phase, inc, waveform, pulse_width);
         if (y < lo) lo = y;
         if (y > hi) hi = y;
@@ -35,7 +35,7 @@ static void measure_wave(uint32_t waveform, const char *name,
     }
     check(name, lo >= -32768 && hi <= 32767 &&
                lo < -peak_min && hi > peak_min &&
-               llabs(sum) < 12 * 4096);
+               llabs(sum) < 4 * 4410);
 }
 
 static void test_waveforms(void)
