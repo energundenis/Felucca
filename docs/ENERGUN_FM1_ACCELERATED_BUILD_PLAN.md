@@ -66,3 +66,27 @@ User approved the accelerated execution model. The following isolated work branc
 The integration branch `energun-metal-core` remains the coordination branch. No branch is merged automatically. Each workstream must return reviewable commits and test evidence before integration. The three branch refs start at the same base; work is not considered implemented merely because a branch exists.
 
 The latest exact coordination HEAD at kickoff is `77c704bd8ef58e2fa03070fd4fefe3bae59e6d3c`. The last observed full baseline build/regression run was successful on `daae06e84c5710e0ed5703c5af38afde927b1ed8` (run 41254106977); it predates the kickoff HEAD and therefore is not evidence for the exact kickoff SHA. A fresh exact-HEAD CI run is required.
+
+
+## Existing DSP lane reused — 2026-11-01
+
+A pre-existing draft PR was found during kickoff and is the authoritative CP3.1 DSP/filter lane; avoid duplicating its implementation:
+
+- PR [#1 — isolated Q2.30 DF2T biquad prototype](https://github.com/energundenis/Felucca/pull/1), head `65533d9780dedf81524a43a7fd669e286d82343e`.
+- Focused host regression run [41255766930](https://github.com/energundenis/Felucca/actions/runs/41255766930): success.
+- AC79 pi32v2 compile-only code-generation run [41255766916](https://github.com/energundenis/Felucca/actions/runs/41255766916): success.
+- The PR reports a host double-precision oracle, 28 coefficient-stability cases, 28 impulse cases, 84 sine comparisons, independent filter histories, and explicit over-range saturation checks.
+- This is still a draft candidate: the PR's local evidence and CI success do not authorize production DSP integration or prove runtime AC79 cycle cost. Review numeric error, signal headroom, target disassembly and the source-derived filter automation before promotion.
+
+The newly created `energun-fm1-cp3-dsp-filter` branch is therefore redundant and remains an unused placeholder; use PR #1 as the active DSP lane unless review identifies a specific missing task.
+
+## Host lane kickoff — 2026-11-01
+
+- Draft PR [#2 — CP3 host lifecycle workstream kickoff](https://github.com/energundenis/Felucca/pull/2) records the host-integration scope.
+- It currently adds documentation only. The real-track adapter source already exists on the base branch, but an exact-HEAD CI run for that adapter has not yet been observed. PR #2 has not produced an observed workflow run at this audit.
+- Next code increment is the fresh-slot / retrigger / released-slot / mono-legato / voice-steal lifecycle matrix, still test-only.
+
+## Platform lane kickoff — 2026-11-01
+
+- Branch `energun-fm1-cp3-platform-qa` records the AC79/resource/recovery workstream scope.
+- No new target benchmark or complete engine-memory proof has been claimed. The 112-byte per-voice / 896-byte per-part accounting and 3 ms feedback ring remain provisional candidate figures; complete coefficients, smoothing and scratch state are not yet budgeted.
