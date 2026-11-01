@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - energun-metal-core
+      - energun-fm1-cp3-host-integration
   pull_request:
     branches:
       - energun-metal-core
