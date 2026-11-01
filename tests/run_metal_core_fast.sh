@@ -37,6 +37,9 @@ run_test() {
 compile_test metal_core_osc tests/metal_core_osc_test.c -lm
 run_test metal_core_osc
 
+compile_test metal_core_osc_source tests/metal_core_osc_source_test.c -lm
+run_test metal_core_osc_source
+
 compile_test metal_core_lpg tests/metal_core_lpg_test.c
 run_test metal_core_lpg
 
