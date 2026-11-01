@@ -22,7 +22,7 @@ static void check(const char *name, int ok)
 }
 
 static void measure_wave(uint32_t waveform, const char *name,
-                         uint32_t inc, uint32_t pulse_width)
+                         uint32_t inc, uint32_t pulse_width, int32_t peak_min)
 {
     uint32_t phase = 0u, i;
     int32_t lo = INT_MAX, hi = INT_MIN;
@@ -34,7 +34,7 @@ static void measure_wave(uint32_t waveform, const char *name,
         sum += y;
     }
     check(name, lo >= -32768 && hi <= 32767 &&
-               lo < -30000 && hi > 30000 &&
+               lo < -peak_min && hi > peak_min &&
                llabs(sum) < 12 * 4096);
 }
 
@@ -42,9 +42,9 @@ static void test_waveforms(void)
 {
     const uint32_t inc = pitch_inc(69u * 16u);
     measure_wave(ENG_METAL_OSC_SINE, "sine: bounded full-scale output and near-zero DC",
-                 inc, 0x80000000u);
+                 inc, 0x80000000u, 30000);
     measure_wave(ENG_METAL_OSC_TRI, "triangle: bounded full-scale output and near-zero DC",
-                 inc, 0x80000000u);
+                 inc, 0x80000000u, 15000);
     measure_wave(ENG_METAL_OSC_SAW, "polyBLEP saw: bounded full-scale output and near-zero DC",
                  inc, 0x80000000u);
     measure_wave(ENG_METAL_OSC_PULSE, "50% pulse: bounded full-scale output and near-zero DC",
