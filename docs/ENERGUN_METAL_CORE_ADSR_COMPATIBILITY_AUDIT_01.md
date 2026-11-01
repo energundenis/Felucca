@@ -2,7 +2,9 @@
 
 Date: 2026-10-31
 Branch: energun-metal-core
-Status: source-backed design audit; documentation only. No firmware source or device changes.
+Status: historical source-backed design audit; its provisional V1 recommendation is superseded by CP2.19.
+
+> **SUPERSEDED DECISION:** Section 5's provisional `ownenv=0` recommendation is no longer valid. The later user-approved decision in `ENERGUN_METAL_CORE_CP2_19_VCA_PERFORMANCE_MODE_DECISION.md` requires the dedicated METAL CORE VCA contour for both live MIDI and sequencer performance, with `ownenv=1`. Do not implement the provisional host-ADSR path described below.
 
 ## 1. Reference v98 amplitude envelope
 
@@ -47,7 +49,7 @@ Lifecycle:
 
 ## 3. Compatibility assessment
 
-The Felucca ADSR is structurally usable as the first V1 normal voice envelope, but it is not curve-identical to v98.
+The Felucca ADSR is structurally usable as a generic host amplitude envelope, but it is not curve-identical to v98.
 
 Known mismatches:
 1. Attack shape: host linear rise vs v98 exponential target approach.
@@ -65,28 +67,38 @@ The Metal Core engine must not assume that selecting the engine automatically gi
 
 For the reference patch with METAL ON, the effective v98 trigger values are ATTACK 0.002 s and METAL DECAY 0.4 s; ordinary ATTACK 0.01 s and DECAY 0.30 s are stored but bypassed while METAL is on.
 
-## 5. V1 decision
+## 5. Historical provisional V1 recommendation — superseded
 
-- Keep the host ADSR as the provisional normal amplitude-envelope path (ownenv=0) for the first integration prototype.
-- Treat this as an approximation until measured against v98, not as exact parity.
-- Keep FM ENV, LPG envelope/decay, and METAL DECAY independent; never map them onto P_ATK/P_DEC/P_SUS/P_REL.
-- Keep P_LEVEL as the final host track output level, not the v98 per-note VCA level.
-- Do not enable ENV SYNC by default for Metal Core.
-- Before implementation is accepted, render and compare the same note/gate/velocity/accent/retrigger/legato cases in v98 and the Felucca emulator.
-- If the host envelope cannot meet the required musical behavior, evaluate a dedicated Metal Core VCA envelope in a separate design review. Do not switch to ownenv=1 without a focused audit of the host's active/gate/release lifecycle and done() semantics.
+The original audit provisionally suggested:
+- using the host ADSR for the first normal-voice integration prototype (`ownenv=0`);
+- treating it as an approximation until measured against v98;
+- keeping FM ENV, LPG envelope/decay, and METAL DECAY independent;
+- keeping P_LEVEL as the final host track output level;
+- leaving ENV SYNC disabled by default;
+- comparing note/gate/velocity/accent/retrigger/legato cases before acceptance.
 
-## 6. Required comparison matrix
+**Disposition:** this provisional recommendation was explicitly superseded by CP2.19. The current approved contract is:
+- `ownenv=1`; host ADSR is bypassed for METAL CORE;
+- every live MIDI and sequencer performance note uses the dedicated internal VCA Attack → Decay → Sustain → Release contour;
+- MIDI Note Off is applied at the first render-block boundary currently exposed by the host API, not at a sample-accurate sub-block offset;
+- retrigger holds the instantaneous VCA level;
+- expressive MIDI velocity must not be treated as sequencer Accent without a separate approved mapping;
+- host LFO-to-AMP and engine-switch fade remain independent multiplicative controls and must be applied exactly once.
 
-| Test | v98 reference behavior to capture | Felucca behavior to compare |
+See `ENERGUN_METAL_CORE_CP2_19_VCA_PERFORMANCE_MODE_DECISION.md` and `ENERGUN_METAL_CORE_CP2_20_EXPLICIT_VCA_GATE_OFF.md` for the current product decision and isolated Gate-off helper boundary.
+
+## 6. Historical comparison matrix
+
+| Test | v98 reference behavior to capture | Host behavior / current integration requirement |
 |---|---|---|
-| Fresh note | Attack to peak | Host linear attack |
-| Short gate | Release begins at sequencer gate | Host note-off release |
-| Long gate | Sustain level after decay | Host sustain level |
-| Retrigger while sounding | Hold current VCA gain, reschedule segments | Host retrigger attack from current envelope |
-| Mono legato | New pitch / trigger behavior from sequencer | Host legato may retain envelope |
-| Velocity | Peak and sustain scaling | Host velocity multiplication |
-| Accent | 1.18 peak and 1.08 sustain factors in v98 | Host velocity/accent path |
-| METAL ON | 2 ms attack + METAL DECAY | Host ADSR plus any separately designed engine behavior |
-| ENV SYNC | No equivalent in v98 | Must remain off unless explicitly accepted |
+| Fresh note | Attack to peak | Dedicated internal VCA attack |
+| Short gate | Release begins at sequencer gate | Internal VCA Gate-off; block-boundary host event for MIDI |
+| Long gate | Sustain level after decay | Internal VCA sustain |
+| Retrigger while sounding | Hold current VCA gain, reschedule segments | Internal VCA cancel-and-hold |
+| Mono legato | New pitch / trigger behavior from sequencer | Verify host callback lifecycle and VCA policy |
+| Velocity | Peak and sustain scaling | Dedicated VCA velocity input; no host ADSR multiplication |
+| Accent | 1.18 peak and 1.08 sustain factors in v98 | Accent provenance remains a separate open mapping |
+| METAL ON | 2 ms attack + METAL DECAY | Internal VCA applies approved METAL timing |
+| ENV SYNC | No equivalent in v98 | Must remain off unless separately accepted |
 
-No firmware source, parameter IDs, UI, binary image, factory firmware, or physical device were changed.
+No firmware source, parameter IDs, UI, binary image, factory firmware, or physical device were changed by this historical audit.
