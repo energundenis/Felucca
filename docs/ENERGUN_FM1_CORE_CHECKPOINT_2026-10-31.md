@@ -44,3 +44,21 @@ Continue with the actual METAL CORE DSP implementation in Felucca, starting from
 ## Project separation rule
 
 Do not bring browser Synth Lab versions such as METAL CORE V105, VOICE 2, MOOG CORE, or K-2 CORE into the FM-1 CORE implementation plan unless the user explicitly requests it and the relevant source is independently verified.
+
+
+## CI checkpoint — 2026-11-01
+
+- Full baseline workflow: https://github.com/energundenis/Felucca/actions/runs/41322047870 — SUCCESS; all 16 principal steps completed.
+- Exact tested source: 542126c0498f177f38f6f14525ac3042806cfdb7 on DSP work branch en erg un/cp3-1-biquad-prototype-01 (PR #1 head), not the coordination branch.
+- Unmodified Felucca firmware build: PASS.
+- Isolated ENERGUN VCA compile with pinned AC79 pi32v2 target compiler: PASS.
+- Felucca Host Regression and Web Regression: PASS.
+- Build output/size recording and experimental evidence upload: PASS.
+- Companion fast regression: https://github.com/energundenis/Felucca/actions/runs/41322047771 — SUCCESS on the same SHA.
+- Biquad candidate host regression + AC79 compile/disassembly probe: https://github.com/energundenis/Felucca/actions/runs/41322047859 — SUCCESS on the same SHA.
+- AC79 biquad inspection is compile/code-generation evidence only, not runtime cycle timing or full-engine CPU proof.
+- This verifies the tested DSP candidate commit only. It does not mean PR #1 is merged, METAL CORE is production-registered/playable, or the coordination branch has the same tested tree.
+- Coordination branch HEAD at checkpoint start: e6877d47f6b5684efab1e2cf759ed37b2ea76cd0. Main remains untouched.
+- No device write or firmware flash occurred; factory firmware remains unchanged.
+
+The implementation boundary is unchanged: DSP candidate PR #1 remains unmerged; METAL CORE is not thereby registered or playable; physical-device validation, full-engine CPU/RAM, UI, persistence, sequencer, package and recovery remain open. See ENERGUN_FM1_CORE_STATUS_2026-11-01.md for the consolidated plan.
