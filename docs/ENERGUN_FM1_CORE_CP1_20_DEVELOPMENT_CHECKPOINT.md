@@ -107,3 +107,15 @@ The automation is not evidence of continuous background development. No complete
 - No stable parameter/engine IDs assigned.
 - No claim that a compile-only target probe proves target runtime performance.
 - This checkpoint records evidence and workflow changes only; it does not authorize installation.
+
+
+## CP3 progress update — 2026-11-01
+
+- Added `tests/metal_core_cp3_real_dispatch_test.c`, compiled against the real Felucca host simulation sources. It executes production `voice.c` and `seq.c` functions, not a reimplementation.
+- Added the new test to `tests/run_metal_core_fast.sh`; fast lane now runs 12 focused tests.
+- Exact HEAD: `4cf1b7011f5e7c45f32a1f018ca1dddba9df535e`.
+- Fast regression run `41339112020`: SUCCESS. The new dispatcher/sequencer test's 19 checks passed.
+- Coverage: POLY, MONO, LEGATO, UNISON, actual Note Off and host render retirement, actual sequencer step and Gate expiry, explicit Accent provenance, velocity 127 without Accent metadata, engine-switch queue provenance.
+- Limitation: this exercises the actual Felucca dispatcher and sequencer with the existing ANALOG engine callback. It does not yet route the METAL CORE VCA callback through a production engine registry or prove the complete METAL CORE audio graph.
+- Full baseline run `41339111968` on this exact HEAD was still in progress at checkpoint time; do not count it as passed until its final result is confirmed.
+- Next: create a safe test seam for the METAL CORE own-envelope callback through the real host dispatcher, then cover shared voice stealing/fade and full engine state/memory.
