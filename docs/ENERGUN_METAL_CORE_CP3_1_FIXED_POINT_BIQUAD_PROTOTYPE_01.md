@@ -9,7 +9,7 @@ Status: isolated host prototype; **not production DSP, not registered, and not a
 
 This prototype tests the DF2T candidate from `ENERGUN_METAL_CORE_CP3_1_FIXED_POINT_BIQUAD_CANDIDATE_01.md`. It is deliberately confined to `tests/` and does not alter firmware source, parameter maps, persistence, engine registration, the host `voice_t` ABI, or factory firmware.
 
-The protected v98 reference has two serial and independent low-pass filters: MAIN FILTER and LPG FILTER. They require separate histories. This prototype implements one mono filter instance; two filters would use two independent state instances.
+The protected v98 reference has two serial and independent low-pass filters: MAIN FILTER and LPG FILTER. They require separate histories. This prototype implements one mono filter instance; two filters use two independent state instances in the host test.
 
 ## 2. Numeric candidate
 
@@ -26,7 +26,7 @@ Q2.30 is selected because normalized `a1` can approach -2; Q1.31 cannot represen
 
 ## 3. Host regression evidence
 
-Local strict build:
+Strict local build:
 
 ```sh
 cc -std=c11 -O2 -Wall -Wextra -Werror \
@@ -34,13 +34,15 @@ cc -std=c11 -O2 -Wall -Wextra -Werror \
   tests/metal_core_biquad_candidate_test.c -lm
 ```
 
-Result: **PASS, 8 checks, 0 failures**.
+Result: **PASS, 10 checks, 0 failures**.
 
 Coverage:
 - Candidate coefficient and state sizes: 20 bytes and 8 bytes.
 - Jury stability checks for 28 quantized cutoff/Q combinations.
 - 28 impulse responses over 65,536 samples, no saturation, and tail peak below 1,024 LSB.
 - 84 sine comparisons against a double-precision recurrence oracle, no saturation.
+- Separate MAIN and LPG histories; resetting MAIN leaves LPG history unchanged.
+- DC step converges to unity gain without saturation.
 - Reset clears both history words.
 - An over-range state is explicitly saturated and counted.
 
@@ -67,8 +69,8 @@ The 100 Hz / Q=20 case is the most demanding low-cutoff/high-resonance corner. A
 1. Run strict host regression in GitHub Actions.
 2. Compile the sample and block-32 probes with the pinned AC79 pi32v2 compiler; inspect disassembly and arithmetic helper calls.
 3. Compare target code size and block cost before deciding whether the arithmetic is viable.
-4. Add independent MAIN/LPG state tests and parameter automation tests.
-5. Revisit coefficient precision / low-frequency high-Q accuracy if the target or audio reference comparisons expose unacceptable error.
-6. Only after the numeric, timing, memory and lifecycle gates pass may the filter be considered for production integration.
+4. Add MAIN/LPG automation tests and source-derived trigger timing tests.
+5. Revisit coefficient precision / low-frequency high-Q accuracy if target or audio-reference comparisons expose unacceptable error.
+6. Only after numeric, timing, memory and lifecycle gates pass may the filter be considered for production integration.
 
 No production DSP, engine registration, parameter IDs, persistence changes, graph connection, hardware access, device write or flash was performed.
