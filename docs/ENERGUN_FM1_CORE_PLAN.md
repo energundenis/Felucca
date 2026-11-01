@@ -681,3 +681,39 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - [ ] Physical FM-1 validation; no flashing authorized.
 
 CI PASS is an engineering verification checkpoint for the tested SHA, not an installable firmware milestone.
+
+
+## CP1.4 execution update — logical parameter/storage baseline (2026-11-02)
+
+Status: **logical architecture adopted as the working V1 baseline; CP1.4 remains OPEN pending implementation-level compatibility tests.** This records the user's instruction to proceed. It does not allocate IDs, change firmware, select physical Flash sectors, or authorize device access.
+
+### Adopted working decisions
+
+1. Retain the full 37-control V1 sound scope.
+2. Adopt the logical access split **8 Engine EDIT + 16 common P_MC + 13 private per-track values** as the V1 working baseline. This is the plan to implement and verify, not a claim that IDs or storage are implemented.
+3. Store all 13 private values independently for each of the four parts. They are persistent patch state, not volatile engine DSP memory.
+4. Keep FOLLOW and METAL as independent switches in OSCILLATORS / SYNTH VOICE; preserve associated parameter values while OFF.
+5. Keep E0..E7 as the eight Engine EDIT / modulation destinations. P_MC continuous controls may be motion-locked only after explicit range handling and regression tests.
+6. Keep private enum/switch values (WAVE, FOLLOW, METAL, MODULATION mode, MOD OSC WAVE, FM CHARACTER, FOLD MODE) out of continuous Motion Lock and modulation-matrix destinations in V1. They remain editable through the private parameter UI/API.
+7. Treat MCX0..MCX6 as a separate optional extension namespace. They do not replace any of the 13 private V1 controls. MCX extension-motion is deferred from this CP1.4 package and requires a separate V1 scope decision.
+8. Use a versioned Sidecar logically associated with each of the four stored projects and the live autosave. Use A/B generations, CRC/integrity validation, generation matching to the base project, and deterministic defaults/fallback for missing or invalid Sidecar data.
+9. Include Sidecar state in user-preset semantics and archive/backup/restore as one versioned compatibility unit. Old projects/presets without Sidecar must load with documented defaults; a failed Sidecar must not prevent loading the base project.
+10. Keep the existing candidate ten-sector arithmetic as a capacity hypothesis only. No physical address range or sector is approved.
+
+### Implementation/verification work added to the plan
+
+- [ ] Freeze the exact 8/16/13 control table against the CP1.3 37-control inventory, including units, ranges, defaults, enum encodings and ownership per part.
+- [ ] Implement/verify private per-track value access and UI edit/write callbacks without using volatile DSP memory.
+- [ ] Implement explicit P_MC motion whitelist handling and tests; keep discrete/private values excluded.
+- [ ] Specify a versioned Sidecar record schema: magic, schema version, project identity/generation, payload length, per-track values, CRC and A/B commit state. Exact byte packing remains subject to size/compatibility review.
+- [ ] Specify atomic write ordering and interrupted-write recovery; verify host/emulator cases for first write, update, power loss at each transaction stage, stale generation, bad CRC, missing record, clear/replace and A/B fallback.
+- [ ] Specify preset save/load and archive-v2 backup/restore representation, including all four project slots and live autosave.
+- [ ] Add migration tests: legacy project/preset without Sidecar, new project with Sidecar, older archive restore, missing/corrupt Sidecar and downgrade/forward-compatibility behavior.
+- [ ] Confirm the logical Sidecar capacity with exact encoded payload sizes and metadata before any physical allocation.
+- [ ] Obtain and audit the complete FM-1 V1.5 dump and source-verify loader/recovery constraints before selecting any Flash sectors.
+
+### CP1.4 exit gate
+
+CP1.4 may be marked **closed at the logical/software-architecture level** only after the control table, access/edit path, Motion Lock policy, Sidecar schema, preset/archive migration and host/emulator transaction tests are complete and reviewed. Physical Flash allocation is a separate later safety gate and is not required to close the logical architecture, but it must remain blocked until the full device dump and recovery analysis are available.
+
+No firmware implementation, stable parameter ID assignment, Sidecar byte layout, Flash address, device write or factory-firmware change is claimed by this planning update.
