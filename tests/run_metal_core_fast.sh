@@ -61,18 +61,21 @@ run_test metal_core_cp3_memory_accounting
 compile_test_strict metal_core_feedback_delay_candidate tests/metal_core_feedback_delay_candidate_test.c
 run_test metal_core_feedback_delay_candidate
 
+compile_test_strict metal_core_biquad_candidate tests/metal_core_biquad_candidate_test.c -lm
+run_test metal_core_biquad_candidate
+
 compile_test metal_core_follow tests/metal_core_follow_test.c -lm
 run_test metal_core_follow
 
 compile_test metal_core_follow_host tests/metal_core_follow_host_test.c
 run_test metal_core_follow_host
 
-echo "== ENERGUN METAL CORE fast regression: all 11 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 12 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 11 focused host tests."
+        echo "Generated headers and compiled/executed all 12 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
