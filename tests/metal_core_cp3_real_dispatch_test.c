@@ -211,6 +211,64 @@ static void test_engine_switch_queue_provenance(void)
               t->xp_n == 0u);
 }
 
+
+static void test_ratchet_tie_slide_rest(void)
+{
+    track_t *t = &trk[0];
+    uint32_t age;
+
+    /* RATCH: invoke the real production seq_step/seq_ratchet functions. */
+    cp3_reset_part(t);
+    t->p[P_VOICE] = V_POLY;
+    t->p[P_SLEN] = 2;
+    t->p[P_SGATE] = 64;
+    t->p[P_SQNT] = 1;
+    t->step[0] = (step_t){{60u}, 1u, ST_NOTE, 0u, 100u};
+    step_set_ratchet(&t->step[0], 3u);
+    t->step[1] = (step_t){{0u}, 0u, ST_REST, 0u, 0u};
+    t->seq_idx = 0u;
+    seq_step(t, &t->step[0], 0u, 128u, SEQ_ROLLED);
+    cp3_check("real seq_step starts a three-hit RATCH and schedules two repeats",
+              t->seq_n == 1u && t->seq_notes[0] == 60u && t->rat_left == 2u);
+    t->seq_pos = 100000u; /* safely beyond each subdivision boundary */
+    seq_ratchet(t, 128u);
+    cp3_check("real seq_ratchet dispatches repeat 2 and decrements its counter",
+              t->rat_left == 1u && t->seq_n == 1u && t->seq_notes[0] == 60u);
+    seq_ratchet(t, 128u);
+    cp3_check("real seq_ratchet dispatches repeat 3 and completes the step",
+              t->rat_left == 0u && t->seq_n == 1u && t->seq_notes[0] == 60u);
+
+    /* SLIDE into and through a TIE, then a REST must release the held note. */
+    cp3_reset_part(t);
+    t->p[P_VOICE] = V_LEGATO;
+    t->p[P_SLEN] = 4;
+    t->p[P_SGATE] = 64;
+    t->p[P_SQNT] = 1;
+    t->step[0] = (step_t){{60u}, 1u, ST_NOTE, SF_SLIDE, 100u};
+    t->step[1] = (step_t){{0u}, 0u, ST_TIE, SF_SLIDE, 0u};
+    t->step[2] = (step_t){{64u}, 1u, ST_NOTE, 0u, 100u};
+    t->step[3] = (step_t){{0u}, 0u, ST_REST, 0u, 0u};
+
+    seq_step(t, &t->step[0], 0u, 128u, SEQ_ROLLED);
+    age = t->v[0].age;
+    cp3_check("SLIDE note holds its Gate for the following transition",
+              t->seq_n == 1u && t->seq_hold && t->v[0].gate &&
+              t->v[0].note == 60u);
+    seq_step(t, &t->step[1], 1u, 128u, SEQ_ROLLED);
+    cp3_check("real TIE extends the current note without issuing Note Off",
+              t->seq_n == 1u && t->seq_hold && t->v[0].gate &&
+              t->v[0].note == 60u);
+    seq_step(t, &t->step[2], 2u, 128u, SEQ_ROLLED);
+    cp3_check("SLIDE out of TIE changes pitch through LEGATO without restarting voice",
+              t->seq_n == 1u && t->seq_notes[0] == 64u &&
+              t->slide_glide && t->v[0].gate &&
+              t->v[0].note == 64u && t->v[0].age == age);
+    seq_step(t, &t->step[3], 3u, 128u, SEQ_ROLLED);
+    cp3_check("real REST releases the sequencer note and clears held state",
+              t->seq_n == 0u && !t->seq_hold &&
+              !t->v[0].gate);
+}
+
 int main(void)
 {
     cp3_init();
@@ -218,6 +276,7 @@ int main(void)
     test_mono_and_legato();
     test_unison_and_voice_budget();
     test_sequencer_source_accent_and_gate();
+    test_ratchet_tie_slide_rest();
     test_engine_switch_queue_provenance();
     seq_stop();
     printf("CP3 real Felucca dispatcher/sequencer integration: %s (%d failures)\n",
