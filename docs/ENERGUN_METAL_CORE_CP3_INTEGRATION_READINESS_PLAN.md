@@ -109,3 +109,28 @@ CP3 implementation may proceed in isolated test code while these are resolved, b
 - No device write or firmware flash occurred; factory firmware remains unchanged.
 
 This is a positive CI qualification checkpoint for the DSP candidate SHA. It does not close integration readiness gates: review/merge approval, production DSP integration, actual host allocator/lifecycle matrix, full-engine RAM/CPU accounting and runtime timing remain required.
+
+
+## CP3.0 real dispatcher/sequencer test — 2026-11-01
+
+- Test added: `tests/metal_core_cp3_real_dispatch_test.c`.
+- The test includes `tests/hostsim.c`, which compiles the actual production `firmware/src/voice.c` and `firmware/src/seq.c` in the same translation unit. It calls the real static production functions rather than a copied allocator or sequencer model.
+- The test is part of `tests/run_metal_core_fast.sh`; focused lane now compiles and runs 12 tests.
+- Exact tested coordination-branch HEAD: `4cf1b7011f5e7c45f32a1f018ca1dddba9df535e`.
+- GitHub Actions fast regression run: https://github.com/energundenis/Felucca/actions/runs/41339112020 — SUCCESS.
+- The new test's 19 checks passed as part of that run:
+  - POLY allocation, real engine note-on callback, source provenance, Note Off and host-render retirement.
+  - MONO retrigger and held-note fallback.
+  - LEGATO pitch change without restarting the voice, then fallback.
+  - UNISON voice allocation and Gate release.
+  - Real `seq_start()` / `seq_tick()` / `seq_step()` dispatch, explicit Accent metadata, no inferred Accent from velocity 127, and sequencer Gate expiry through `trk_note_off()`.
+  - Engine-switch queue preservation/removal of note source and Accent metadata.
+- Important boundary: the test uses Felucca's real ANALOG engine descriptor/callback as the registered engine. It proves the real host dispatcher and sequencer route; it does NOT yet invoke the METAL CORE VCA callback through the production `ENGINES[]` registry or prove a production METAL CORE render path.
+- The full baseline workflow on the same HEAD, run `41339111968`, was still in progress when this entry was written. Its final result must be checked separately.
+
+### Remaining CP3.0 / CP3.3 gates
+
+1. Exercise the METAL CORE own-envelope callback through a production-equivalent host path without prematurely registering a selectable engine or allocating a stable engine ID.
+2. Cover real shared eight-voice cross-part stealing/fade and `done()` interaction with engine-owned VCA.
+3. Resolve the approved V1 control/parameter map and engine state placement before production registration.
+4. Keep Gate observation documented as render-block-boundary unless an approved host event-offset extension is implemented.
