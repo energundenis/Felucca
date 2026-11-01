@@ -148,6 +148,14 @@ static void cp3_vca_init(void)
     }
 }
 
+static uint32_t cp3_active_count(const track_t *t)
+{
+    uint32_t i, n = 0;
+    for (i = 0; i < NVOICE; ++i)
+        n += t->v[i].active != 0u;
+    return n;
+}
+
 static void cp3_render_blocks(track_t *t, uint32_t blocks)
 {
     int32_t out[CTL];
@@ -246,7 +254,7 @@ static void test_engine_switch_replays_queued_vca_note(void)
     trk_note_on_source(t, 72u, 93u,
                        NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
     cp3_vca_check("note during fade is queued, not sent to old engine",
-                  t->xp_n == 1u && cp3_active_in_part(t) == 1u);
+                  t->xp_n == 1u && cp3_active_count(t) == 1u);
 
     for (i = 0; i < XF_BLOCKS; ++i) {
         memset(out, 0, sizeof(out));
