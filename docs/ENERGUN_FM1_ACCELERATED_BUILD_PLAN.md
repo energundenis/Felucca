@@ -53,3 +53,16 @@ The older `ENERGUN_METAL_CORE_ADSR_COMPATIBILITY_AUDIT_01.md` contains a provisi
 ## Reporting
 
 For each workstream, report status as not started / in progress / checking / passed / blocked, with completed work, evidence, and remaining gates. Report only observed CI and build results. No claim of background engineering between active sessions.
+
+
+## Execution kickoff — 2026-11-01
+
+User approved the accelerated execution model. The following isolated work branches have been created from the same audited base, `77c704bd8ef58e2fa03070fd4fefe3bae59e6d3c`:
+
+- `energun-fm1-cp3-dsp-filter` — host-only fixed-point filter prototype and numerical qualification. No production DSP promotion until reference-vector and stability tests pass.
+- `energun-fm1-cp3-host-integration` — real Felucca callback/lifecycle adapter tests, including retrigger, fresh-slot reuse, Gate-off and voice retirement. No engine registration in this workstream.
+- `energun-fm1-cp3-platform-qa` — AC79 compiler/code-generation inspection, state/memory accounting, build evidence and release-safety audit.
+
+The integration branch `energun-metal-core` remains the coordination branch. No branch is merged automatically. Each workstream must return reviewable commits and test evidence before integration. The three branch refs start at the same base; work is not considered implemented merely because a branch exists.
+
+The latest exact coordination HEAD at kickoff is `77c704bd8ef58e2fa03070fd4fefe3bae59e6d3c`. The last observed full baseline build/regression run was successful on `daae06e84c5710e0ed5703c5af38afde927b1ed8` (run 41254106977); it predates the kickoff HEAD and therefore is not evidence for the exact kickoff SHA. A fresh exact-HEAD CI run is required.
