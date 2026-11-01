@@ -139,7 +139,10 @@ int main(void)
                 test_metal_biquad_coeff_q30_t c;
                 double oracle[5];
                 if (cutoffs[ci] < FS * 0.5) {
-                    stable &= make_lowpass(cutoffs[ci], qs[qi], &c, oracle);
+                    if (!make_lowpass(cutoffs[ci], qs[qi], &c, oracle)) {
+                        stable = 0;
+                        continue;
+                    }
                     stable &= coefficients_stable(&c);
                 }
             }
@@ -181,6 +184,42 @@ int main(void)
     check("worst sine error is below 0.15% of input amplitude",
           worst_sine < 7500.0);
 
+    {
+        test_metal_biquad_coeff_q30_t main_c, lpg_c;
+        test_metal_biquad_state_t main_s = {0, 0}, lpg_s = {0, 0};
+        test_metal_biquad_state_t lpg_before;
+        double main_oracle[5], lpg_oracle[5];
+        uint32_t main_sat = 0, lpg_sat = 0;
+        int n;
+        make_lowpass(1200.0, 2.0, &main_c, main_oracle);
+        make_lowpass(1800.0, 0.7, &lpg_c, lpg_oracle);
+        for (n = 0; n < 256; ++n) {
+            test_metal_biquad_process_q30(&main_c, &main_s,
+                                           n == 0 ? 1000000 : 0, &main_sat);
+            test_metal_biquad_process_q30(&lpg_c, &lpg_s,
+                                           n == 0 ? 700000 : 0, &lpg_sat);
+        }
+        lpg_before = lpg_s;
+        test_metal_biquad_reset(&main_s);
+        check("MAIN and LPG filter histories remain independent",
+              main_s.z1 == 0 && main_s.z2 == 0 &&
+              lpg_s.z1 == lpg_before.z1 && lpg_s.z2 == lpg_before.z2 &&
+              (lpg_s.z1 != 0 || lpg_s.z2 != 0) &&
+              main_sat == 0 && lpg_sat == 0);
+    }
+    {
+        test_metal_biquad_coeff_q30_t c;
+        test_metal_biquad_state_t s = {0, 0};
+        double oracle[5];
+        uint32_t sat = 0;
+        int32_t y = 0;
+        int n;
+        make_lowpass(1200.0, 0.707, &c, oracle);
+        for (n = 0; n < 65536; ++n)
+            y = test_metal_biquad_process_q30(&c, &s, 5000000, &sat);
+        check("DC step converges to unity gain without saturation",
+              sat == 0 && y > 4999000 && y < 5001000);
+    }
     {
         test_metal_biquad_state_t s = {123, -456};
         test_metal_biquad_reset(&s);
