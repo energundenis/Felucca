@@ -225,6 +225,50 @@ static void test_gate_release_and_done_lifecycle(void)
                   blocks < 1000u);
 }
 
+static void test_engine_switch_replays_queued_vca_note(void)
+{
+    track_t *t;
+    int32_t out[CTL];
+    uint32_t i, voice = NVOICE;
+
+    cp3_vca_init();
+    t = &trk[0];
+    /* Private host-test slot 1 models the destination engine descriptor. */
+    ENGINES[1] = &ENG_METAL_CORE_CP3_TEST;
+    trk_note_on_source(t, 45u, 100u, NOTE_SRC_PERFORMANCE);
+    cp3_render_blocks(t, 3u);
+
+    t->eng_req = 1u;
+    engine_block(t); /* begin the real four-block old-engine fade */
+    cp3_vca_check("real engine_block starts the engine-switch fade",
+                  t->xf_on && t->xf == XF_BLOCKS && t->engine == 0u);
+
+    trk_note_on_source(t, 72u, 93u,
+                       NOTE_SRC_SEQUENCER | NOTE_META_ACCENT);
+    cp3_vca_check("note during fade is queued, not sent to old engine",
+                  t->xp_n == 1u && cp3_active_in_part(t) == 1u);
+
+    for (i = 0; i < XF_BLOCKS; ++i) {
+        memset(out, 0, sizeof(out));
+        (void)track_render(t, out, CTL);
+    }
+    cp3_vca_check("old engine fade completes on the real render path",
+                  t->xf_on && t->xf == 0u && t->engine == 0u);
+
+    engine_block(t); /* switch, claim new engine memory, replay queued note */
+    for (i = 0; i < NVOICE; ++i)
+        if (t->v[i].active && t->v[i].note == 72u)
+            voice = i;
+    cp3_vca_check("real engine_block replays queued note on destination engine",
+                  t->engine == 1u && !t->xf_on && t->xp_n == 0u &&
+                  voice < NVOICE && t->v[voice].gate);
+    cp3_vca_check("queued source and explicit Accent survive the real engine switch",
+                  voice < NVOICE &&
+                  t->voice_source[voice] ==
+                    (NOTE_SRC_SEQUENCER | NOTE_META_ACCENT) &&
+                  cp3_voice_vca(t, &t->v[voice])->phase == ENG_METAL_VCA_ATTACK);
+}
+
 static void test_cross_part_steal_and_reclaimed_vca_reset(void)
 {
     track_t *a = &trk[0], *b = &trk[1];
@@ -297,6 +341,7 @@ int main(void)
     test_gate_release_and_done_lifecycle();
     test_retrigger_from_release_level();
     test_cross_part_steal_and_reclaimed_vca_reset();
+    test_engine_switch_replays_queued_vca_note();
     printf("CP3 real METAL VCA through Felucca host dispatcher: %s (%d failures)\n",
            cp3_vca_failures ? "FAIL" : "PASS", cp3_vca_failures);
     return cp3_vca_failures ? 1 : 0;
