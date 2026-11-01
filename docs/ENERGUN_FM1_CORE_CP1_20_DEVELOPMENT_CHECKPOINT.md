@@ -119,3 +119,15 @@ The automation is not evidence of continuous background development. No complete
 - Limitation: this exercises the actual Felucca dispatcher and sequencer with the existing ANALOG engine callback. It does not yet route the METAL CORE VCA callback through a production engine registry or prove the complete METAL CORE audio graph.
 - Full baseline run `41339111968` on this exact HEAD was still in progress at checkpoint time; do not count it as passed until its final result is confirmed.
 - Next: create a safe test seam for the METAL CORE own-envelope callback through the real host dispatcher, then cover shared voice stealing/fade and full engine state/memory.
+
+
+## CP3 progress update — real METAL VCA callback through Felucca
+
+- Added `tests/metal_core_cp3_real_vca_dispatch_test.c` and a compile-time host-only registry seam in `firmware/src/engines.c`. The registry remains immutable in normal firmware builds; no production engine ID or selectable engine was added.
+- The test uses Felucca's actual `voice.c`, `seq.c`, `track_render()` and `engine_block()` code, with a private descriptor that invokes the real METAL VCA module.
+- Verified: `ownenv=1` host ADSR bypass, explicit Accent, Note Off / Release / `done()`, MONO retrigger from Release, shared eight-voice budget, cross-part steal, stage-4 fade, fresh-slot VCA reset, engine-switch fade and queued-note replay with source/Accent preserved.
+- New VCA dispatch checks: 19 PASS. Earlier real dispatcher/sequencer checks: 19 PASS. Total: 38 integration assertions.
+- Exact HEAD: `80a37fa7b06ac24d5664a2681c9fb4df9dc34ce1`.
+- Fast regression run `41340134547`: SUCCESS; all 13 tests passed.
+- Full baseline run `41340134381` on this exact HEAD was pending at checkpoint time.
+- Remaining: production callback implementation, real sequencer ratchet/rest/slide/tie coverage, full DSP graph, production RAM/CPU accounting, and exact-HEAD full baseline CI. Production engine registration remains gated.
