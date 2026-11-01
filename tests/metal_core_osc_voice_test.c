@@ -13,7 +13,7 @@
 static int failures;
 static void check(const char *name, int ok)
 {
-    printf("metal osc voice: %-68s %s\\n", name, ok ? "PASS" : "FAIL");
+    printf("metal osc voice: %-68s %s\n", name, ok ? "PASS" : "FAIL");
     failures += !ok;
 }
 
@@ -68,7 +68,7 @@ int main(void)
 {
     test_independent_voice_slots();
     test_note_on_reset_and_retrigger_contract();
-    printf("metal osc voice: %s (%d failures)\\n",
+    printf("metal osc voice: %s (%d failures)\n",
            failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
 }
