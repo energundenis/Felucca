@@ -95,3 +95,21 @@ CP1 can be closed only when all of the following are recorded:
 - No engine ID or parameter ID is allocated.
 - No Flash sector is allocated or written.
 - No physical FM-1 access, firmware install or factory-firmware change is performed.
+
+
+## 10. CP1.4 execution decision — 2026-11-02
+
+Following the user's instruction to proceed, the 8/16/13 allocation is adopted as the **logical V1 working baseline** rather than left as an undecided proposal:
+
+- 8 Engine EDIT values, 16 common P_MC continuous values, 13 private persistent values per part.
+- All 13 private values are per-part state across four parts; they are not volatile DSP memory.
+- E0..E7 remain modulation-matrix destinations. P_MC motion-lock support requires an explicit whitelist and tests. Private discrete enums/switches remain excluded from continuous Motion Lock and modulation-matrix destinations in V1.
+- FOLLOW and METAL remain independent and retain their associated values while OFF.
+- MCX0..MCX6 remain a separate extension namespace; MCX extension-motion is deferred pending a separate scope decision.
+- Sidecar is logically versioned and associated with four stored projects plus live autosave. Required properties: A/B generation copies, CRC, base-project generation matching, deterministic defaults, and non-blocking fallback when missing or invalid.
+- Preset save/load and archive/backup/restore must include the Sidecar compatibility unit.
+- No parameter IDs, exact byte packing, physical sector or Flash address is approved by this decision.
+
+CP1.4 remains OPEN until the exact control table, private edit API/UI path, P_MC motion handling, Sidecar schema/size, preset/archive migration and host/emulator A/B transaction tests are complete. Physical Flash allocation remains separately blocked until the complete FM-1 V1.5 dump and recovery constraints are audited.
+
+The corresponding implementation checklist is appended to ENERGUN_FM1_CORE_PLAN.md and the CP1.4 proposal addendum.
