@@ -648,3 +648,36 @@ Do not mark a checkbox complete based on an intended design, a source comment, o
 - **Disposition: CP2.23 closed for the isolated VCA-only harness.** This does not close CP3 or claim hardware validation.
 - Added [CP3 integration readiness plan](ENERGUN_METAL_CORE_CP3_INTEGRATION_READINESS_PLAN.md). CP3 starts with contract/state freeze, then isolated fixed-point DSP integration, and only later production registration after the V1 parameter/storage map is resolved.
 
+
+
+## CI checkpoint — 2026-11-01
+
+- Full baseline workflow: https://github.com/energundenis/Felucca/actions/runs/41322047870 — SUCCESS; all 16 principal steps completed.
+- Exact tested source: 542126c0498f177f38f6f14525ac3042806cfdb7 on DSP work branch en erg un/cp3-1-biquad-prototype-01 (PR #1 head), not the coordination branch.
+- Unmodified Felucca firmware build: PASS.
+- Isolated ENERGUN VCA compile with pinned AC79 pi32v2 target compiler: PASS.
+- Felucca Host Regression and Web Regression: PASS.
+- Build output/size recording and experimental evidence upload: PASS.
+- Companion fast regression: https://github.com/energundenis/Felucca/actions/runs/41322047771 — SUCCESS on the same SHA.
+- Biquad candidate host regression + AC79 compile/disassembly probe: https://github.com/energundenis/Felucca/actions/runs/41322047859 — SUCCESS on the same SHA.
+- AC79 biquad inspection is compile/code-generation evidence only, not runtime cycle timing or full-engine CPU proof.
+- This verifies the tested DSP candidate commit only. It does not mean PR #1 is merged, METAL CORE is production-registered/playable, or the coordination branch has the same tested tree.
+- Coordination branch HEAD at checkpoint start: e6877d47f6b5684efab1e2cf759ed37b2ea76cd0. Main remains untouched.
+- No device write or firmware flash occurred; factory firmware remains unchanged.
+
+### Updated milestone disposition
+
+- [x] Exact-HEAD baseline CI on DSP work branch: standard build, AC79 VCA compile, Host Regression, Web Regression, evidence collection.
+- [x] Focused Metal Core fast regression on the same exact SHA.
+- [x] Isolated biquad host regression and AC79 compile/disassembly probe on the same exact SHA.
+- [ ] Review/integrate DSP PR #1 into coordination branch — open; no merge performed.
+- [ ] Complete actual host allocator/lifecycle proof: voice steal, MONO/LEGATO, shared voice budget, engine switching.
+- [ ] Complete full-engine AC79 CPU and RAM budgets.
+- [ ] Register and make METAL CORE selectable/playable in Felucca.
+- [ ] Complete parameter mapping, persistence and sidecar/recovery design.
+- [ ] FM-1 UI/control integration.
+- [ ] Generative sequencer integration and clock/live-playback regression.
+- [ ] Package validation and source-verified factory recovery route.
+- [ ] Physical FM-1 validation; no flashing authorized.
+
+CI PASS is an engineering verification checkpoint for the tested SHA, not an installable firmware milestone.
