@@ -50,7 +50,13 @@ static uint8_t eng_mem_owner[NPART];       /* engine index + 1 whose state is in
 #endif
 
 /* the editor protocol, user presets and projects store these indices: append, never reorder */
+/* Host-only CP3 integration tests may substitute an isolated descriptor in a private
+ * hostsim process. Production builds keep the registry pointer table immutable. */
+#ifdef FELUCCA_CP3_TEST_MUTABLE_ENGINE_REGISTRY
+static const engine_t *ENGINES[NENGINES] = {
+#else
 static const engine_t *const ENGINES[NENGINES] = {
+#endif
     &ENG_ANALOG,                 /* 0 */
 #if FELUCCA_FM4
     &ENG_DIGITAL,                /* 1 (ENGI_DIGITAL) */
