@@ -140,3 +140,32 @@ The candidate XDATA sectors remain unapproved. Do not write to them until the fu
 Retain the 37-control V1 sound scope. Use E0..E7 for the eight highest-value modulation targets, use up to 16 P_MC common IDs for continuous controls that benefit from parameter locks and standard pages, and implement a small versioned private sidecar bank for the remaining 9/13 values. Do not reduce sound functionality merely to fit the existing eight edit values.
 
 This remains a proposal. No parameter IDs, engine ABI, project format, backup protocol, sidecar, Flash address, firmware code, or hardware state was changed.
+
+
+## CP1.4 execution addendum — adopted V1 working baseline (2026-11-02)
+
+The user instructed the project to proceed with the recommended CP1.4 closure work. The following is now the **adopted logical working baseline**, replacing the earlier status of an unapproved proposal for planning purposes. It is not yet an implemented parameter map or a physical storage approval.
+
+- **37 V1 controls remain in scope.**
+- Adopt **8 Engine EDIT + 16 common P_MC + 13 private values**.
+- All 13 private values are stored independently per track/part (four parts). They are persistent patch state and must not be stored in volatile engine DSP memory.
+- FOLLOW and METAL remain independent switches in OSCILLATORS / SYNTH VOICE; OFF must not erase their associated values.
+- E0..E7 remain the eight Engine EDIT / modulation destinations.
+- Continuous P_MC controls are eligible for Motion Lock only after explicit whitelist/range handling and tests. Private discrete enums/switches are not Motion Lock or modulation-matrix destinations in V1.
+- MCX0..MCX6 are a separate extension namespace, not a substitute for the 13 private V1 values. MCX extension-motion is deferred from this CP1.4 package pending a separate scope decision.
+- Sidecar must be versioned and logically associated with four stored projects plus live autosave; use A/B copies, CRC, generation matching, deterministic defaults, and safe fallback that never blocks loading the base project.
+- Preset save/load and archive/backup/restore must carry Sidecar data as a compatible versioned unit.
+- The ten-sector A/B capacity estimate remains arithmetic only. No physical Flash range or sector is approved.
+
+### Remaining work before CP1.4 can close
+
+1. Freeze the exact 8/16/13 table against the 37-control inventory: ownership, units, ranges, defaults and enum encoding.
+2. Define/implement private per-track read/write/edit access and UI/API behavior.
+3. Define and test the P_MC Motion Lock whitelist; exclude discrete/private values.
+4. Specify exact Sidecar record fields and byte size, then verify capacity.
+5. Specify A/B atomic transaction ordering and run host/emulator interruption, CRC, stale-generation, missing/corrupt record and fallback tests.
+6. Define preset and archive-v2 backup/restore migration, including four projects and live autosave.
+7. Complete legacy/new project and preset migration tests.
+8. Audit the full FM-1 V1.5 dump and factory recovery route before any physical Flash allocation.
+
+**Closure rule:** CP1.4 can close at the logical/software-architecture level after items 1–7 are implemented, tested and reviewed. Physical Flash sector selection is deliberately separate and remains blocked until item 8. This addendum assigns no stable parameter IDs and authorizes no device or Flash write.
