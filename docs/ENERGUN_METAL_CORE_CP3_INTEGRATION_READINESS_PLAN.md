@@ -178,3 +178,13 @@ The full baseline workflow on this exact HEAD, run `41340134381`, was pending at
 - Fast regression workflow run `41346681009` on exact HEAD `d158d786a33650f675f06bba7bd89b488bf1d1bb`: SUCCESS; all 13 focused test programs passed.
 - Full baseline build/regression run `41346681012` on the same exact HEAD was still in progress when this note was written. Its conclusion must be checked separately.
 - Coverage remains host integration evidence. It does not prove the production METAL CORE engine is registered or the full DSP graph is integrated, and it is not a hardware/AC79 runtime test.
+
+
+## CP3.2 OSC per-voice phase adapter — 2026-11-02
+
+- Added `firmware/src/eng_metal_core_osc_voice.h`, a thin adapter that maps OSC1 and OSC2 to the existing `voice_t.ph[0]` and `voice_t.ph[1]` phase slots. No `voice_t` ABI expansion or per-part memory allocation is required.
+- The adapter uses the final host `vmod_t.inc`, so oscillator pitch follows the already-computed host pitch increment (including glide and modulation).
+- The note-on helper resets the two phase slots. Felucca's real `voice_start()` saves/restores `ph[0..2]` after the engine note_on callback when retriggering a sounding voice; this preserves both oscillator phases on retrigger while fresh/reused voices start at phase zero.
+- Added `tests/metal_core_osc_voice_test.c` against actual host `voice_t` / `vmod_t` declarations. It checks independent phase advancement, output bounds, fresh-note reset, preservation of phase slot 2, and the host retrigger save/restore contract.
+- Added this test to `tests/run_metal_core_fast.sh`; focused test lane now contains 15 test programs.
+- This is a per-voice integration adapter and host contract test only. It is not yet called from a production METAL CORE descriptor or render callback; it does not establish production sound or target CPU timing.
