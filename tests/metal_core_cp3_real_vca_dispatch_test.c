@@ -81,6 +81,11 @@ static void cp3_engine_note_on(struct track *track, voice_t *voice)
     int32_t peak, sustain, velocity;
     if (!vca || i >= NVOICE)
         return;
+    /* voice_start sets host env to zero for a genuinely free/reclaimed slot;
+     * a live retrigger keeps its instantaneous host level. Reset stale engine
+     * state after Felucca has completed its one-block stage-4 steal fade. */
+    if (voice->env == 0)
+        eng_metal_vca_reset(vca);
     velocity = ((int32_t)voice->vel * ENG_METAL_VCA_Q16_ONE + 63) / 127;
     eng_metal_vca_targets_q16(ENG_METAL_VCA_Q16_ONE, 32768,
                               velocity, 1,
@@ -220,6 +225,51 @@ static void test_gate_release_and_done_lifecycle(void)
                   blocks < 1000u);
 }
 
+static void test_cross_part_steal_and_reclaimed_vca_reset(void)
+{
+    track_t *a = &trk[0], *b = &trk[1];
+    eng_metal_vca_t *stolen_vca;
+    uint32_t i;
+    int32_t out[CTL];
+
+    cp3_vca_init();
+    a = &trk[0];
+    b = &trk[1];
+    a->p[P_VOICE] = V_POLY;
+    b->p[P_VOICE] = V_POLY;
+    for (i = 0; i < NVOICE; ++i)
+        trk_note_on_source(a, 40u + i, 100u, NOTE_SRC_PERFORMANCE);
+    cp3_render_blocks(a, 8u);
+    stolen_vca = cp3_voice_vca(a, &a->v[1]);
+    cp3_vca_check("eight live voices fill Felucca's shared allocator budget",
+                  voices_busy() == NVOICE && stolen_vca &&
+                  stolen_vca->level_q16 > 0);
+
+    trk_note_on_source(b, 80u, 100u, NOTE_SRC_PERFORMANCE);
+    cp3_vca_check("ninth note steals oldest eligible non-bass voice across parts",
+                  voices_busy() == NVOICE && a->v[0].gate && a->v[0].note == 40u &&
+                  !a->v[1].gate && a->v[1].stage == 4u &&
+                  b->v[0].active && b->v[0].note == 80u);
+
+    memset(out, 0, sizeof(out));
+    (void)track_render(a, out, CTL);
+    cp3_vca_check("host stage-4 fade retires stolen voice after one render block",
+                  !a->v[1].active && a->v[1].stage == 0u &&
+                  stolen_vca->phase == ENG_METAL_VCA_RELEASE &&
+                  stolen_vca->level_q16 > 0);
+
+    trk_note_off(b, 80u);
+    cp3_render_blocks(b, 1000u);
+    cp3_vca_check("the new part's VCA completes Release and frees shared voice budget",
+                  !b->v[0].active && voices_busy() == NVOICE - 1u);
+
+    trk_note_on_source(a, 52u, 100u, NOTE_SRC_PERFORMANCE);
+    cp3_vca_check("reclaimed host slot resets stale stolen VCA state before fresh Attack",
+                  a->v[1].active && a->v[1].gate && a->v[1].note == 52u &&
+                  stolen_vca->phase == ENG_METAL_VCA_ATTACK &&
+                  stolen_vca->level_q16 == 0);
+}
+
 static void test_retrigger_from_release_level(void)
 {
     track_t *t = &trk[0];
@@ -246,6 +296,7 @@ int main(void)
     test_real_dispatch_uses_engine_owned_vca();
     test_gate_release_and_done_lifecycle();
     test_retrigger_from_release_level();
+    test_cross_part_steal_and_reclaimed_vca_reset();
     printf("CP3 real METAL VCA through Felucca host dispatcher: %s (%d failures)\n",
            cp3_vca_failures ? "FAIL" : "PASS", cp3_vca_failures);
     return cp3_vca_failures ? 1 : 0;
