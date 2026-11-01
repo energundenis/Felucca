@@ -59,9 +59,13 @@ Required before parameter-map freeze:
 
 - DSP PR #1 remains Draft and unmerged. Its exact tested candidate SHA passed focused host regression and an AC79 compile-only probe. The target probe wrapper still requires source/disassembly review before claiming production-path code generation or runtime performance.
 - Host Integration PR #2 remains Draft and unmerged. Its test-only lifecycle contract matrix and source trace exist, but the matrix does not execute the real static allocator/event dispatcher. Exact-head CI evidence is still pending.
+- At CP1.20 (2026-11-01), exact coordination-branch HEAD `4fc80496e6acfa459eec574974a2121f8912b14b` passed the focused Metal Core host regression (run `41338093488`). The full baseline workflow (run `41338093471`) had completed the unmodified Felucca build and AC79 VCA compile-only probes, but its host/web regression was still in progress at checkpoint time; do not count the full workflow as passed.
+- CI path filters were added to both baseline and fast workflows so documentation-only changes under `docs/**` and root `*.md` do not start code-validation workflows. Explicit manual dispatch remains available. A dedicated docs-only trigger verification has not been recorded.
+- A daily ChatGPT automation for safe continuation was created and enabled; no completed automation run was yet confirmed at CP1.20. This is scheduled assistance, not continuous background execution.
 - Platform QA remains a separate workstream and is not complete.
 - No production METAL CORE engine is registered/playable.
 - No installable ENERGUN FM-1 package is established.
+- See `docs/ENERGUN_FM1_CORE_CP1_20_DEVELOPMENT_CHECKPOINT.md` for the dated evidence and next actions.
 
 ## 7. CP1 exit criteria
 
@@ -76,12 +80,13 @@ CP1 can be closed only when all of the following are recorded:
 
 ## 8. Next execution order
 
-1. Complete the parameter-access decision package from the existing 37-control inventory; do not assign IDs yet.
-2. Finish the VCA trigger-mode mapping and reference-accuracy tests.
-3. Reconcile P_MC motion events with the sidecar and archive-v2 design; keep MCX extension motion separate unless explicitly approved.
-4. Complete host/emulator storage transaction tests without touching device Flash.
-5. Close the actual host allocator/lifecycle test gap in CP3 in parallel, but keep production engine registration gated.
-6. Only after these gates: freeze CP1, then integrate qualified DSP incrementally and rerun exact-HEAD CI.
+1. Confirm the final result/artifacts of full baseline run `41338093471` from CP1.20; its host/web regression was still running at checkpoint time.
+2. Close the actual host allocator/lifecycle test gap in CP3 by executing real Felucca dispatcher/sequencer source in a test harness, or document the exact platform/static-linkage blocker and minimal safe seam.
+3. Complete the parameter-access decision package from the existing 37-control inventory; do not assign IDs yet.
+4. Finish VCA reference-accuracy tests and the remaining manual/live versus sequencer acceptance coverage.
+5. Reconcile P_MC motion events with the sidecar and archive-v2 design; keep MCX extension motion separate unless explicitly approved.
+6. Complete host/emulator storage transaction tests without touching device Flash.
+7. Only after these gates: freeze CP1, then integrate qualified DSP incrementally and rerun exact-HEAD CI.
 
 ## 9. Safety
 
