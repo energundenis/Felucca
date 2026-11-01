@@ -49,7 +49,7 @@ Do not bring browser Synth Lab versions such as METAL CORE V105, VOICE 2, MOOG C
 ## CI checkpoint — 2026-11-01
 
 - Full baseline workflow: https://github.com/energundenis/Felucca/actions/runs/41322047870 — SUCCESS; all 16 principal steps completed.
-- Exact tested source: 542126c0498f177f38f6f14525ac3042806cfdb7 on DSP work branch en erg un/cp3-1-biquad-prototype-01 (PR #1 head), not the coordination branch.
+- Exact tested source: 542126c0498f177f38f6f14525ac3042806cfdb7 on DSP work branch energun/cp3-1-biquad-prototype-01 (PR #1 head), not the coordination branch.
 - Unmodified Felucca firmware build: PASS.
 - Isolated ENERGUN VCA compile with pinned AC79 pi32v2 target compiler: PASS.
 - Felucca Host Regression and Web Regression: PASS.
