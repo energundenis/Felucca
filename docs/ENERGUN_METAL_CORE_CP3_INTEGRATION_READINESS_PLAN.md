@@ -168,3 +168,13 @@ The full baseline workflow on this exact HEAD, run `41340134381`, was pending at
 3. Complete production state placement and exact engine memory accounting, including all DSP state and feedback buffers.
 4. Integrate the full fixed-point DSP chain and measure target CPU/RAM.
 5. Only after CP1 parameter/storage decisions are approved, register the production engine and run exact-HEAD full CI.
+
+
+## CP3 real sequencer coverage extension — 2026-11-01
+
+- Extended `tests/metal_core_cp3_real_dispatch_test.c` using the real production `seq_step()` and `seq_ratchet()` functions compiled through `tests/hostsim.c`.
+- Added deterministic checks for a three-hit RATCH (initial trigger plus two repeats), TIE Gate continuation, SLIDE into/out of TIE through the real LEGATO dispatcher without restarting the host voice, and REST releasing the sequencer note and clearing held state.
+- All 7 new assertions passed. The dispatcher/sequencer integration test now has 26 passing assertions (previously 19).
+- Fast regression workflow run `41346681009` on exact HEAD `d158d786a33650f675f06bba7bd89b488bf1d1bb`: SUCCESS; all 13 focused test programs passed.
+- Full baseline build/regression run `41346681012` on the same exact HEAD was still in progress when this note was written. Its conclusion must be checked separately.
+- Coverage remains host integration evidence. It does not prove the production METAL CORE engine is registered or the full DSP graph is integrated, and it is not a hardware/AC79 runtime test.
