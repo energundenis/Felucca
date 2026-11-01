@@ -110,3 +110,10 @@ Hardware: M-VAVE FM-1; factory firmware V15 baseline
 7. Integrate sequencer, validate package and recovery, then seek separate explicit approval for any physical-device flash.
 
 **Release status: NOT INSTALLABLE.** Passing CI is an important engineering checkpoint, not permission to flash and not proof of hardware operation.
+
+
+## CP1.4 plan update — 2026-11-02
+
+The user instructed proceeding with the CP1.4 closure package. The logical V1 working baseline is now recorded: 8 Engine EDIT + 16 common P_MC + 13 private persistent values per part; private values are per-track across four parts; P_MC motion-lock handling requires an explicit whitelist; discrete/private enums remain excluded; MCX extension-motion is deferred; Sidecar is versioned, A/B + CRC + generation-matched and included in preset/archive backup/restore. This is a planning decision only.
+
+CP1.4 remains OPEN pending exact control-map freeze, private edit path, Sidecar byte schema/size, migration and host/emulator transaction tests. No stable parameter IDs or physical Flash sectors are assigned. Full FM-1 V1.5 dump and recovery audit remain mandatory before any physical allocation.
