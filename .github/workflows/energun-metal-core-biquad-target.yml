@@ -1,6 +1,9 @@
-name: ENERGUN METAL CORE biquad target codegen probe
+name: ENERGUN METAL CORE biquad candidate regression and target probe
 
 on:
+  push:
+    branches:
+      - energun/cp3-1-biquad-prototype-01
   pull_request:
     branches:
       - energun-metal-core
@@ -15,14 +18,25 @@ concurrency:
 
 jobs:
   biquad-target:
-    name: AC79 pi32v2 biquad compile-only probe
+    name: Host regression and AC79 pi32v2 biquad compile-only probe
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out source
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up Python and host dependencies
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install header-generation dependencies
+        run: python -m pip install --upgrade Pillow fonttools
+
+      - name: Run focused ENERGUN METAL CORE host regression
+        run: sh tests/run_metal_core_fast.sh
 
       - name: Install pinned JieLi pi32v2 toolchain
         run: |
@@ -47,15 +61,18 @@ jobs:
           grep -q "eng_metal_biquad_target_probe_state_size" build/metal-core-biquad-target/biquad_probe.dis
           {
             echo "## AC79 biquad code-generation probe"
+            echo "All 12 focused host tests passed before the AC79 compile-only probe."
             echo "The isolated Q2.30 DF2T sample and block-32 functions compiled with the pinned pi32v2 compiler."
             echo "Object, disassembly and symbol table are archived. This is compile-only evidence, not hardware execution or cycle timing."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload target codegen evidence
+      - name: Upload host and target codegen evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: energun-metal-core-biquad-target-${{ github.sha }}
-          path: build/metal-core-biquad-target/
+          path: |
+            build/metal-core-fast/
+            build/metal-core-biquad-target/
           if-no-files-found: ignore
           retention-days: 14
