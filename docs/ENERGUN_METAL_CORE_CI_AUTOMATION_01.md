@@ -13,3 +13,20 @@ The existing `.github/workflows/energun-fm1-baseline.yml` remains the full integ
 The runner uses the same hardware include paths as `tests/run_tests.sh` and the same generated headers as the full build. It fetches recursive pinned submodules because the existing table generator imports the engine submodule, and the host tests include Felucca BSP headers.
 
 Next stages, gated on implementation evidence: target compiler probes for finalized DSP structures; exact per-part memory assertions after the complete typed state is frozen; and measured decomposition of the full regression suite.
+
+## CI checkpoint — 2026-11-01
+
+- Full baseline workflow: https://github.com/energundenis/Felucca/actions/runs/41322047870 — SUCCESS; all 16 principal steps completed.
+- Exact tested source: 542126c0498f177f38f6f14525ac3042806cfdb7 on DSP work branch en erg un/cp3-1-biquad-prototype-01 (PR #1 head), not the coordination branch.
+- Unmodified Felucca firmware build: PASS.
+- Isolated ENERGUN VCA compile with pinned AC79 pi32v2 target compiler: PASS.
+- Felucca Host Regression and Web Regression: PASS.
+- Build output/size recording and experimental evidence upload: PASS.
+- Companion fast regression: https://github.com/energundenis/Felucca/actions/runs/41322047771 — SUCCESS on the same SHA.
+- Biquad candidate host regression + AC79 compile/disassembly probe: https://github.com/energundenis/Felucca/actions/runs/41322047859 — SUCCESS on the same SHA.
+- AC79 biquad inspection is compile/code-generation evidence only, not runtime cycle timing or full-engine CPU proof.
+- This verifies the tested DSP candidate commit only. It does not mean PR #1 is merged, METAL CORE is production-registered/playable, or the coordination branch has the same tested tree.
+- Coordination branch HEAD at checkpoint start: e6877d47f6b5684efab1e2cf759ed37b2ea76cd0. Main remains untouched.
+- No device write or firmware flash occurred; factory firmware remains unchanged.
+
+Scope limitation: these runs verify the tested DSP commit and CI paths. AC79 biquad inspection is compile-only, not runtime timing. They do not prove full-engine resource budgets, production engine registration, FM-1 hardware operation, installability, or recovery. PR #1 remains unmerged.
