@@ -90,3 +90,21 @@ The newly created `energun-fm1-cp3-dsp-filter` branch is therefore redundant and
 
 - Branch `energun-fm1-cp3-platform-qa` records the AC79/resource/recovery workstream scope.
 - No new target benchmark or complete engine-memory proof has been claimed. The 112-byte per-voice / 896-byte per-part accounting and 3 ms feedback ring remain provisional candidate figures; complete coefficients, smoothing and scratch state are not yet budgeted.
+
+
+## CI checkpoint — 2026-11-01
+
+- Full baseline workflow: https://github.com/energundenis/Felucca/actions/runs/41322047870 — SUCCESS; all 16 principal steps completed.
+- Exact tested source: 542126c0498f177f38f6f14525ac3042806cfdb7 on DSP work branch en erg un/cp3-1-biquad-prototype-01 (PR #1 head), not the coordination branch.
+- Unmodified Felucca firmware build: PASS.
+- Isolated ENERGUN VCA compile with pinned AC79 pi32v2 target compiler: PASS.
+- Felucca Host Regression and Web Regression: PASS.
+- Build output/size recording and experimental evidence upload: PASS.
+- Companion fast regression: https://github.com/energundenis/Felucca/actions/runs/41322047771 — SUCCESS on the same SHA.
+- Biquad candidate host regression + AC79 compile/disassembly probe: https://github.com/energundenis/Felucca/actions/runs/41322047859 — SUCCESS on the same SHA.
+- AC79 biquad inspection is compile/code-generation evidence only, not runtime cycle timing or full-engine CPU proof.
+- This verifies the tested DSP candidate commit only. It does not mean PR #1 is merged, METAL CORE is production-registered/playable, or the coordination branch has the same tested tree.
+- Coordination branch HEAD at checkpoint start: e6877d47f6b5684efab1e2cf759ed37b2ea76cd0. Main remains untouched.
+- No device write or firmware flash occurred; factory firmware remains unchanged.
+
+Acceleration is operating as parallel CI and verification, not as an autonomous coding agent. No development occurs between active sessions. Next critical work: review DSP PR #1, close the host lifecycle matrix, then complete full-engine memory and runtime CPU budgets before registration or release work.
