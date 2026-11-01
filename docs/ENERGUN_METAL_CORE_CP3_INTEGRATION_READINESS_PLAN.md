@@ -134,3 +134,37 @@ This is a positive CI qualification checkpoint for the DSP candidate SHA. It doe
 2. Cover real shared eight-voice cross-part stealing/fade and `done()` interaction with engine-owned VCA.
 3. Resolve the approved V1 control/parameter map and engine state placement before production registration.
 4. Keep Gate observation documented as render-block-boundary unless an approved host event-offset extension is implemented.
+
+
+## CP3.0 real METAL VCA host-dispatch integration — 2026-11-01
+
+- Test: `tests/metal_core_cp3_real_vca_dispatch_test.c`.
+- The test includes the real hostsim production compilation unit (`voice.c`, `seq.c`, and the actual `track_render()` / `engine_block()` functions) and substitutes a private test descriptor in the engine registry.
+- The registry is mutable only when `FELUCCA_CP3_TEST_MUTABLE_ENGINE_REGISTRY` is defined for this host test. Normal firmware builds retain the immutable `static const engine_t *const ENGINES[]` registry. No production engine ID is allocated.
+- The private descriptor uses the real METAL VCA module and Felucca `engine_t` callbacks: `ownenv=1`, `note_on`, `render`, `done`, and `mem=288`.
+- Exact tested HEAD: `80a37fa7b06ac24d5664a2681c9fb4df9dc34ce1`.
+- Fast regression: https://github.com/energundenis/Felucca/actions/runs/41340134547 — SUCCESS; all 13 fast-lane tests passed.
+- The VCA dispatch test's 19 checks passed:
+  - real `trk_note_on_source()` invokes the METAL VCA note-on callback;
+  - Accent follows explicit voice-source metadata, not velocity;
+  - real `track_render()` bypasses host ADSR for `ownenv=1`;
+  - real Note Off enters VCA Release and `done()` retires the voice only after idle;
+  - MONO retrigger during Release preserves instantaneous VCA level;
+  - global eight-voice budget, cross-part stealing, bass protection and stage-4 fade;
+  - a reclaimed host voice slot resets stale VCA state before a fresh Attack;
+  - real `engine_block()` performs the old-engine fade, queues a note, switches descriptor, and replays note/source/Accent on the destination engine.
+- Combined with the 19-check `metal_core_cp3_real_dispatch_test.c`, the focused tests now exercise 38 real-dispatch integration assertions across voice modes, sequencer Gate/Accent, VCA lifecycle, shared voice stealing and engine-switch replay.
+
+### Important boundary
+
+This is a host integration test with a private test descriptor, not production registration. It proves the real Felucca host dispatcher/render/switch lifecycle can drive the METAL VCA callback contract. It does not mean the full OSC → FM/METAL → FOLD → FILTER → LPG → VCA DSP chain is complete or registered/playable. The test callback's fresh-slot reset rule (host `voice->env == 0`) must be carried into the production engine implementation and independently reviewed.
+
+The full baseline workflow on this exact HEAD, run `41340134381`, was pending at the time of this entry. Full firmware build and host/web regression must be confirmed separately.
+
+### Remaining CP3 gates after this integration test
+
+1. Port the proven callback/state-lifecycle pattern into the production METAL CORE engine implementation, preserving the test seam as host-only.
+2. Extend real sequencer coverage for ratchet, REST, SLIDE and TIE paths.
+3. Complete production state placement and exact engine memory accounting, including all DSP state and feedback buffers.
+4. Integrate the full fixed-point DSP chain and measure target CPU/RAM.
+5. Only after CP1 parameter/storage decisions are approved, register the production engine and run exact-HEAD full CI.
