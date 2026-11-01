@@ -160,7 +160,7 @@ static void test_real_dispatch_uses_engine_owned_vca(void)
     t = &trk[0];
     s = cp3_part_state(t);
 
-    cp3_check("test descriptor is selected through the host engine registry",
+    cp3_vca_check("test descriptor is selected through the host engine registry",
               ENGINES[t->engine] == &ENG_METAL_CORE_CP3_TEST &&
               ENGINES[t->engine]->ownenv == 1u &&
               ENGINES[t->engine]->mem == 288u);
@@ -172,18 +172,18 @@ static void test_real_dispatch_uses_engine_owned_vca(void)
         if (t->v[i].active && t->v[i].note == 60u) a = i;
         if (t->v[i].active && t->v[i].note == 64u) b = i;
     }
-    cp3_check("real trk_note_on_source reaches the METAL VCA note_on callback",
+    cp3_vca_check("real trk_note_on_source reaches the METAL VCA note_on callback",
               a < NVOICE && b < NVOICE &&
               s->voice[a].phase == ENG_METAL_VCA_ATTACK &&
               s->voice[b].phase == ENG_METAL_VCA_ATTACK);
-    cp3_check("voice provenance independently controls explicit Accent",
+    cp3_vca_check("voice provenance independently controls explicit Accent",
               a < NVOICE && b < NVOICE &&
               t->voice_source[a] == (NOTE_SRC_PERFORMANCE | CP3_TEST_ACCENT) &&
               t->voice_source[b] == NOTE_SRC_PERFORMANCE &&
               s->voice[a].target_q16 > s->voice[b].target_q16);
 
     cp3_render_blocks(t, 4u);
-    cp3_check("real track_render bypasses host ADSR for ownenv engine",
+    cp3_vca_check("real track_render bypasses host ADSR for ownenv engine",
               t->v[a].env == (1 << 24) && t->v[a].stage != 0u &&
               s->voice[a].phase == ENG_METAL_VCA_ATTACK);
 }
