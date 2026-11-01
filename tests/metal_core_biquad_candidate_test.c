@@ -121,8 +121,55 @@ static int coefficients_stable(const test_metal_biquad_coeff_q30_t *c)
            (1.0 - a1 + a2) > 0.0;
 }
 
+static int64_t reference_mul_q30(int32_t coefficient, int32_t sample)
+{
+    int64_t product = (int64_t)coefficient * sample;
+    if (product >= 0)
+        return (product + TEST_METAL_BIQUAD_Q30_HALF) /
+               TEST_METAL_BIQUAD_Q30_ONE;
+    return (product - TEST_METAL_BIQUAD_Q30_HALF) /
+           TEST_METAL_BIQUAD_Q30_ONE;
+}
+
+static void test_q30_rounding_equivalence(void)
+{
+    static const int32_t edge[] = {
+        INT32_MIN, INT32_MIN + 1, -1073741824, -1, 0, 1,
+        1073741823, INT32_MAX
+    };
+    uint32_t state = 0x6D2B79F5u;
+    unsigned i, j;
+    int equivalent = 1;
+
+    for (i = 0; i < sizeof(edge) / sizeof(edge[0]); ++i) {
+        for (j = 0; j < sizeof(edge) / sizeof(edge[0]); ++j) {
+            int64_t expected = reference_mul_q30(edge[i], edge[j]);
+            int64_t actual = test_metal_biquad_mul_q30(edge[i], edge[j]);
+            if (actual != expected)
+                equivalent = 0;
+        }
+    }
+
+    for (i = 0; i < 20000u; ++i) {
+        int32_t coefficient, sample;
+        int64_t expected, actual;
+        state = state * 1664525u + 1013904223u;
+        coefficient = (int32_t)((int64_t)state - 2147483648LL);
+        state = state * 1664525u + 1013904223u;
+        sample = (int32_t)((int64_t)state - 2147483648LL);
+        expected = reference_mul_q30(coefficient, sample);
+        actual = test_metal_biquad_mul_q30(coefficient, sample);
+        if (actual != expected)
+            equivalent = 0;
+    }
+
+    check("Q30 rounded-shift multiply matches division oracle on edge and 20,000 deterministic vectors",
+          equivalent);
+}
+
 int main(void)
 {
+    test_q30_rounding_equivalence();
     static const double cutoffs[] = {100.0, 1200.0, 8000.0, 12000.0};
     static const double qs[] = {0.5, 0.7, 1.0, 2.0, 5.0, 10.0, 20.0};
     size_t ci, qi;
