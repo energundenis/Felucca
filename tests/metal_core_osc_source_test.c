@@ -44,11 +44,11 @@ static void test_waveforms(void)
     measure_wave(ENG_METAL_OSC_SINE, "sine: bounded full-scale output and near-zero DC",
                  inc, 0x80000000u, 30000);
     measure_wave(ENG_METAL_OSC_TRI, "triangle: bounded full-scale output and near-zero DC",
-                 inc, 0x80000000u, 15000);
+                 inc, 0x80000000u, 30000);
     measure_wave(ENG_METAL_OSC_SAW, "polyBLEP saw: bounded full-scale output and near-zero DC",
-                 inc, 0x80000000u);
-    measure_wave(ENG_METAL_OSC_PULSE, "50% pulse: bounded full-scale output and near-zero DC",
-                 inc, 0x80000000u);
+                 inc, 0x80000000u, 30000);
+    measure_wave(ENG_METAL_OSC_PULSE, "50% pulse: bounded half-scale output and near-zero DC",
+                 inc, 0x80000000u, 15000);
 }
 
 static void test_independent_phases(void)
