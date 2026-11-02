@@ -2,7 +2,7 @@
 
 Date: 2026-11-02  
 Branch: `energun/cp1-4-5-pair-coordinator`  
-Status: reader implementation candidate; exact-head CI pending.
+Status: reader implementation candidate; exact-head host CI PASS (run 41511905591, tested HEAD `a82512e02c782145cdef43572ed1aaa5118b86ba`).
 
 ## Scope
 
@@ -74,3 +74,8 @@ This work does **not** close CP1.4.7. Remaining items:
 ## Evidence boundary
 
 Evidence at this stage is strict host C11 execution and simulated-NOR tests only. It is not target compilation, target runtime or physical FM-1 validation. No factory firmware, physical FM-1, production object IDs or Flash sectors were modified or assigned.
+
+
+## Exact-head CI result
+
+Run [41511905591](https://github.com/energundenis/Felucca/actions/runs/41511905591) completed successfully against `a82512e02c782145cdef43572ed1aaa5118b86ba`. The new exact-generation reader suite passed 10/10. The pair coordinator ordering suite passed 6/6; power-loss suite passed 19/19. The dependency-aware queue correctly stops at `sidecar-integrity`, because ABI freeze and production storage-backend integration remain open. Evidence is host C11 / simulated NOR only.
