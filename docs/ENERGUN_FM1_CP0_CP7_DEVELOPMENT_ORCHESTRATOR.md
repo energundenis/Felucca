@@ -120,7 +120,8 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 - Added unit coverage for dependency waits, blocked descendants, max parallel, allow-list enforcement, shell-free invocation, refusal to execute tasks whose prerequisites have not passed, and a barrier-based proof that independent executor workers overlap.
 - The fast regression workflow invokes the executor and uploads its report.
 - CP0 remains `checking` until baseline evidence is tied to the exact candidate commit. Therefore CP1 is correctly held at the dependency gate; no CP1 command is dispatched by the global executor yet.
-- CP2 and CP3 are represented as independent workstreams, but have no separate registered executor commands yet. They are not falsely reported as running.
+- CP2 and CP3 now have separate host-only scripts: `tests/run_cp2_dsp_qualification.sh` (8 focused DSP tests) and `tests/run_cp3_host_lifecycle.sh` (6 lifecycle/dispatch tests). Both commands are registered in the allow-list and can run beside CP1 in the three-worker pool after CP0 is passed.
+- The test suite includes a dispatch-gate check proving CP1, CP2 and CP3 become the three parallel candidates only after CP0 is passed.
 
 ### Phase 3 — unified CI dispatch (not complete)
 
@@ -140,7 +141,7 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 
 Implemented: CP0–CP7 registry, DAG validation/planning, bounded shell-free allow-listed command execution, CP1 report handoff, unit tests and fast-workflow integration.
 
-Not implemented: CP2/CP3 executor commands, automatic promotion of implementation tasks, a global concurrency lock across separate GitHub workflows, autonomous coding agents, persistent background workers, automatic branch/PR creation or automatic merges.
+Not implemented: automatic CP0 evidence handoff from the separate baseline workflow, automatic promotion of implementation tasks, a global concurrency lock across separate GitHub workflows, autonomous coding agents, persistent background workers, automatic branch/PR creation or automatic merges.
 
 A green workflow does not imply that every CP0–CP7 workstream is passed. Workstream status is determined by explicit evidence and dependency gates.
 
