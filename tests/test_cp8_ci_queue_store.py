@@ -37,6 +37,18 @@ class FakeGitRefBackend:
             return new_head
 
 
+class ConflictOnceBackend(FakeGitRefBackend):
+    def __init__(self):
+        super().__init__()
+        self.conflict_once = True
+
+    def commit_ledger(self, expected_head, ledger, branch):
+        if self.conflict_once:
+            self.conflict_once = False
+            raise QueueCASConflict("simulated competing writer")
+        return super().commit_ledger(expected_head, ledger, branch)
+
+
 class CP8QueueStoreTests(unittest.TestCase):
     def setUp(self):
         self.backend = FakeGitRefBackend()
@@ -50,6 +62,14 @@ class CP8QueueStoreTests(unittest.TestCase):
         self.assertTrue(first["created"])
         self.assertFalse(second["created"])
         self.assertEqual(len(self.backend.ledgers[self.backend.head]["records"]), 1)
+
+    def test_cas_conflict_retries_from_latest_head(self):
+        backend = ConflictOnceBackend()
+        store = GitRefCASQueueStore(backend, sleep=lambda _: None)
+        result = store.enqueue("energundenis/Felucca", ["fast-regression"], "refs/heads/retry",
+                               SHA, "push", now=NOW)
+        self.assertTrue(result["created"])
+        self.assertEqual(len(backend.ledgers[backend.head]["records"]), 1)
 
     def test_different_exact_sha_creates_a_distinct_request(self):
         self.store.enqueue("energundenis/Felucca", ["fast-regression"], "refs/heads/feature",
