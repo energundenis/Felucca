@@ -103,3 +103,12 @@ This is host-only automation using simulated NOR Flash and existing host-test ev
 - Architecture: [Parallel test queue](ENERGUN_FM1_CORE_PARALLEL_TEST_QUEUE_ARCHITECTURE.md).
 - This is CI job parallelism, not an always-on background agent. Existing fast host and AC79 baseline workflows remain independently triggered. Host/simulated-NOR only; no physical FM-1 operations.
 
+
+## Parallel queue CI acceptance — 2026-11-02
+
+- Fast regression [41481399097](https://github.com/energundenis/Felucca/actions/runs/41481399097) **SUCCESS**, exact tested code HEAD `ae7d01399396c4e40b3eae24d2e0ebb9aebbcd9a`.
+- Focused host regression: **21/21 PASS**. Parallel scheduler unit tests: **5/5 PASS**. The barrier-based test proves two independent stages overlap, then a join stage waits for both.
+- In the real CP1 run, `sidecar-format` and `base-generation-binding` started together; both passed (Sidecar V1 **38/38**, Base binding **16/16**). `sidecar-ab-selection` started only after both passed and passed **17/17**.
+- Queue ended **BLOCKED at Pair Commit Ordering**, as expected: the production Base+Sidecar transaction coordinator and fault-injection acceptance are the next implementation work. Queue BLOCKED is a correct gate, not a CI failure; the workflow itself succeeded.
+- The first CI attempt found a shell-quoting defect in the concurrency barrier test (`NameError`); the test was corrected to use shell-safe quoting, and the subsequent full fast workflow passed. This regression is now covered.
+- Baseline workflow [41481399187](https://github.com/energundenis/Felucca/actions/runs/41481399187) for the same code HEAD was still running host/web regression at this update.
