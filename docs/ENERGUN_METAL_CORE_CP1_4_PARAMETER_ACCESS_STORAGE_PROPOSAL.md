@@ -204,3 +204,20 @@ The user accepted the proposed dependency-aware execution order. This is the con
 - **E:** physical Flash safety separately confirmed from full dump/recovery audit.
 
 This accepted order is a planning decision only. It does not claim any of these tasks are completed, assign stable parameter IDs, approve Flash sectors or authorize device writes.
+
+
+## CP1.4.1 result — logical V1 map frozen (2026-11-02)
+
+The consolidated logical map is recorded in:
+`docs/ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`.
+
+Checkpoint result:
+- 8 Engine EDIT + 16 common P_MC + 13 Private controls reconciled to the 37-control v98 inventory.
+- The 13 Private values are independent per-part state for each of four parts (52 Private values total).
+- Source ranges, defaults, known steps, types and semantic distinctions are recorded.
+- No stable numeric IDs, page IDs, byte encodings, Sidecar offsets or physical Flash sectors were assigned.
+- FOLLOW and METAL remain independent persistent booleans.
+- The FM CHARACTER default conflict, WEST COAST VOLUME gain-scaling conflict, FREQ unit/quantization, unspecified source steps and host ADSR parity remain explicit verification gates.
+
+**CP1.4.1 status: LOGICAL MAP FROZEN; SOURCE-LEVEL ENCODING CHECKS OPEN.**  
+CP1.4.2 may now begin its compatibility and encoding audit, but must not assign stable IDs until the unresolved source facts and migration constraints are reviewed. No firmware code or physical device was changed.
