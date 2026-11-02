@@ -38,7 +38,7 @@ static const control_t controls[] = {
     {"FM ENV ATTACK", 0.001, 1, 0.005, 0.001, MAP_LOG, 30},
     {"FM ENV DECAY", 0.01, 3, 0.25, 0.01, MAP_LOG, 72},
     {"METAL DECAY", 0.05, 3, 0.4, 0.01, MAP_LOG, 65},
-    {"FOLD SYMMETRY", -1, 1, 0, 0.01, MAP_BIPOLAR_LINEAR, 32},
+    {"FOLD SYMMETRY", -1, 1, 0, 0.01, MAP_BIPOLAR_LINEAR, 0},
     {"WAVEFOLDER DRIVE", 0, 1, 0.2, 0.01, MAP_LINEAR, 25},
     {"LPG RESPONSE", 0, 1, 0.5, 0.01, MAP_LINEAR, 64},
     {"VOICE VCA LEVEL", 0, 1, 0.5, 0.01, MAP_LINEAR, 64},
@@ -57,7 +57,7 @@ static const control_t controls[] = {
 static int code_min(const control_t *c) {
     return c->map == MAP_BIPOLAR_LINEAR ? -64 : 0;
 }
-static int code_max(void) { return 127; }
+static int code_max(const control_t *c) { return c->map == MAP_BIPOLAR_LINEAR ? 63 : 127; }
 
 static int encode_value(const control_t *c, double value, int *out) {
     double normalized;
@@ -76,14 +76,14 @@ static int encode_value(const control_t *c, double value, int *out) {
     } else if (c->map == MAP_BIPOLAR_LINEAR) {
         normalized = (value - c->min_value) /
                      (c->max_value - c->min_value);
-        rounded = lround(-64.0 + normalized * 191.0);
+        rounded = lround(-64.0 + normalized * 127.0);
     } else {
         normalized = (value - c->min_value) /
                      (c->max_value - c->min_value);
         rounded = lround(127.0 * normalized);
     }
     if (rounded < code_min(c)) rounded = code_min(c);
-    if (rounded > code_max()) rounded = code_max();
+    if (rounded > code_max(c)) rounded = code_max();
     *out = (int)rounded;
     return 1;
 }
@@ -100,7 +100,7 @@ static int decode_code(const control_t *c, int code, double *out) {
         *out = c->min_value *
                pow(c->max_value / c->min_value, normalized);
     } else if (c->map == MAP_BIPOLAR_LINEAR) {
-        normalized = (double)(code + 64) / 191.0;
+        normalized = (double)(code + 64) / 127.0;
         *out = c->min_value +
                normalized * (c->max_value - c->min_value);
     } else {
@@ -255,14 +255,11 @@ static void test_invalid_inputs_and_bipolar_center(void) {
              !decode_code(&controls[18], -65, &value) &&
              !decode_code(&controls[18], 128, &value);
     check("NaN, infinity and out-of-range raw codes are rejected", ok);
-    ok = encode_value(bipolar, 0.0, &code) && code == 32 &&
-         decode_code(bipolar, code, &value) && fabs(value) < 0.006;
-    check("FOLD SYMMETRY zero maps to nearest signed code (32), not exact zero",
+    ok = encode_value(bipolar, 0.0, &code) && code == 0 &&
+         decode_code(bipolar, code, &value) && fabs(value) < 1e-12;
+    check("FOLD SYMMETRY zero maps exactly to signed code 0",
           ok);
-    printf("CP1.4.2 NOTE bipolar zero decoded at code 32 = %.12f; code 31 = ",
-           value);
-    (void)decode_code(bipolar, 31, &value);
-    printf("%.12f (the 192-code domain has no exact midpoint)\n", value);
+    printf("CP1.4.2 NOTE bipolar zero decoded at code 0 = %.12f; signed range = -64..63 (128 codes)\\n", value);
 }
 
 int main(void) {
