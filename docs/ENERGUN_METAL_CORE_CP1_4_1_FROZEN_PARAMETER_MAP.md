@@ -68,7 +68,7 @@ These are common per-track controls. Their logical membership is frozen; stable 
 | 13 | LPG RESPONSE | Continuous | 0–1 | 0.50 | Step 0.01 | LPG transient response |
 | 14 | VOICE VCA LEVEL | Continuous | 0–1 | 0.50 | Step 0.01 | Triggered voice VCA peak; not host P_LEVEL |
 | 15 | WAVEFOLDER MODULE VOLUME | Continuous | 0–1 | 1 | Step not specified | Output level after second folder stage |
-| 16 | WEST COAST VOLUME | Continuous | 0–1 | 1 | Step not specified | Final engine output gain; source gain scaling conflict unresolved |
+| 16 | WEST COAST VOLUME | Continuous | 0–1 | 1 | Step not specified | Final engine output gain; effective steady-state v98 mapping is VOLUME × 5 |
 
 P_MC motion/parameter-lock support requires an explicit whitelist and tests. Continuous type alone does not imply that the current host automatically accepts these IDs. The current modulation-matrix destination list remains E0–E7 unless separately extended and approved.
 
@@ -83,25 +83,18 @@ Each of the four parts owns its own independent values for all rows below. These
 | 3 | METAL | Boolean | OFF / ON | ON | Discrete | Enables separate METAL FM/ring paths and METAL trigger behavior |
 | 4 | MODULATION | Enum | FM / AM | FM | Discrete | Complex oscillator mode |
 | 5 | MOD OSC WAVE | Enum | SINE / TRIANGLE / SAW / SQUARE | SINE | Discrete | Complex modulator waveform |
-| 6 | FM CHARACTER | Enum | SMOOTH / CLASSIC / METALLIC | **Unresolved: source object=METALLIC (2); HTML selector markup=CLASSIC (1)** | Discrete | Do not freeze the default until effective runtime initialization is checked |
+| 6 | FM CHARACTER | Enum | SMOOTH / CLASSIC / METALLIC | **METALLIC (2)** | Discrete | Canonical DSP default; UI is synchronized from this value during audio initialization |
 | 7 | COMPLEX MODULE VOLUME | Continuous | 0–1 | 1 | Step not specified | Complex oscillator output level |
 | 8 | FOLD MODE | Enum | SOFT / CLASSIC / HARD | CLASSIC | Discrete | Second-stage folder transfer curve |
-| 9 | LPG MODULE VOLUME | Continuous | 0–1 | 1 | Step not specified | LPG gain control |
+| 9 | LPG MODULE VOLUME | Continuous | 0–1 | 1 | Step not specified | V1-approved Option C: trigger peak = (0.25 + 0.75 × LPG RESPONSE) × MODULE VOLUME; one LPG gain stage |
 | 10 | ATTACK | Continuous | 0.001–1 s | 0.010 s | Step not specified | Normal voice amplitude envelope |
 | 11 | DECAY | Continuous | 0.05–3 s | 0.30 s | Step not specified | Normal voice amplitude envelope; distinct from FM and METAL decay |
 | 12 | SUSTAIN | Continuous | 0–1 | 0 | Step not specified | Normal voice amplitude envelope |
 | 13 | RELEASE | Continuous | 0.01–3 s | 0.20 s | Step not specified | Normal voice amplitude envelope |
 
-### 5.1 Conditional host ADSR reuse
+### 5.1 VCA ownership and host lifecycle
 
-ATTACK, DECAY, SUSTAIN and RELEASE remain in the logical 13-value inventory until parity is demonstrated. Felucca P_ATK/P_DEC/P_SUS/P_REL may serve as the normal voice ADSR only after tests prove acceptable v98 parity for:
-- attack/decay/release curves and time mapping;
-- note retrigger and mono legato behavior;
-- velocity and accent interaction;
-- gate-off and voice-lifecycle behavior;
-- ENV SYNC behavior (must not be silently imposed if it changes v98 semantics).
-
-If all checks pass, the four Private values may be represented by the host ADSR without duplicate persistent storage. This is a later verified optimization, not an assumption in this frozen logical map. They are not substitutes for FM-index, LPG or METAL envelopes.
+The four normal voice contour values ATTACK, DECAY, SUSTAIN and RELEASE remain in the 13-value Private bank. Felucca P_ATK/P_DEC/P_SUS/P_REL are **not** aliases and must not be used as a drop-in replacement. The accepted V1 architecture preserves the v98-compatible engine-owned VCA (`ownenv=1`) without cascading the host ADSR. Felucca continues to own voice allocation, note/gate delivery, shared voice budgeting and host amplitude ramps/fades; Metal Core owns its VCA contour and reports completion through the verified `done()` lifecycle contract. Velocity and Accent must be applied by the engine, with host amplitude ramps multiplied exactly once. LPG and FM-index envelopes remain independent. See CP1.14/CP1.15 and CP3.0 source contract audit.
 
 ## 6. Explicit non-alias rules
 
@@ -109,7 +102,7 @@ If all checks pass, the four Private values may be represented by the host ADSR 
 - TIMBRE, WEST COAST DRIVE and WAVEFOLDER DRIVE are three independent controls.
 - OSC2 DETUNE is not Felucca P_DETUNE; P_DETUNE is host UNISON voice spread.
 - VOICE VCA LEVEL is not Felucca P_LEVEL; P_LEVEL is the final host track mixer level.
-- WEST COAST VOLUME is not P_LEVEL and remains an internal engine output control.
+- WEST COAST VOLUME is not P_LEVEL and remains an internal engine output control; v98 steady-state reference scaling is ×5 (the persistent loop overwrites transient ×12 assignments).
 - LPG RESPONSE / DECAY / MODULE VOLUME are independent of main filter CUTOFF / RESONANCE.
 - FM ENV ATTACK/DECAY, METAL DECAY, LPG DECAY and normal voice ADSR DECAY are separate envelope paths.
 - FOLLOW and METAL are separate persistent booleans and remain independently editable.
@@ -137,11 +130,10 @@ MCX0–MCX6 remain a separate extension namespace. No MCX motion support is impl
 ## 9. Known unresolved source facts
 
 These are explicit gates, not permission to guess:
-1. **FM CHARACTER default:** source parameter object initializes METALLIC (2), while HTML selector markup marks CLASSIC (1) selected. Verify effective runtime state in the protected v98 reference.
-2. **WEST COAST VOLUME scaling:** v98 direct knob handler writes `VOLUME × 12`, while the recurring volume loop writes `VOLUME × 5`. Keep logical range/default, but do not claim exact gain parity until calibrated.
-3. **FREQ quantization and physical unit:** source inventory records raw range 30–500 and default 160; a definitive step and unit label must be checked against the actual source control implementation before fixed-point encoding.
-4. **Unspecified source steps:** where the tables say “not specified”, implementation quantization must be derived from the protected source behavior and documented before assigning a storage encoding.
-5. **ADSR host reuse:** conditional on the parity test matrix in §5.1.
+1. **FREQ physical unit and quantization:** source inventory records raw range 30–500 and default 160; definitive unit label and effective step must be checked against the protected source control before fixed-point encoding.
+2. **Unspecified source steps:** where the tables say “not specified”, derive implementation quantization from protected source behavior and document it before assigning storage encoding.
+3. **E0–E7 allocation conflict:** the 2026-10-30 Frozen Draft used E0 FREQ / E1 OSC2 LEVEL / E2 TIMBRE / E3 WEST COAST DRIVE / E4 METAL RATIO / E5 FOLD / E6 CUTOFF / E7 RESONANCE, while this CP1.4 proposal uses a different E0–E7 order. The logical map must not be treated as final ABI until this conflict is explicitly reconciled against the approved earlier freeze.
+4. **Stable IDs and encoding:** no numeric IDs, serialized field IDs, byte encodings or backward-compatibility rules are approved.
 
 ## 10. CP1.4.1 acceptance result
 
@@ -157,13 +149,18 @@ Acceptance checks:
 - [x] Independent switch, ratio, envelope and gain semantics documented.
 - [x] Unresolved source conflicts are explicitly blocked rather than guessed.
 - [x] Existing Felucca host parameter reuse is conditional and semantics-based.
-- [ ] Verify FM CHARACTER effective default in v98.
+- [x] FM CHARACTER default resolved: METALLIC (2), with documented pre-audio HTML selector mismatch.
+- [x] WEST COAST VOLUME steady-state mapping resolved: ×5.
+- [x] LPG MODULE VOLUME V1 semantics approved as Option C.
+- [x] Internal VCA ownership approved: ownenv=1; no host ADSR cascade.
+- [x] FOLLOW / MOD RATIO Option A approved.
+- [x] Short-Gate VCA Option B approved.
 - [ ] Verify FREQ unit and quantization.
-- [ ] Verify WEST COAST VOLUME gain behavior.
-- [ ] Complete ADSR host parity tests.
-- [ ] Review and sign off the logical map against the protected source artifact.
+- [ ] Reconcile the earlier E0–E7 freeze against the CP1.4 candidate order.
+- [ ] Derive all unspecified source steps.
+- [ ] Review and sign off the complete map against the protected source artifact.
 
-The unchecked items do not invalidate the logical 8/16/13 allocation. They prevent claiming complete source-level encoding closure and must be resolved before CP1.4.2 assigns stable IDs or implementation encodings.
+The decisions checked above supersede the older unresolved notes in this document. The unchecked items do not invalidate the 8/16/13 logical allocation, but they prevent claiming complete source-level encoding closure and must be resolved before CP1.4.2 assigns stable IDs or implementation encodings.
 
 ## 11. Safety and change control
 
