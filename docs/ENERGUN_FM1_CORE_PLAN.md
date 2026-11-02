@@ -889,3 +889,10 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Archive ID 0 restores live runtime through `project_restore_runtime()`, not directly to the persistent autosave object; live-runtime Sidecar/autosave semantics require a separate decision.
 - Existing FM6 user-preset patch data remains a separate object (archive ID 9 / `upf_store()`); Sidecar must not claim atomicity across it without separate design.
 - CP1.4.9 source audit is complete; archive V2 design, implementation and regression remain open. No firmware, archive protocol, storage IDs, Flash sectors or device state changed.
+
+### CP1.4.2 legacy expanded-count fixtures — PASS (2026-11-02)
+
+- Exact-head full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) passed on code HEAD `33327eb312a36b83b3751560d899c577147125e4`.
+- Its logs confirm `project_test` rejects a FUN10 `np=127` object even with a valid checksum on the legacy `P_COUNT=111` reader, and `upreset_test` maps a 127-value preset by count, skipping 16 inserted common values while preserving the final eight E0–E7 values.
+- The run also confirms project format, user preset, firmware backup, browser backup and complete host/web regression tests passed.
+- These two named legacy fixtures are now verified. CP1.4.2 remains OPEN for per-control musical-resolution sign-off, final map/E0–E7 reconciliation, new-writer behavior, complete project/preset Sidecar pairing, archive V2 and transaction/migration failure tests.
