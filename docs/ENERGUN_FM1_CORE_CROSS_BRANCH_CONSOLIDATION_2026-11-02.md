@@ -225,3 +225,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Fast CI [41406252578](https://github.com/energundenis/Felucca/actions/runs/41406252578) SUCCESS on code HEAD `89528e4948b58b98232543014d805ec3bd306616`; all 16 focused tests passed with zero failures.
 - 30 continuous controls, 9,434 v98 source-step boundaries. Maximum log relative error 2.7569%; linear and signed bipolar mappings meet their exact half-code bounds. These mathematical bounds do not constitute musical-resolution approval.
 - Full baseline run [41406252564](https://github.com/energundenis/Felucca/actions/runs/41406252564) is still in progress; no conclusion claimed yet.
+
+
+### CP1.4.3 / CP1.4.4 design draft — 2026-11-02
+- Added a source-aligned design draft for the per-part Private cache/API, capability-probed editor access, engine-specific UI, explicit P_MC Motion Lock whitelist, common value conversion and the shared 128-record motion pool.
+- The draft includes lifecycle, persistence, stale-generation protection and test matrices. It assigns no stable IDs, command numbers, page IDs, Sidecar ABI or Flash sectors; no production code changed.
+- CP1.4.3/4.4 remain OPEN and depend on resolving CP1.4.1/4.2 and freezing CP1.4.5 Sidecar identity/schema.
