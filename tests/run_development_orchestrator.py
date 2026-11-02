@@ -85,16 +85,18 @@ def build_plan(manifest: dict, order: list[str], cp1_status: str | None = None, 
         failed_dep = next((dep for dep in deps if results.get(dep) in {"FAILED", "BLOCKED"}), None)
         waiting_deps = [dep for dep in deps if results.get(dep) != "PASSED"]
 
-        if state == "passed":
-            status, detail = "PASSED", (cp1_detail if task_id == "cp1-persistence" and cp1_status == "PASS" else "Registry marks this gate passed; evidence must still be tied to the reported commit.")
-        elif state == "failed":
+        if state == "failed":
             status, detail = "FAILED", (cp1_detail if task_id == "cp1-persistence" and cp1_status == "FAIL" else task.get("blocker", "Workstream is marked failed."))
-        elif state == "blocked" or failed_dep:
+        elif state == "blocked":
             status = "BLOCKED"
-            detail = (cp1_detail if task_id == "cp1-persistence" and cp1_status == "BLOCKED" else task.get("blocker") or f"Dependency {failed_dep} is not passed.")
+            detail = (cp1_detail if task_id == "cp1-persistence" and cp1_status == "BLOCKED" else task.get("blocker", "Workstream is blocked."))
+        elif failed_dep:
+            status, detail = "BLOCKED", f"Dependency {failed_dep} is not passed."
         elif waiting_deps:
             status = "WAITING"
             detail = "Waiting for: " + ", ".join(waiting_deps)
+        elif state == "passed":
+            status, detail = "PASSED", (cp1_detail if task_id == "cp1-persistence" and cp1_status == "PASS" else "Registry marks this gate passed; evidence must still be tied to the reported commit.")
         elif state == "planned":
             status, detail = "PLANNED", "Scope is registered but not ready for execution."
         elif state == "checking":
