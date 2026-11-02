@@ -153,3 +153,15 @@ The automation is not evidence of continuous background development. No complete
 ### Supersession note
 
 This update supersedes the earlier CP1.20 priority wording that described the 8/16/13 logical allocation itself as unresolved. The logical map is now frozen and guarded by a host test. Stable IDs, runtime APIs, serialization, Sidecar and physical Flash/recovery remain unresolved and must not be inferred from that freeze.
+
+
+## Part 7 documentation synchronization — 2026-11-02
+
+- Added authoritative project status: [ENERGUN FM-1 CORE Master Status](ENERGUN_FM1_CORE_MASTER_STATUS_2026-11-02.md). It now owns the current CP0–CP7 and CP1.4.1–CP1.4.11 percentage matrix and execution order.
+- CP1.4.1 logical membership remains frozen at 8 Engine EDIT + 16 P_MC + 13 Private per part; the 18-program fast lane passed on exact code HEAD `7ec54a19bb1e18992c1dbc3603deba60015d411f` in run [41417141686](https://github.com/energundenis/Felucca/actions/runs/41417141686).
+- Full baseline run [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732) was re-inspected: build and AC79 VCA compile-only probe completed successfully, but Felucca host/web regression remained in progress. It is not a completed PASS.
+- CP1.4.2 remains open. The standard 7-bit V1 encoding decision is accepted; the 30-control conversion reference and mathematical quantization bounds do not by themselves approve musical resolution or close legacy project/preset migration and Sidecar compatibility gates.
+- CP1.4.3/4 are design drafts, CP1.4.5 is a logical Sidecar schema/transaction draft, CP1.4.6 logical capacity arithmetic is verified only, CP1.4.9 source audit is complete only, and CP1.4.7/.8/.10/.11 remain implementation/qualification gates as detailed in the Master Status.
+- DSP Stage 1–7, VCA and Sequencer V0.3 remain branch-local prototypes/work products; none is promoted to a complete registered production engine by this documentation update.
+- The Master Status supersedes older task wording or percentages where those descriptions conflict. Historical CI results remain tied to their exact source commits.
+- Documentation-only change. No firmware code, `main`, factory image, physical device, Flash allocation or engine registration changed.
