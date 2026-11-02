@@ -147,3 +147,38 @@ It does not:
 - change factory firmware or access the physical FM-1.
 
 **CP1.4.5 remains a logical design draft. CP1.4.7 remains open. CP1.4.8 implementation and CP1.4.11 physical Flash audit remain separate gates.**
+
+## 9. Critical A/B correction — preserve the current matching copy
+
+A deeper failure-mode review found that the phrase “write the inactive Sidecar copy” is ambiguous and unsafe if it means “the copy opposite the newest Sidecar-local sequence.”
+
+Example:
+- Current base sequence is 5.
+- Sidecar A has local sequence 7 but is bound to future base sequence 6 (an orphan left by an earlier interrupted pair save).
+- Sidecar B has local sequence 6 and is the valid extension bound to current base sequence 5.
+- A subsequent save that chooses the copy opposite the newest local Sidecar sequence would erase B before the new base commit.
+- If that base commit then fails, base sequence 5 remains active but its matching Sidecar has been destroyed.
+
+Therefore the transaction writer must choose the target copy using the current base binding:
+
+1. Read and validate the currently selected base object and its exact committed sequence.
+2. Inspect both Sidecar copies independently: validate storage header, payload CRC, Sidecar semantic schema, identity and base-sequence binding.
+3. Among Sidecar copies matching the current base sequence, select the newest matching copy using wrap-safe local sequence ordering (A wins an exact tie). This is the **protected copy**.
+4. Choose the other Sidecar copy as the write target, even if that target currently has a newer local sequence but is stale/future-bound.
+5. Determine the next Sidecar-local sequence from the newest fully valid Sidecar storage object (header plus payload CRC), independent of its base binding; write the complete new Sidecar snapshot to the selected target with the next base sequence.
+6. Read back and fully validate the newly written Sidecar.
+7. Commit the base object to its inactive A/B copy while holding the same per-identity transaction lock.
+8. Read back the selected base and Sidecar and verify exact sequence binding.
+
+The protected matching copy is never erased before the new base commit. If power is lost or the base commit fails after the new Sidecar commit, the old base still has its old matching Sidecar. The future-bound/new Sidecar is ignored. After the base commit succeeds, the new Sidecar becomes the matching copy and the old one becomes stale.
+
+If no Sidecar copy matches the current base sequence, the current extension is already logically missing and defaults apply. The writer may replace an invalid/stale copy, but must still ensure that a base commit failure cannot cause an older matching copy to be overwritten—there is none to preserve.
+
+Implementation implications:
+- The reader must report both per-copy validation/binding results, not only one local-sequence winner.
+- The writer must accept an explicit Sidecar target slot selected by the base-binding predicate. Existing `st_save_to(obj, src, len, to)` already has an explicit `to` argument internally, but its public static boundary and sequence selection are not a complete pair API.
+- The Sidecar-local sequence source and Sidecar target-slot choice are separate decisions: sequence comes from the newest fully valid local object; target slot is the copy not protecting the current base match.
+- The per-identity transaction lock must cover base-sequence observation, Sidecar target selection, Sidecar commit, base commit and final verification.
+- Tests must seed an orphan newer Sidecar plus an older matching Sidecar, inject a failure at every subsequent base-commit boundary, and prove the older matching Sidecar remains selected.
+
+This correction supersedes any interpretation of “inactive Sidecar copy” based solely on Sidecar-local sequence order. It does not change the logical payload schema or authorize any Flash allocation.
