@@ -47,6 +47,7 @@ typedef struct {
     energun_sc_identity_kind_t identity_kind;
     uint8_t identity_index;
     uint32_t base_sequence;
+    uint32_t base_payload_crc32;
     const uint8_t *payload;
     uint16_t payload_length;
 } energun_sc_view_t;
