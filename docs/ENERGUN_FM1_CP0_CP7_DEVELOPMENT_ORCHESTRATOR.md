@@ -128,7 +128,8 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 
 - Route already-existing CP2/CP3 host-test coverage through the canonical fast regression only; add new executors only for genuinely new acceptance checks, not for tests already run in the fast lane.
 - Add dedicated CP2 reference-vector, sample-rate, target-compiler and resource-budget checks, and CP3 production-integration checks when their implementations and acceptance criteria are ready.
-- Add a global concurrency lock across workflows, task timing, critical-path and dependency-wait metrics.
+- A coarse repository-wide GitHub Actions concurrency group (`energun-fm1-ci-global`) is now shared by the fast-regression and baseline workflows. This serializes those two workflow lanes but is not a durable FIFO lock: GitHub allows one running and one pending run, and newer pending runs may replace older pending runs. CP8 tracks the durable lease/lock implementation as unfinished work.
+- Add task timing, critical-path and dependency-wait metrics.
 - Benchmark equivalent sequential and parallel task sets on the same commit.
 
 ### Phase 4 — controlled implementation execution (not complete)
@@ -142,7 +143,7 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 
 Implemented: CP0–CP7 registry, DAG validation/planning, bounded shell-free allow-listed command execution, CP1 report handoff without a second queue execution, duplicate CP2/CP3 host-worker removal, unit tests and fast-workflow integration.
 
-Not implemented: automatic CP0 evidence handoff from the separate baseline workflow, automatic promotion of implementation tasks, a global concurrency lock across separate GitHub workflows, autonomous coding agents, persistent background workers, automatic branch/PR creation or automatic merges.
+Not implemented: automatic CP0 evidence handoff from the separate baseline workflow, automatic promotion of implementation tasks, a durable FIFO/lease-based global lock across workflows, autonomous coding agents, persistent background workers, automatic branch/PR creation or automatic merges. A coarse shared GitHub Actions concurrency group is present on the two existing workflows; see the CP8 design document for its limitations.
 
 A green workflow does not imply that every CP0–CP7 workstream is passed. Workstream status is determined by explicit evidence and dependency gates.
 
