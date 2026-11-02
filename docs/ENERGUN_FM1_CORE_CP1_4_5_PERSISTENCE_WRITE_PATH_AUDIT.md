@@ -182,3 +182,24 @@ Implementation implications:
 - Tests must seed an orphan newer Sidecar plus an older matching Sidecar, inject a failure at every subsequent base-commit boundary, and prove the older matching Sidecar remains selected.
 
 This correction supersedes any interpretation of “inactive Sidecar copy” based solely on Sidecar-local sequence order. It does not change the logical payload schema or authorize any Flash allocation.
+
+## 10. Shared autosave-sector staging dependency — FM6 voice-bank transfer
+
+A second source pass found an important storage ownership dependency outside ordinary `st_save()` call sites:
+
+- `firmware/src/fm6_vbank.c` stages an incoming FM6 voice bank in the *older copy of the autosave A/B sectors* (`0xE5000` or `0xE6000`), using a distinct commit-record type `OBJ_FM6VB`.
+- `fvb_begin()` chooses the copy that the next ordinary autosave write would overwrite, then erases it for transfer staging.
+- `fvb_write()` writes voice records there; `fvb_end()` commits the staged bank and copies it to the separate home sector at `0xE7000`.
+- At boot, `fvb_boot()` checks both autosave sectors for a staged bank and finishes the copy to `0xE7000` before autosave restoration.
+- `firmware/src/editor.c` calls `autosave_hold()` for FM6B_BEGIN/WRITE/END commands. The existing design intentionally allows a long transfer to be aborted if autosave eventually takes the staging sector: `fvb_tx_ok()` detects the staged commit record was overwritten and returns “no transfer”.
+
+This means the autosave A/B sectors are not exclusively owned by ordinary autosave objects at all times. A future live-autosave pair writer must not erase or rewrite either autosave sector while an FM6 voice-bank transfer is active. It must preserve the existing idle/quiet gating and coordinate with the FM6 bank staging reservation. The current 10-second autosave hold is a delay policy, not a hard mutual-exclusion lock: if a transfer remains open long enough, autosave may intentionally take the sector and invalidate that transfer.
+
+Required future integration:
+1. Add an explicit FM6 voice-bank staging-active query/reservation contract (do not infer it only from elapsed time).
+2. Make live-autosave pair commit defer or return a retryable busy result while the FM6 transfer owns its staging sector.
+3. Keep the current transfer-abort behavior only if explicitly retained as a product decision; do not let the Sidecar coordinator silently change it.
+4. Serialize staging begin/write/end and autosave pair commit through the same main-context Flash ownership contract.
+5. Add tests for FM6 staging active, autosave deferral, explicit timeout/abort behavior, boot-time staged-bank recovery, and no accidental Sidecar writes into either staging sector.
+
+The Sidecar physical allocation must remain separate from these reserved/reused autosave sectors unless CP1.4.11 explicitly audits and approves a different layout. This finding does not allocate or authorize any sector.
