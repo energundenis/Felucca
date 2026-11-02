@@ -287,3 +287,10 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Identified pair-aware transaction integration points: `project_save_as/project_save`, `project_rename`, `project_erase`, `autosave_poll`, and user-preset `up_put` (used by save/rename/erase). Rename requires rebinding unchanged extension data; erase requires an empty/tombstone extension; autosave remains an independent identity.
 - User preset FM6 patch data is a separate object written after `up_put` by `upf_store()`. Sidecar pairing covers the base preset bank + Private extension only and cannot claim atomicity across the FM6 patch object without a separate transaction design.
 - These are source-audit findings recorded in `ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_SCHEMA_DRAFT.md`; no production code or Flash map changed.
+
+### Exact-head full baseline CI closure — 2026-11-02
+
+- Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) completed **SUCCESS** on code HEAD `33327eb312a36b83b3751560d899c577147125e4`.
+- The run confirms unmodified Felucca firmware build, AC79 VCA compile-only target probe, complete host/web regression, output-size recording and artifact upload.
+- Fast lane [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) completed **SUCCESS**, 17/17 focused programs, including the real `ENG_MEM(p)` VCA backing-store test.
+- This supersedes earlier statements in this register and the plan that run 41410200166 was still in progress. It closes baseline CI evidence only; it does not qualify the complete METAL CORE engine, target runtime CPU/RAM, hardware audio, or physical FM-1.
