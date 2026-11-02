@@ -42,6 +42,8 @@ run_test metal_core_osc_source
 
 compile_test metal_core_osc_voice tests/metal_core_osc_voice_test.c -lm
 run_test metal_core_osc_voice
+compile_test metal_core_osc_real_dispatch tests/metal_core_osc_real_dispatch_test.c -lm
+run_test metal_core_osc_real_dispatch
 
 compile_test metal_core_lpg tests/metal_core_lpg_test.c
 run_test metal_core_lpg
@@ -82,12 +84,12 @@ run_test metal_core_follow_host
 compile_test_strict metal_core_parameter_quantization tests/metal_core_parameter_quantization_test.c -lm
 run_test metal_core_parameter_quantization
 
-echo "== ENERGUN METAL CORE fast regression: all 16 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 17 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 16 focused host tests."
+        echo "Generated headers and compiled/executed all 17 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo

@@ -188,3 +188,12 @@ The full baseline workflow on this exact HEAD, run `41340134381`, was pending at
 - Added `tests/metal_core_osc_voice_test.c` against actual host `voice_t` / `vmod_t` declarations. It checks independent phase advancement, output bounds, fresh-note reset, preservation of phase slot 2, and the host retrigger save/restore contract.
 - Added this test to `tests/run_metal_core_fast.sh`; focused test lane now contains 15 test programs.
 - This is a per-voice integration adapter and host contract test only. It is not yet called from a production METAL CORE descriptor or render callback; it does not establish production sound or target CPU timing.
+
+
+## CP3.2 real OSC phase adapter through Felucca host lifecycle — 2026-11-02
+
+- Added `tests/metal_core_osc_real_dispatch_test.c`. The test includes `tests/hostsim.c`, so it compiles and executes the actual production `firmware/src/voice.c` and `track_render()` path. A private descriptor invokes the production `eng_metal_core_osc_voice.h` adapter through the host registry test seam.
+- Verified through real host dispatch: a fresh note resets OSC1/OSC2 phase slots 0/1; the real render callback advances both slots by the actual host `vmod_t.inc` for every sample; a real MONO retrigger passes through `voice_start()`, whose save/restore preserves both oscillator phases and phase slot 2 after the adapter's note-on reset; Note Off and host render retire the voice; the next fresh note clears stale OSC phases again.
+- The prior isolated `metal_core_osc_voice_test.c` remains as a primitive-level test. This new test closes its specific evidence gap: retrigger behavior is no longer only mirrored in a test model.
+- Added the new program to `tests/run_metal_core_fast.sh`; the focused suite now contains 17 test programs.
+- Acceptance boundary: host integration evidence for the oscillator phase adapter only. The descriptor is private to the test; no production engine is registered, no complete DSP graph is rendered, and no AC79 cycle or hardware behavior is claimed.

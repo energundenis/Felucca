@@ -249,3 +249,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Rechecked `upreset.c` and the 144-byte packed parameter capacity: P_COUNT=127 fits in the ordinary user-preset base record. P_MC therefore remains in the base user-preset record; only the 13 Private values per slot require Sidecar extension storage.
 - Corrected user-preset bank Sidecar estimate from 464 to **208 value bytes** (16 slots × 13 Private values), plus slot bitmap/envelope. Project Sidecar estimate remains 501 bytes including up to 128 P_MC motion records.
 - Existing count-based preset migration uses the final eight stored values as E0–E7, so older firmware can map those final eight back to its current E positions and ignore the inserted P_MC common values. This expected 127-count cross-version path still requires an exact fixture; no production code changed.
+
+
+### CP3.2 real OSC phase lifecycle through host dispatcher — 2026-11-02
+- Added `tests/metal_core_osc_real_dispatch_test.c` and registered it in the focused fast suite (17 programs).
+- This executes production `voice.c` / `track_render()` through `hostsim.c`, with a private descriptor calling the production OSC phase adapter. It verifies fresh reset, per-sample advancement using the actual host `vmod_t.inc`, real `voice_start()` retrigger phase preservation, Note Off retirement and stale-phase reset on the next fresh note.
+- This replaces the prior mirrored retrigger-contract-only evidence with an actual production host path for this adapter. It remains host-only and does not imply production engine registration, full DSP graph completion, AC79 cycle timing or hardware validation.
