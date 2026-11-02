@@ -333,21 +333,17 @@ This supersedes the earlier provisional 44,100 Hz / 132.3-sample assumption in S
 The audio source constant is stronger evidence than the earlier `HALF_FRAMES` comment, but remains a source-derived nominal rate rather than a measured runtime clock on physical hardware. The production delay candidate remains host-only and unapproved: AC79 code-generation review, production arithmetic saturation/overflow tests, v98 response comparison and actual callback CPU timing are still required.
 
 
-## 20. CP3.0 VCA dispatch test backing-store audit — 2026-11-02
+## 20. CP3.1 real engine-memory backing — host test implemented, 2026-11-02
 
-A source review of `tests/metal_core_cp3_real_vca_dispatch_test.c` found an important boundary in the existing host evidence:
+The CP3 VCA dispatch test now uses Felucca's actual per-part engine-memory pool rather than a parallel test-only array:
 
-- The private descriptor declares `engine_t.mem = 288` and `cp3_vca_init()` calls the real `eng_mem_claim(&trk[p])` for all four parts.
-- However, the test's `cp3_part_state()` currently returns a separate test-only `cp3_test_mem[p].bytes` array (13,344 bytes per part), not the production `ENG_MEM(p)` pool declared in `firmware/src/engines.c`.
-- Therefore the test exercises the real host allocator/render/switch lifecycle and invokes the real memory-claim function, but its VCA callback state is not yet backed by the actual Felucca engine-memory pool. Its current cross-part state-isolation assertions are against the test array, not the production pool.
-- The source-defined production pool is `ENG_MEM_PART=12888` bytes with ADPCM disabled and `13344` bytes with ADPCM enabled. `ENG_MEM(p)`, `eng_mem_owner[]` and `eng_mem_claim()` are visible to a host test that includes `tests/hostsim.c` in the same translation unit.
+- `cp3_part_state()` returns `ENG_MEM(p)`, the same region used by production engines.
+- Isolated host setup resets `eng_mem[]` and `eng_mem_owner[]`; no production reset behavior was changed.
+- The private test descriptor still declares exactly 288 bytes (8 × 36-byte VCA states), and remains outside the production registry.
+- Five new assertions prove: state points into the real pool; part regions are distinct; first claim zeroes the declared bytes; same-owner claim preserves state; different-owner claim clears exactly its declared byte range without touching the remainder.
 
-### Next safe CP3.1 implementation increment
+Focused fast CI [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) passed on code HEAD `33327eb312a36b83b3751560d899c577147125e4`; all 17 focused test programs passed, including all five real-pool assertions and the existing real OSC/VCA lifecycle cases.
 
-1. Change the host VCA dispatch test's part-state accessor to use the real `ENG_MEM(p)` region; remove the duplicate `cp3_test_mem[]` backing array.
-2. Reset `eng_mem[]` and `eng_mem_owner[]` only inside the isolated host-test setup, then exercise the production `eng_mem_claim()` path.
-3. Assert distinct part regions, zero-on-first-claim, preservation when the same engine retains ownership, and zeroing of the declared byte range when a different memory-owning descriptor claims the part.
-4. Keep the descriptor private and use only already-defined test slots; do not register METAL CORE or assign an engine ID.
-5. Run focused and full regression. This will prove the host VCA state can occupy the real per-part engine-memory pool, but still will not establish the final complete METAL CORE state layout or AC79 runtime cost.
+This closes the **host backing-store evidence gap for the 288-byte VCA state only**. It does not establish the final full METAL CORE state size, AC79 linked memory layout, target runtime CPU, full DSP qualification or physical hardware behavior. The exact-head full baseline run [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) is still running; no full-baseline pass is claimed yet.
 
-This is a newly identified test-coverage gap, not a production firmware defect. No source behavior or memory layout was changed by this audit.
+No production engine registration, engine ID allocation, production memory-layout change, physical device write or factory firmware change was made.
