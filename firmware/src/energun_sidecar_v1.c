@@ -7,7 +7,6 @@
  */
 #include "energun_sidecar_v1.h"
 
-#include <string.h>
 
 #define SC_OFF_MAGIC       0u
 #define SC_OFF_FORMAT      4u
@@ -28,6 +27,27 @@
 #define SC_PRESET_PRIVATE_OFF    2u
 #define SC_PRIVATE_COUNT         13u
 #define SC_PRESET_SLOTS          16u
+
+static void sc_zero(void *destination, size_t length)
+{
+    uint8_t *out = (uint8_t *)destination;
+    while (length-- != 0u)
+        *out++ = 0u;
+}
+
+static void sc_copy(void *destination, const void *source, size_t length)
+{
+    uint8_t *out = (uint8_t *)destination;
+    const uint8_t *in = (const uint8_t *)source;
+    while (length-- != 0u)
+        *out++ = *in++;
+}
+
+static int sc_magic_valid(const uint8_t *record)
+{
+    return record[0] == (uint8_t)'E' && record[1] == (uint8_t)'G' &&
+           record[2] == (uint8_t)'S' && record[3] == (uint8_t)'C';
+}
 
 static uint16_t sc_get_u16(const uint8_t *p)
 {
@@ -208,10 +228,10 @@ energun_sc_status_t energun_sc_v1_validate(
     energun_sc_status_t status;
 
     if (view != NULL)
-        memset(view, 0, sizeof *view);
+        sc_zero(view, sizeof *view);
     if (record == NULL || view == NULL || record_length < ENERGUN_SC_V1_HEADER_SIZE)
         return ENERGUN_SC_ERR_ARGUMENT;
-    if (memcmp(record + SC_OFF_MAGIC, "EGSC", 4u) != 0)
+    if (!sc_magic_valid(record + SC_OFF_MAGIC))
         return ENERGUN_SC_ERR_MAGIC;
     if (record[SC_OFF_FORMAT] != ENERGUN_SC_V1_FORMAT_VERSION)
         return ENERGUN_SC_ERR_FORMAT_VERSION;
@@ -272,8 +292,8 @@ energun_sc_status_t energun_sc_v1_encode(
         return ENERGUN_SC_ERR_LENGTH;
 
     /* Output is untouched until every validation and capacity check succeeds. */
-    memset(output, 0, ENERGUN_SC_V1_HEADER_SIZE);
-    memcpy(output + SC_OFF_MAGIC, "EGSC", 4u);
+    sc_zero(output, ENERGUN_SC_V1_HEADER_SIZE);
+    sc_copy(output + SC_OFF_MAGIC, "EGSC", 4u);
     output[SC_OFF_FORMAT] = ENERGUN_SC_V1_FORMAT_VERSION;
     output[SC_OFF_SCHEMA] = ENERGUN_SC_V1_SCHEMA_VERSION;
     output[SC_OFF_IDENTITY] = (uint8_t)identity_kind;
@@ -282,7 +302,7 @@ energun_sc_status_t energun_sc_v1_encode(
     sc_put_u32(output + SC_OFF_BASE_CRC, base_payload_crc32);
     sc_put_u16(output + SC_OFF_PAYLOAD_LEN, payload_length);
     sc_put_u16(output + SC_OFF_RESERVED, 0u);
-    memcpy(output + ENERGUN_SC_V1_HEADER_SIZE, payload, payload_length);
+    sc_copy(output + ENERGUN_SC_V1_HEADER_SIZE, payload, payload_length);
     *output_length = total;
     return ENERGUN_SC_OK;
 }
