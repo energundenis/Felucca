@@ -261,3 +261,10 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Focused suite now runs 17 tests, adding the real OSC voice lifecycle/dispatch test. Run [41408456648](https://github.com/energundenis/Felucca/actions/runs/41408456648) SUCCESS on code HEAD `992e4591629277d9952fc76610928972e515a6f0`.
 - CP1.4.2 quantization reference remains green (30 controls, 9,434 source-step boundaries, 100,001-point bound sweeps, endpoint clamping).
 - The exact-head full baseline run is [41408456680](https://github.com/energundenis/Felucca/actions/runs/41408456680), still in progress at this update.
+
+
+### Exact-head fast CI and compatibility fixture correction — 2026-11-02
+- Fast workflow [41408630658](https://github.com/energundenis/Felucca/actions/runs/41408630658) completed SUCCESS on exact code HEAD `baaf8b1106bce93377dfda692423d5b363d657c4`; all 17 focused test programs passed. The new real OSC lifecycle test passed all 8 assertions.
+- CP1.4.2 compatibility tests now include the old-FUN10 rejection of an expanded parameter count and old-firmware mapping of a 127-value user-preset record: 16 inserted P_MC values are skipped and the final E0..E7 values are retained. The fixture uses the existing `ENGI_SAMPLE` constant; it does not allocate an engine ID.
+- Earlier full-baseline attempt [41408456680](https://github.com/energundenis/Felucca/actions/runs/41408456680) failed while compiling the new preset test because it referred to nonexistent symbol `ENGI_FM6`. This was a test-fixture compile error, not a firmware build or target-compiler failure. The fixture was corrected in commit `baaf8b1106bce93377dfda692423d5b363d657c4`.
+- Full-baseline rerun [41408630704](https://github.com/energundenis/Felucca/actions/runs/41408630704) on the corrected code HEAD has passed the unmodified firmware build and AC79 VCA compile-only probe; the host/web regression step was still running when this note was recorded. No full-baseline pass is claimed yet.

@@ -197,3 +197,9 @@ The full baseline workflow on this exact HEAD, run `41340134381`, was pending at
 - The prior isolated `metal_core_osc_voice_test.c` remains as a primitive-level test. This new test closes its specific evidence gap: retrigger behavior is no longer only mirrored in a test model.
 - Added the new program to `tests/run_metal_core_fast.sh`; the focused suite now contains 17 test programs.
 - Acceptance boundary: host integration evidence for the oscillator phase adapter only. The descriptor is private to the test; no production engine is registered, no complete DSP graph is rendered, and no AC79 cycle or hardware behavior is claimed.
+
+
+### CP3.2 exact-head focused CI evidence — 2026-11-02
+- Fast workflow [41408630658](https://github.com/energundenis/Felucca/actions/runs/41408630658) completed SUCCESS on exact code HEAD `baaf8b1106bce93377dfda692423d5b363d657c4`; all 17 focused programs passed.
+- The real OSC host-lifecycle program reported 8/8 assertions PASS: production `trk_note_on_source()`, fresh phase reset, actual `track_render()` advancement using host `vmod_t.inc`, real MONO retrigger preservation through `voice_start()`, Note Off retirement, and fresh reuse reset.
+- The test descriptor remains host-only. This is not a production METAL CORE registration, complete DSP graph, target cycle measurement or hardware test.
