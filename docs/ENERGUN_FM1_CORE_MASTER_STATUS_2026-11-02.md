@@ -129,3 +129,11 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - An initial CI attempt exposed an unused static storage helper under `-Werror`; the existing Base-binding test was extended to exercise the new primitive. The subsequent run passed. A second compile-time warning about uninitialized fixture metadata was fixed before the successful run.
 - Baseline workflow [41478848463](https://github.com/energundenis/Felucca/actions/runs/41478848463) on exact code HEAD `277313eeda4bd3805ea0c910e3298633c041d03b`: unmodified Felucca firmware build **PASS**, AC79 pi32v2 compile-only probes for VCA and Sidecar V1 **PASS**; full host/web regression was still running at this status update, so the complete baseline workflow is not yet marked PASS.
 - Safety: no Sidecar storage object ID, `OBJ_COUNT`, physical sector allocation, archive V1/V2, bootloader, OTA, recovery or physical device changes.
+
+## Parallel CP1 queue automation — 2026-11-02
+
+- Replaced linear CP1 queue execution with dependency-aware DAG scheduler (`tests/run_cp1_test_queue.py`), configured for up to 3 concurrent workers.
+- Sidecar format/semantic validation and Base-generation binding are now independent sibling stages after Storage A/B + FM6 staging evidence; Sidecar A/B selection joins both before proceeding.
+- Added scheduler acceptance tests for actual overlap, dependency join, independent-branch continuation, failure propagation and cycle detection.
+- Current CI validation for code HEAD `d687674014a507544e8d3cf494f57492d4d0674b`: [fast regression 41480832267](https://github.com/energundenis/Felucca/actions/runs/41480832267) and [baseline build 41480831836](https://github.com/energundenis/Felucca/actions/runs/41480831836) were in progress at this status update. No PASS is claimed yet for the new scheduler.
+- This automation change does not change CP0–CP7 completion percentages. No physical FM-1, Flash layout, object IDs, bootloader, OTA or recovery changes.
