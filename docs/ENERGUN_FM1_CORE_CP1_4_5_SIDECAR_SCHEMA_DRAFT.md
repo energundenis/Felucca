@@ -14,7 +14,7 @@ The Sidecar carries V1 values that cannot safely be inserted into the legacy FUN
 User presets are different: the existing record has 144 parameter bytes, enough for P_COUNT=127. P_MC values can remain in the ordinary user-preset base record; the Sidecar is required only for the 13 Private values per slot, which the ordinary serializer does not store.
 
 Dependencies:
-- CP1.4.1 must resolve E0–E7 ordering and the OSC2 LEVEL / TIMBRE overlap before stable key IDs are assigned.
+- CP1.4.1 E0–E7 ordering and OSC2 LEVEL / TIMBRE membership are reconciled; stable key IDs remain blocked on CP1.4.2 encoding/compatibility and final schema review.
 - CP1.4.2 must complete curve review and legacy compatibility approval.
 - CP1.4.3/4.4 access and Motion contracts are drafted in `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_MOTION_IMPLEMENTATION_DESIGN_DRAFT.md`.
 - CP1.4.6 capacity, CP1.4.7 A/B transaction implementation, CP1.4.8 project/preset integration and CP1.4.11 physical Flash audit remain separate gates.
@@ -162,7 +162,7 @@ If each copy eventually uses one 4 KiB sector, the logical reservation would be 
 
 ## 8. Open decisions and implementation gates
 
-1. CP1.4.1 final E0–E7 order and the OSC2 LEVEL / TIMBRE overlap.
+1. CP1.4.1 logical membership is reconciled; stable key IDs still require CP1.4.2 encoding/compatibility sign-off.
 2. CP1.4.2 final per-control curve review and explicit acceptance of the legacy base FUN10 projection.
 3. Whether one-byte typed values are sufficient for every Private enum/boolean/continuous key; current estimate assumes yes.
 4. Exact payload field order, widths, reserved values, checksums, schema migration and malformed-record behavior.
