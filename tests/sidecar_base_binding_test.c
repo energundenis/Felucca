@@ -21,8 +21,8 @@ static int st_read(uint32_t off, void *dst, uint32_t n)
 static int st_erase(uint32_t off)
 {
     ++flash_calls;
-    if (off > sizeof nor || ST_SECTOR > sizeof nor - off) return -1;
-    memset(nor + off, 0xFF, ST_SECTOR);
+    if (off > sizeof nor || 4096u > sizeof nor - off) return -1;
+    memset(nor + off, 0xFF, 4096u);
     return 0;
 }
 
