@@ -68,6 +68,9 @@ jobs:
       - name: Generate CP0-CP7 development dispatch plan
         run: python3 tests/run_development_orchestrator.py --cp1-report build/cp1-test-queue/report.json --execute
 
+      - name: Test CP8 durable CI queue record invariants
+        run: python3 tests/test_cp8_ci_queue.py
+
       - name: Test CP8 worker routing and safety policy
         run: python3 tests/test_cp8_dispatch_planner.py
 
