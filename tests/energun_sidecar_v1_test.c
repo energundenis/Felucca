@@ -97,6 +97,13 @@ static void test_pmc_ranges(void)
     check("unipolar P_MC code 128 rejected", encode_project(record, payload, PROJECT_BASE + 1u, 0u) == 0u);
     payload[0] = 127u;
     check("unipolar P_MC upper endpoint 127 accepted", encode_project(record, payload, PROJECT_BASE + 1u, 0u) != 0u);
+    payload[3u * 16u + 1u] = 128u;
+    check("P_MC unipolar bounds are validated for part four too",
+          encode_project(record, payload, PROJECT_BASE + 1u, 0u) == 0u);
+    payload[3u * 16u + 1u] = 127u;
+    payload[3u * 16u + 9u] = 0xBFu;
+    check("signed FOLD SYMMETRY bounds are validated for every part",
+          encode_project(record, payload, PROJECT_BASE + 1u, 0u) == 0u);
 }
 
 static void test_private_types(void)
@@ -139,6 +146,9 @@ static void test_motion_payload(void)
     payload[MOTION_COUNT_OFF] = 129u;
     check("event count above global 128 rejected",
           ENC_PROJECT(record, payload, ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD, 0u) == ENERGUN_SC_ERR_MOTION_COUNT);
+    payload[MOTION_COUNT_OFF] = 0u;
+    check("base Motion count above global 128 rejected",
+          ENC_PROJECT(record, payload, MOTION_OFF, 129u) == ENERGUN_SC_ERR_MOTION_COUNT);
     payload[MOTION_COUNT_OFF] = 2u;
     payload[MOTION_OFF + 0u] = 7u;
     payload[MOTION_OFF + 1u] = 3u;
