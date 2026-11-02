@@ -72,7 +72,7 @@ int main(void)
     uint8_t rec_a[ENERGUN_SC_V1_MAX_RECORD], rec_b[ENERGUN_SC_V1_MAX_RECORD];
     uint8_t read_a[ENERGUN_SC_V1_MAX_RECORD], read_b[ENERGUN_SC_V1_MAX_RECORD];
     size_t len_a, len_b;
-    st_meta_t base_meta, side_meta_a, side_meta_b;
+    st_meta_t base_meta = { 0 }, side_meta_a = { 0 }, side_meta_b = { 0 };
     energun_sc_candidate_t c[2];
     energun_sc_ab_selection_t sel;
     uint32_t current_crc = 0x12345678u;
