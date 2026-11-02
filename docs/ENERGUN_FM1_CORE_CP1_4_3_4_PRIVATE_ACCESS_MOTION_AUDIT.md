@@ -86,3 +86,15 @@ This audit confirms the host-source constraints and identifies the smallest arch
 - write to physical FM-1 or Flash.
 
 **CP1.4.3 and CP1.4.4 remain OPEN.**
+
+## 6. Subsequent CP1.4.1 logical reconciliation — 2026-11-02
+
+The earlier source audit's symbolic P_MC candidate table reflected the later candidate E ordering and is superseded for membership purposes by `ENERGUN_FM1_CORE_CP1_4_1_E0_E7_RECONCILIATION.md`.
+
+The controlling E0–E7 freeze remains:
+- E0 FREQ; E1 OSC2 LEVEL; E2 TIMBRE; E3 WEST COAST DRIVE;
+- E4 METAL RATIO; E5 FOLD; E6 CUTOFF; E7 RESONANCE.
+
+The reconciled P_MC set removes OSC2 LEVEL and TIMBRE (already E1/E2) and includes FM INDEX and LPG DECAY instead. The 16-control whitelist and value-domain candidate are updated in `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_MOTION_IMPLEMENTATION_DESIGN_DRAFT.md`.
+
+This resolves the logical overlap only. It does not assign numeric IDs, change `motion_param()`, implement the whitelist, or alter firmware/storage/editor source. CP1.4.3/4.4 implementation and regression remain open.
