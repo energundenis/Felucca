@@ -95,8 +95,9 @@ class CP1QueueTests(unittest.TestCase):
             {"id": "first", "title": "First", "state": "blocked", "depends_on": ["later"]},
             {"id": "later", "title": "Later", "state": "blocked"},
         ]
+        QUEUE.MANIFEST.write_text(json.dumps({"schema_version": 1, "queue_id": "TEST", "stages": stages}), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
-            code = self.run_manifest(stages)[0]
+            code = QUEUE.main()
         self.assertEqual(code, 1)
 
 
