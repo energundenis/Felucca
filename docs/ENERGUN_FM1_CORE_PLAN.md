@@ -871,3 +871,11 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Sidecar coordinator must be placed below UI entry points, rebind on rename as well as content changes, and write an empty/tombstone extension on erase. Autosave is a distinct seventh identity.
 - Important boundary: user-preset FM6 patch data is committed separately by `upf_store()` after the preset bank's `up_put()`; the Private Sidecar transaction does not make that third object atomic. This needs separate integration tests and must not be described as whole-preset atomicity.
 - Documentation-only source audit; no storage code changed.
+
+## Exact-head full baseline CI closure — 2026-11-02
+
+- Full baseline workflow [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) completed **SUCCESS** on tested code HEAD `33327eb312a36b83b3751560d899c577147125e4`.
+- Confirmed steps: unmodified Felucca firmware build, AC79 target-compiler VCA compile-only probe, complete Felucca host and web regression, build-output/size recording and evidence artifact upload.
+- Fast regression [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) also completed **SUCCESS**, 17/17 focused test programs, including real `ENG_MEM(p)` VCA backing and five ownership assertions.
+- This closes the previously pending exact-head baseline CI check only. It does not close CP1.4.2 legacy compatibility fixtures, does not register/build METAL CORE as a production engine, and does not establish full-engine AC79 CPU/RAM or physical-device qualification.
+- The code tested by both workflows is `33327eb312a36b83b3751560d899c577147125e4`; subsequent branch changes recorded here are documentation-only.
