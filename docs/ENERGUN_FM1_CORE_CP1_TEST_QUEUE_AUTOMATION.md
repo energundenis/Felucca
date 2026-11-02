@@ -91,3 +91,15 @@ This is host-only automation using simulated NOR Flash and existing host-test ev
 - Latest baseline build [41478848463](https://github.com/energundenis/Felucca/actions/runs/41478848463) for the same code HEAD was still running the host/web regression at the time of this update; no final baseline PASS is claimed yet.
 - No physical Flash map, object IDs, `OBJ_COUNT`, archive V1/V2, bootloader, OTA, recovery or physical FM-1 access changed.
 
+
+## Parallel DAG queue automation — 2026-11-02
+
+- Replaced the strictly sequential CP1 runner with a dependency-aware DAG scheduler in `tests/run_cp1_test_queue.py`.
+- Manifest sets `max_parallel: 3`. Sidecar format/semantic validation and Base-generation binding now share the FM6 foundation prerequisite and run concurrently. Sidecar A/B selection waits for both suites to pass; pair transaction and later stages remain gated.
+- BLOCKED/FAIL propagates to dependent stages only. Independent branches can finish; after a failure no new work is scheduled (`stop_on_first_failure`), while already-running peer jobs are collected.
+- Scheduler validates duplicate IDs, unknown dependencies and cycles; forward references are supported. It writes JSON/Markdown reports and GitHub Step Summary.
+- Added barrier-based scheduler tests for actual overlap, dependency join, independent branch continuation, failure handling and cycle rejection in `tests/test_cp1_test_queue.py`.
+- Fast workflow step renamed to `Run dependency-aware parallel CP1 persistence test queue`.
+- Architecture: [Parallel test queue](ENERGUN_FM1_CORE_PARALLEL_TEST_QUEUE_ARCHITECTURE.md).
+- This is CI job parallelism, not an always-on background agent. Existing fast host and AC79 baseline workflows remain independently triggered. Host/simulated-NOR only; no physical FM-1 operations.
+
