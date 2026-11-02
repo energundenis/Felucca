@@ -4,6 +4,7 @@
 **Last consolidated:** 2026-11-02
 
 Start here:
+0. [Master status and completion percentages](ENERGUN_FM1_CORE_MASTER_STATUS_2026-11-02.md)
 1. [Cross-branch canonical project base and decision register](ENERGUN_FM1_CORE_CROSS_BRANCH_CONSOLIDATION_2026-11-02.md)
 2. [CP1.4.1 frozen logical parameter map — corrected](ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md)
 3. [CP1.4 parameter access and storage proposal](ENERGUN_METAL_CORE_CP1_4_PARAMETER_ACCESS_STORAGE_PROPOSAL.md)
@@ -12,7 +13,7 @@ Start here:
 
 - **Parameter inventory / persistence:** CP1.3, CP1.4, CP1.4.1, CP1.4.2–4.11; source closure: `ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`.
 - **Parameter encoding / compatibility audit:** `ENERGUN_FM1_CORE_CP1_4_2_COMPATIBILITY_AUDIT.md` (V1 standard 7-bit encoding accepted; per-control curves/quantization, base-project migration and user-preset extension scope remain open).
-- **Per-control conversion table:** `ENERGUN_FM1_CORE_CP1_4_2_PARAMETER_CONVERSION_TABLE_DRAFT.md` (30-control host reference; 9,434 source-step boundaries; 100,001-point nearest-code bound sweep per control; endpoint clamping; corrected signed bipolar mapping; 17/17 focused tests pass). Exact-head full baseline CI also passed on code HEAD `89528e4`, including AC79 VCA compile probe and all host/web tests. Musical-resolution review and legacy project/preset compatibility fixtures remain open.
+- **Per-control conversion table:** `ENERGUN_FM1_CORE_CP1_4_2_PARAMETER_CONVERSION_TABLE_DRAFT.md` (30-control host reference; 9,434 source-step boundaries; 100,001-point nearest-code bound sweep per control; endpoint clamping; corrected signed bipolar mapping; 18/18 focused tests pass). Exact-head full baseline CI also passed on code HEAD `89528e4`, including AC79 VCA compile probe and all host/web tests. Musical-resolution review and legacy project/preset compatibility fixtures remain open.
 - **Private access / Motion Lock:** `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md` (source audit) and `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_MOTION_IMPLEMENTATION_DESIGN_DRAFT.md` (typed per-part cache, editor capability protocol, explicit P_MC whitelist and test matrix; design draft only, implementation open).
 - **Host VCA / sequencer lifecycle:** CP1.17–CP1.20 records, including final CI evidence in `ENERGUN_FM1_CORE_CP1_20_DEVELOPMENT_CHECKPOINT.md`.
 - **V98 behavior and V1 decisions:** CP1.5, CP1.8, CP1.12–CP1.16. Their source records currently remain in `energun-fm1-cp3-host-integration`; the canonical decisions are summarized in the cross-branch register.
@@ -44,3 +45,8 @@ The cross-branch register is a status/decision index, not permission to merge so
 
 
 - **CP1.4.1 inventory contract (2026-11-02):** logical map is frozen at 8 Engine EDIT + 16 P_MC + 13 Private per part (52 Private values across four parts). New host test `tests/metal_core_parameter_inventory_test.c` guards counts, E0–E7 order, uniqueness, no E1/E2 duplication, FM INDEX/LPG DECAY placement, and independent FOLLOW/METAL booleans. Fast run [41417141686](https://github.com/energundenis/Felucca/actions/runs/41417141686) passed 18/18 on exact HEAD `7ec54a1`. This freezes logical membership only—not IDs, descriptors, Private API, Motion Lock, storage ABI or Flash layout. Full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732) was still running at the latest check.
+
+
+## Status authority — 2026-11-02
+
+Use `ENERGUN_FM1_CORE_MASTER_STATUS_2026-11-02.md` for current CP0–CP7 percentages, CP1.4.1–CP1.4.11 progress, CI exact-HEAD boundaries and execution order. Older status paragraphs in this index and earlier checkpoint snapshots are historical evidence; where they conflict with the Master Status, the newer Master Status governs. The original implementation-plan checkbox list is a historical task breakdown, not a current progress report.
