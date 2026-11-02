@@ -68,7 +68,7 @@ static void candidate(energun_sc_candidate_t *c, const uint8_t *record,
 
 int main(void)
 {
-    uint8_t base[32], base_meta_payload[32];
+    uint8_t base[32];
     uint8_t rec_a[ENERGUN_SC_V1_MAX_RECORD], rec_b[ENERGUN_SC_V1_MAX_RECORD];
     uint8_t read_a[ENERGUN_SC_V1_MAX_RECORD], read_b[ENERGUN_SC_V1_MAX_RECORD];
     size_t len_a, len_b;
@@ -81,7 +81,6 @@ int main(void)
     memset(nor, 0xFF, sizeof nor);
     memset(payload, 0, sizeof payload);
     memset(base, 0xA5, sizeof base);
-    memset(base_meta_payload, 0x5A, sizeof base_meta_payload);
 
     check("real storage saves and reports selected Base metadata",
           st_save(OBJ_PROJECT0, base, sizeof base) == 0 &&
