@@ -149,3 +149,25 @@ A source-level recheck of `params.c`, `project.c` and `motion.c` identified an i
 - Linear worst-case measured error is 0.3937% of full scale. All 30 controls passed the nearest-code bound and endpoint-clamp checks.
 - Fast CI [41406252578](https://github.com/energundenis/Felucca/actions/runs/41406252578) passed on code HEAD `89528e4948b58b98232543014d805ec3bd306616`: 16/16 focused tests passed; 0 quantization-reference failures.
 - These are mathematical quantizer-correctness bounds, not a musical/perceptual approval. CP1.4.2 remains open for review of musical resolution, base-compatible FUN10 migration, user-preset extension scope and exact expanded-count compatibility fixtures.
+
+
+## 4E. Logarithmic one-code spacing reference
+
+The following values show the approximate physical increment between adjacent raw codes at the low endpoint, the control default and the high endpoint. For a logarithmic control, adjacent values have a constant ratio, while the absolute increment grows with the displayed value. This makes the trade-off visible for musical-resolution review; it does not approve the curve.
+
+| Control | Adjacent step at min | At default | At max | Adjacent code ratio |
+|---|---:|---:|---:|---:|
+| FREQ (Hz) | 0.672 | 3.584 | 11.200 | 1.022400 |
+| METAL RATIO | 0.01267 | 0.10643 | 0.30408 | 1.025340 |
+| CUTOFF (Hz) | 3.511 | 42.128 | 280.851 | 1.035106 |
+| RESONANCE | 0.01474 | 0.05894 | 0.58945 | 1.029472 |
+| LPG DECAY (s) | 0.000739 | 0.009232 | 0.073853 | 1.036927 |
+| MOD RATIO | 0.00832 | 0.10220 | 0.53263 | 1.033289 |
+| FM ENV ATTACK (s) | 0.0000559 | 0.0002795 | 0.055898 | 1.055898 |
+| FM ENV DECAY (s) | 0.000459 | 0.011484 | 0.137806 | 1.045935 |
+| METAL DECAY (s) | 0.001638 | 0.013106 | 0.098293 | 1.032764 |
+| ATTACK (s) | 0.0000559 | 0.0005590 | 0.055898 | 1.055898 |
+| DECAY (s) | 0.001638 | 0.009829 | 0.098293 | 1.032764 |
+| RELEASE (s) | 0.000459 | 0.009187 | 0.137806 | 1.045935 |
+
+Interpretation: the 7-bit log curve is relatively fine around low frequencies and short times, but its absolute step becomes wider at the upper end. For example, FREQ is about 3.58 Hz/code at its 160 Hz default and 11.2 Hz/code near 500 Hz. The original v98 1 Hz control increment is therefore not retained throughout the range. The user-facing editor must show the decoded physical value, not imply that every source UI step is available.
