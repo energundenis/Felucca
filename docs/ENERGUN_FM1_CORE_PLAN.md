@@ -834,3 +834,9 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Estimated maximum project payload: 501 bytes (116 parameter values + one count byte + up to 128 P_MC motion records at 3 bytes each). User-preset bank extension: 464 value bytes plus bitmap/envelope.
 - Identified base-object sequence binding as necessary because current storage A/B sequence is independent per object. Sidecar must be written/rebound to the next base sequence before every base rewrite; loader must search both Sidecar copies for an exact base-sequence match.
 - This is a logical design draft only. No storage source, object IDs, binary ABI, sector addresses or Flash allocations changed. CP1.4.5 not frozen; CP1.4.6–4.11 remain open.
+
+
+## CP1.4.2 exact-head full baseline CI — 2026-11-02
+
+- Full baseline CI [41406252564](https://github.com/energundenis/Felucca/actions/runs/41406252564) also completed SUCCESS on the same code HEAD `89528e4948b58b98232543014d805ec3bd306616`: unmodified Felucca firmware build, AC79 target-compiler VCA probe, all host/web regressions and artifact upload completed. Artifact [energum-fm1-baseline-89528e4948b58b98232543014d805ec3bd306616.zip](https://github.com/energundenis/Felucca/actions/runs/41406252564/artifacts/13124032492), SHA-256 `209f57ff896b4dff66c5be24b9f7c570c2ddc7b371b935192247229199660ef1`.
+- This is baseline/toolchain/regression evidence only. It does not register/build METAL CORE as a production engine, qualify its complete DSP graph on AC79, or validate hardware behavior.
