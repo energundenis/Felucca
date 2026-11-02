@@ -1,0 +1,27 @@
+name: FM-1 dry-run validation
+
+on:
+  push:
+    branches:
+      - fm1-dryrun-pattern-20261031
+    paths:
+      - "tools/fm1_pattern_dryrun.py"
+      - "tests/test_fm1_pattern_dryrun.py"
+      - ".github/workflows/fm1-dryrun-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run offline converter tests
+        run: python -m unittest discover -s tests -p "test_fm1_pattern_dryrun.py" -v
