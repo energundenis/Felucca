@@ -104,6 +104,9 @@ def main() -> int:
             break
 
         state = stage.get("state")
+        if state not in ("evidence", "ready", "blocked"):
+            print(f"::error::Stage {sid} has invalid state: {state}")
+            return 1
         if state == "evidence":
             evidence_path = ROOT / stage.get("evidence_file", "")
             needle = stage.get("evidence_contains", "")
@@ -122,6 +125,7 @@ def main() -> int:
                 rows.append(row)
                 results[sid] = "FAIL"
                 overall = "FAIL"
+                blocked_at = sid
                 break
             detail = f"Verified from this run: {needle}"
             row = {"id": sid, "title": title, "result": "PASS", "detail": detail}
