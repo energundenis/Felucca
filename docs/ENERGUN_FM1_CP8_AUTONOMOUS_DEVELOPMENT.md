@@ -18,8 +18,8 @@ The machine-readable plan is `tests/cp8_autonomous_development_orchestrator.json
 | ID | Workstream | Initial status |
 |---|---|---:|
 | CP8.1 | Repository-wide CI concurrency coordination | 0% |
-| CP8.2 | Coding worker registry and capability model | 0% |
-| CP8.3 | Automatic task routing and assignment | 0% |
+| CP8.2 | Coding worker registry and capability model | 25% |
+| CP8.3 | Automatic task routing and assignment | 35% |
 | CP8.4 | Isolated feature branches and workspaces | 0% |
 | CP8.5 | Bounded autonomous source-code changes | 0% |
 | CP8.6 | Automated validation and evidence collection | 0% |
@@ -46,6 +46,24 @@ A correct implementation must provide:
 - tests that start two independent workflows and prove mutual exclusion without dropping either run.
 
 Do not mark CP8.1 complete until these behaviors are implemented and verified.
+
+## CP8.2 — worker registry schema (25%)
+
+Implemented `tests/cp8_worker_registry.json` with a capability catalog, explicit least-privilege policy, concurrency budget and an empty worker list. The dispatcher validates the schema and rejects unsafe permission settings.
+
+No coding worker is connected or registered. Runtime enrollment, identity verification, credentials/permission provisioning and health reporting remain outstanding.
+
+## CP8.3 — deterministic dry-run task router (35%)
+
+Implemented:
+
+- `tests/cp8_task_catalog.json` — bounded task records, dependencies, priorities and allowed path prefixes;
+- `tests/run_cp8_dispatch_planner.py` — deterministic dry-run router;
+- `tests/test_cp8_dispatch_planner.py` — automated safety and routing tests.
+
+The planner checks capability match, dependency completion, allowed paths, active state and worker/global concurrency. It does not invoke a worker, create a branch, modify files or open a PR. Since the registry is intentionally empty, the current report must be `NO_WORKERS_REGISTERED`.
+
+Live task claims, persistent queueing, atomic assignment leases, retries and worker execution remain unimplemented. The fast-regression workflow now runs the CP8 planner tests and uploads its dry-run report.
 
 ## CP8.2–CP8.9 — planned architecture
 
