@@ -240,6 +240,7 @@ energun_sc_status_t energun_sc_v1_validate(
     view->identity_kind = kind;
     view->identity_index = index;
     view->base_sequence = expected_base_sequence;
+    view->base_payload_crc32 = expected_base_crc32;
     view->payload = record + ENERGUN_SC_V1_HEADER_SIZE;
     view->payload_length = payload_length;
     return ENERGUN_SC_OK;
