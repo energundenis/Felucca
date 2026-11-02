@@ -28,12 +28,13 @@
       "id": "sidecar-format",
       "title": "Sidecar schema, envelope and semantic validation",
       "kind": "executable-host-test",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
         "fm6-staging-baseline"
       ],
-      "command": null,
-      "blocker": "Frozen Sidecar binary ABI and production parser/validator are not implemented. Add the real implementation and an executable test before enabling this stage."
+      "command": "sh tests/run_sidecar_v1_test.sh",
+      "blocker": "Sidecar V1 envelope and identity/length/value/motion validation are implemented and covered by the focused host acceptance suite. P_MC numeric-ID whitelist validation remains a later CP1.4.4 gate because IDs are intentionally not assigned.",
+      "enable_when": "V1 format implementation and strict host acceptance suite committed together."
     },
     {
       "id": "base-generation-binding",
