@@ -61,6 +61,7 @@ class CP8QueueStoreTests(unittest.TestCase):
                                     SHA, "pull_request", now=NOW + timedelta(seconds=1))
         self.assertTrue(first["created"])
         self.assertFalse(second["created"])
+        self.assertEqual(self.backend.sequence, 1, "duplicate enqueue must not create a no-op commit")
         self.assertEqual(len(self.backend.ledgers[self.backend.head]["records"]), 1)
 
     def test_cas_conflict_retries_from_latest_head(self):
@@ -101,6 +102,16 @@ class CP8QueueStoreTests(unittest.TestCase):
         self.assertEqual(recovered["request_id"], request["request_id"])
         self.assertEqual(recovered["attempts"], 2)
         self.assertEqual(recovered["claim"]["owner_run_id"], 101)
+
+    def test_expired_owner_cannot_mark_running_or_finish(self):
+        request = self.store.enqueue("energundenis/Felucca", ["fast-regression"], "refs/heads/expired",
+                                     SHA, "push", now=NOW)["record"]
+        self.store.claim_next("coordinator", 100, now=NOW + timedelta(seconds=1), lease_seconds=30)
+        with self.assertRaisesRegex(QueueStoreError, "lease has expired"):
+            self.store.mark_running(request["request_id"], 100, now=NOW + timedelta(seconds=32))
+        with self.assertRaisesRegex(QueueStoreError, "lease has expired"):
+            self.store.finish(request["request_id"], 100, "failed", "late result",
+                              now=NOW + timedelta(seconds=32))
 
     def test_heartbeat_extends_lease_only_for_current_owner(self):
         request = self.store.enqueue("energundenis/Felucca", ["fast-regression"], "refs/heads/feature",
