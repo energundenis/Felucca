@@ -132,11 +132,14 @@ def validate_queue_record(record: dict[str, Any]) -> dict[str, Any]:
     if state == "superseded":
         _require(isinstance(result, dict) and result.get("outcome") == "superseded",
                  "superseded records require a superseded result")
+        _parse_time(result.get("finished_at"), "result.finished_at")
+        _require(isinstance(result.get("summary"), str) and bool(result["summary"].strip()),
+                 "result.summary is required")
     return record
 
 
 def validate_transition(current_state: str, next_state: str) -> None:
     """Reject illegal state changes; storage must still perform an atomic CAS."""
     _require(isinstance(current_state, str) and current_state in ALLOWED_STATES, "current_state is unsupported")
-    _require(next_state in TRANSITIONS[current_state],
+    _require(isinstance(next_state, str) and next_state in TRANSITIONS[current_state],
              f"illegal queue transition: {current_state} -> {next_state}")
