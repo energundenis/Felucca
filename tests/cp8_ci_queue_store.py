@@ -89,7 +89,7 @@ class GitHubGitDataClient:
         tree_sha = commit.get("tree", {}).get("sha")
         if not tree_sha:
             raise QueueStoreError("Git commit response has no tree SHA")
-        tree = self.request("GET", "/git/trees/" + tree_sha)
+        tree = self.request("GET", "/git/trees/" + tree_sha + "?recursive=1")
         entry = next((item for item in tree.get("tree", []) if item.get("path") == LEDGER_PATH), None)
         if entry is None:
             return {"schema_version": 1, "records": []}
