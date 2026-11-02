@@ -268,6 +268,84 @@ energun_sc_status_t energun_sc_v1_validate(
     return ENERGUN_SC_OK;
 }
 
+energun_sc_status_t energun_sc_v1_inspect(
+    const uint8_t *record, size_t record_length,
+    energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
+    uint16_t base_motion_count, energun_sc_view_t *view)
+{
+    uint32_t embedded_sequence, embedded_crc;
+    if (record == NULL || record_length < ENERGUN_SC_V1_HEADER_SIZE)
+        return ENERGUN_SC_ERR_ARGUMENT;
+    embedded_sequence = sc_get_u32(record + SC_OFF_BASE_SEQ);
+    embedded_crc = sc_get_u32(record + SC_OFF_BASE_CRC);
+    return energun_sc_v1_validate(record, record_length,
+        expected_kind, expected_index, embedded_sequence, embedded_crc,
+        base_motion_count, view);
+}
+
+static int sc_sequence_newer(uint32_t a, uint32_t b)
+{
+    return a != b && (uint32_t)(a - b) < 0x80000000u;
+}
+
+energun_sc_status_t energun_sc_v1_select_ab(
+    const energun_sc_candidate_t candidates[2],
+    energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
+    uint32_t current_base_sequence, uint32_t current_base_crc32,
+    uint16_t base_motion_count, energun_sc_ab_selection_t *selection)
+{
+    energun_sc_view_t views[2];
+    uint8_t valid[2] = { 0u, 0u };
+    uint8_t matching[2] = { 0u, 0u };
+    int newest = -1;
+    int protected_copy = -1;
+    unsigned int i;
+
+    if (candidates == NULL || selection == NULL)
+        return ENERGUN_SC_ERR_ARGUMENT;
+    selection->matching_copy = -1;
+    selection->write_copy = 0;
+    selection->newest_valid_copy = -1;
+    selection->next_storage_sequence = 1u;
+
+    for (i = 0; i < 2u; ++i) {
+        if (!candidates[i].storage_valid || candidates[i].record == NULL)
+            continue;
+        if (energun_sc_v1_inspect(candidates[i].record,
+                candidates[i].record_length, expected_kind, expected_index,
+                base_motion_count, &views[i]) != ENERGUN_SC_OK)
+            continue;
+        valid[i] = 1u;
+        matching[i] = (uint8_t)(
+            views[i].base_sequence == current_base_sequence &&
+            views[i].base_payload_crc32 == current_base_crc32);
+        if (newest < 0 ||
+            sc_sequence_newer(candidates[i].storage_sequence,
+                              candidates[newest].storage_sequence))
+            newest = (int)i;
+        /* Exact sequence ties deterministically retain A (index 0). */
+    }
+
+    for (i = 0; i < 2u; ++i) {
+        if (!valid[i] || !matching[i])
+            continue;
+        if (protected_copy < 0 ||
+            sc_sequence_newer(candidates[i].storage_sequence,
+                              candidates[protected_copy].storage_sequence))
+            protected_copy = (int)i;
+    }
+
+    selection->newest_valid_copy = (int8_t)newest;
+    selection->matching_copy = (int8_t)protected_copy;
+    if (newest >= 0)
+        selection->next_storage_sequence =
+            candidates[newest].storage_sequence + 1u;
+    selection->write_copy = (int8_t)(
+        protected_copy >= 0 ? 1 - protected_copy :
+        newest >= 0 ? 1 - newest : 0);
+    return ENERGUN_SC_OK;
+}
+
 energun_sc_status_t energun_sc_v1_encode(
     uint8_t *output, size_t output_capacity, size_t *output_length,
     energun_sc_identity_kind_t identity_kind, uint8_t identity_index,
