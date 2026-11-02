@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - energun-metal-core
+      - energun/cp1-4-5-pair-coordinator
     paths-ignore:
       - 'docs/**'
       - '*.md'
