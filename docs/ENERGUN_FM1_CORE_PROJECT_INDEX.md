@@ -30,6 +30,7 @@ The cross-branch register is a status/decision index, not permission to merge so
 
 - **Sidecar design:** `ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_SCHEMA_DRAFT.md` (seven logical identities, project/preset payload capacity estimates, base-sequence binding and sidecar-first A/B pair-commit model; logical draft only, no binary ABI or Flash allocation).
 - **Sidecar integrity:** `ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md` (existing CRC-32/header/payload checks and A/B fallback audited; recommends reusing the outer storage CRC, validating Sidecar semantics and selecting copies by exact base-sequence binding; design draft only, no production reader).
+- **Sidecar persistence write-path audit:** `ENERGUN_FM1_CORE_CP1_4_5_PERSISTENCE_WRITE_PATH_AUDIT.md` (maps project save/rename/erase, live autosave, both preset banks, preset load and archive V1 restore; confirms direct `st_save()`/`st_load()` bypasses that a future pair coordinator must own; source audit only, no production changes).
 
 - Latest fast lane [41417141686](https://github.com/energundenis/Felucca/actions/runs/41417141686) passed all 18 focused test programs on exact branch HEAD `7ec54a1`; it adds a CP1.4.1 logical inventory contract test. Exact-head full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732) was in progress at the latest check. The prior full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) passed on code HEAD `33327eb`.
 
