@@ -852,3 +852,9 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Added the real host `track_render()` / `voice_start()` OSC dispatch test to the focused suite; the suite now runs 17 tests.
 - Fast CI [41408456648](https://github.com/energundenis/Felucca/actions/runs/41408456648) SUCCESS on code HEAD `992e4591629277d9952fc76610928972e515a6f0`; 17/17 tests passed. CP1.4.2 quantization reference: 0 failures across 30 controls.
 - Full baseline for this exact HEAD remains pending.
+
+
+## CP3.1 real VCA backing-store test — 2026-11-02
+- The isolated host VCA dispatch test now uses Felucca's real `ENG_MEM(p)` pool. Five additional assertions verify distinct part regions, first-claim zeroing, same-owner retention and exact declared-range clearing on engine-owner change.
+- Fast CI [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) passed all 17 focused test programs on code HEAD `33327eb312a36b83b3751560d899c577147125e4`.
+- This is host evidence for the VCA-only 288-byte state, not full engine memory or AC79 runtime qualification. Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) remains in progress.
