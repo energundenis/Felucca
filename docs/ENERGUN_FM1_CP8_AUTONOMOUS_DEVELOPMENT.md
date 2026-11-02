@@ -17,7 +17,7 @@ The machine-readable plan is `tests/cp8_autonomous_development_orchestrator.json
 
 | ID | Workstream | Initial status |
 |---|---|---:|
-| CP8.1 | Repository-wide CI concurrency coordination | 50% |
+| CP8.1 | Repository-wide CI concurrency coordination | 0% |
 | CP8.2 | Coding worker registry and capability model | 0% |
 | CP8.3 | Automatic task routing and assignment | 0% |
 | CP8.4 | Isolated feature branches and workspaces | 0% |
@@ -29,20 +29,23 @@ The machine-readable plan is `tests/cp8_autonomous_development_orchestrator.json
 
 Percentages are engineering estimates, not CI results.
 
-## CP8.1 — initial CI coordination guard
+## CP8.1 — global lock not yet implemented
 
-The following existing workflows now share the exact GitHub Actions concurrency group `energun-fm1-ci-global`:
+A shared GitHub Actions concurrency-group prototype was tested by assigning the same group to both existing workflows. The experiment caused both the fast-regression and baseline runs to be cancelled because GitHub concurrency supports only one running and one pending run per group; a new pending run can replace the previous pending run.
 
-- `.github/workflows/energun-metal-core-fast.yml`
-- `.github/workflows/energun-fm1-baseline.yml`
+The shared group was reverted. The workflows again use separate concurrency groups, so there is currently **no cross-workflow lock**.
 
-Both use `cancel-in-progress: false`. This prevents the baseline and fast workflows from intentionally running concurrently under the same repository-level group.
+A correct implementation must provide:
 
-### Important GitHub Actions limitation
+- atomic lock acquisition across workflows;
+- owner identity (workflow, run ID, commit SHA);
+- heartbeat and expiry;
+- stale-lock recovery without stealing a live lock;
+- guaranteed release on success, failure and cancellation;
+- bounded waiting and clear timeout/failure reporting;
+- tests that start two independent workflows and prove mutual exclusion without dropping either run.
 
-GitHub Actions concurrency is not a durable FIFO queue or a lease-based distributed lock. A group allows one running and one pending run; a newer pending run can replace an older pending run. Therefore CP8.1 is only partially complete.
-
-Before claiming a robust global lock, implement and test a durable coordination mechanism with atomic acquisition, owner/run identity, expiry/heartbeat, stale-lock recovery and unconditional release. Every future ENERGUN workflow must participate in the same mechanism.
+Do not mark CP8.1 complete until these behaviors are implemented and verified.
 
 ## CP8.2–CP8.9 — planned architecture
 
