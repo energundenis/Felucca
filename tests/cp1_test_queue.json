@@ -127,12 +127,12 @@
       "id": "cp1-full-host-regression",
       "title": "Full focused host regression after all CP1 stages",
       "kind": "final-regression",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
         "fm6-staging-coordination"
       ],
       "command": "sh tests/run_metal_core_fast.sh",
-      "blocker": "Automatically enabled only after every preceding CP1 stage has an executable passing test.",
+      "blocker": "This final regression runs only after all preceding CP1 acceptance stages have passed.",
       "enable_when": "All preceding stages are ready and pass."
     }
   ]
