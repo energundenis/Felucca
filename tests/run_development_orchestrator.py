@@ -150,6 +150,7 @@ def execute_ready_workstreams(manifest: dict, plan: dict) -> dict:
     by_id = {task["id"]: task for task in manifest["workstreams"]}
     selected = list(plan.get("dispatch_candidates", []))[:plan["max_parallel"]]
     if not selected:
+        plan["mode"] = "dependency-aware-execution"
         plan["execution"] = {"mode": "execute", "started": 0, "results": []}
         return plan
 
