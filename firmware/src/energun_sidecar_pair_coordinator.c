@@ -50,6 +50,56 @@ static int sc_pair_read_candidates(
     return 0;
 }
 
+static int sc_pair_sequence_newer(uint32_t a, uint32_t b)
+{
+    return a != b && (uint32_t)(a - b) < 0x80000000u;
+}
+
+/* Inspect candidates with base_motion_count zero first so a valid orphan
+ * bound to a different Base generation is not rejected using the current
+ * Base's motion occupancy. Then validate only exact current-generation
+ * matches against the actual Base motion count.
+ */
+static energun_sc_status_t sc_pair_select(
+    energun_sc_candidate_t candidates[2],
+    energun_sc_identity_kind_t identity_kind, uint8_t identity_index,
+    uint8_t base_valid, uint32_t base_sequence, uint32_t base_crc32,
+    uint16_t base_motion_count, energun_sc_ab_selection_t *selection)
+{
+    energun_sc_view_t view;
+    int matching = -1;
+    unsigned int i;
+    energun_sc_status_t status = energun_sc_v1_select_ab(
+        candidates, identity_kind, identity_index,
+        base_valid ? base_sequence : 0u,
+        base_valid ? base_crc32 : 0u, 0u, selection);
+    if (status != ENERGUN_SC_OK)
+        return status;
+
+    if (base_valid) {
+        for (i = 0; i < 2u; ++i) {
+            if (!candidates[i].storage_valid)
+                continue;
+            if (energun_sc_v1_validate(
+                    candidates[i].record, candidates[i].record_length,
+                    identity_kind, identity_index, base_sequence, base_crc32,
+                    base_motion_count, &view) != ENERGUN_SC_OK)
+                continue;
+            if (matching < 0 || sc_pair_sequence_newer(
+                    candidates[i].storage_sequence,
+                    candidates[(unsigned int)matching].storage_sequence))
+                matching = (int)i;
+        }
+    }
+
+    selection->matching_copy = (int8_t)matching;
+    selection->write_copy = matching >= 0
+        ? (int8_t)(1 - matching)
+        : (selection->newest_valid_copy >= 0
+            ? (int8_t)(1 - selection->newest_valid_copy) : 0);
+    return ENERGUN_SC_OK;
+}
+
 static energun_sc_pair_status_t sc_pair_finish(
     energun_sc_pair_coordinator_t *coordinator,
     energun_sc_pair_status_t status)
@@ -99,10 +149,9 @@ energun_sc_pair_status_t energun_sc_pair_commit(
                                 candidates) != 0)
         return sc_pair_finish(coordinator, ENERGUN_SC_PAIR_ERR_SIDECAR_READ);
 
-    rc = energun_sc_v1_select_ab(
+    rc = sc_pair_select(
         candidates, request->identity_kind, request->identity_index,
-        base.valid ? base.sequence : 0u,
-        base.valid ? base.payload_crc32 : 0u,
+        base.valid, base.sequence, base.payload_crc32,
         request->base_motion_count, &selection);
     if (rc != ENERGUN_SC_OK)
         return sc_pair_finish(coordinator, ENERGUN_SC_PAIR_ERR_SELECT);
@@ -110,11 +159,6 @@ energun_sc_pair_status_t energun_sc_pair_commit(
     /* With no valid Base generation, no old Sidecar can be a matching pair,
      * even if its envelope happens to contain the zero/zero sentinel.
      */
-    if (!base.valid) {
-        selection.matching_copy = -1;
-        selection.write_copy = selection.newest_valid_copy >= 0
-            ? (int8_t)(1 - selection.newest_valid_copy) : 0;
-    }
     if (selection.write_copy < 0 || selection.write_copy > 1)
         return sc_pair_finish(coordinator, ENERGUN_SC_PAIR_ERR_SELECT);
 
@@ -177,9 +221,9 @@ energun_sc_pair_status_t energun_sc_pair_commit(
     if (sc_pair_read_candidates(backend, backend_context, workspace,
                                 candidates) != 0)
         return sc_pair_finish(coordinator, ENERGUN_SC_PAIR_ERR_SIDECAR_READ);
-    rc = energun_sc_v1_select_ab(
+    rc = sc_pair_select(
         candidates, request->identity_kind, request->identity_index,
-        verified_base.sequence, verified_base.payload_crc32,
+        1u, verified_base.sequence, verified_base.payload_crc32,
         request->base_motion_count, &selection);
     if (rc != ENERGUN_SC_OK || selection.matching_copy != sidecar_write_copy ||
         !candidates[sidecar_write_copy].storage_valid ||
