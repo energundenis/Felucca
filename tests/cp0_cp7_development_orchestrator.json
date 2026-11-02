@@ -5,16 +5,22 @@
   "branch": "energun-development-orchestrator",
   "coordination_branch": "energun-metal-core",
   "execution_policy": {
-    "mode": "registry-first",
+    "mode": "dependency-aware-execution",
     "max_parallel": 3,
-    "max_parallel_scope": "future unified orchestrator runner only; existing independent GitHub workflows are not globally throttled yet",
+    "max_parallel_scope": "global orchestrator worker pool only; independent GitHub workflows are not globally throttled",
     "stop_scheduling_after_failure": true,
     "collect_running_peers": true,
     "merge_automatically": false,
     "main_branch_writes": false,
     "physical_device_access": false,
     "physical_flash_write": false,
-    "factory_firmware_changes": false
+    "factory_firmware_changes": false,
+    "allowed_commands": [
+      [
+        "python3",
+        "tests/run_cp1_test_queue.py"
+      ]
+    ]
   },
   "states": [
     "planned",
@@ -51,10 +57,15 @@
       "checkpoint": "CP1",
       "title": "Parameter model, Sidecar persistence and recovery",
       "state": "ready",
-      "depends_on": ["cp0-baseline"],
+      "depends_on": [
+        "cp0-baseline"
+      ],
       "parallel_group": "core-foundations",
       "executor": "existing-cp1-dag",
-      "command": "python3 tests/run_cp1_test_queue.py",
+      "command": [
+        "python3",
+        "tests/run_cp1_test_queue.py"
+      ],
       "acceptance": [
         "The existing CP1 queue report is parsed by its explicit PASS/BLOCKED/FAIL status",
         "Pair Commit Ordering is implemented and fault-injection tests pass",
@@ -71,7 +82,9 @@
       "checkpoint": "CP2",
       "title": "DSP primitives, numerical behavior and resource qualification",
       "state": "ready",
-      "depends_on": ["cp0-baseline"],
+      "depends_on": [
+        "cp0-baseline"
+      ],
       "parallel_group": "dsp-and-lifecycle",
       "executor": "workstream-branch",
       "command": null,
@@ -91,7 +104,9 @@
       "checkpoint": "CP3",
       "title": "Host callback, MIDI and voice lifecycle adapter",
       "state": "ready",
-      "depends_on": ["cp0-baseline"],
+      "depends_on": [
+        "cp0-baseline"
+      ],
       "parallel_group": "dsp-and-lifecycle",
       "executor": "workstream-branch",
       "command": null,
@@ -110,7 +125,10 @@
       "checkpoint": "CP3",
       "title": "Production METAL CORE audio-engine integration",
       "state": "blocked",
-      "depends_on": ["cp2-dsp-qualification", "cp3-host-lifecycle"],
+      "depends_on": [
+        "cp2-dsp-qualification",
+        "cp3-host-lifecycle"
+      ],
       "parallel_group": "integration",
       "executor": "workstream-branch",
       "command": null,
@@ -127,7 +145,9 @@
       "checkpoint": "CP4",
       "title": "User interface, parameter control and display",
       "state": "planned",
-      "depends_on": ["cp3-production-integration"],
+      "depends_on": [
+        "cp3-production-integration"
+      ],
       "parallel_group": "post-engine",
       "executor": "workstream-branch",
       "command": null,
@@ -143,7 +163,9 @@
       "checkpoint": "CP5",
       "title": "Sequencer behavior and engine event integration",
       "state": "planned",
-      "depends_on": ["cp3-production-integration"],
+      "depends_on": [
+        "cp3-production-integration"
+      ],
       "parallel_group": "post-engine",
       "executor": "workstream-branch",
       "command": null,
@@ -181,7 +203,9 @@
       "checkpoint": "CP7",
       "title": "Firmware packaging, recovery audit and device validation",
       "state": "blocked",
-      "depends_on": ["cp6-system-qualification"],
+      "depends_on": [
+        "cp6-system-qualification"
+      ],
       "parallel_group": "release",
       "executor": "manual-approval-gate",
       "command": null,
