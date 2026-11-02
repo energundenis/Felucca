@@ -224,7 +224,7 @@ energun_sc_pair_status_t energun_sc_pair_commit(
     rc = sc_pair_select(
         candidates, request->identity_kind, request->identity_index,
         1u, verified_base.sequence, verified_base.payload_crc32,
-        request->current_base_motion_count, &selection);
+        request->base_motion_count, &selection);
     if (rc != ENERGUN_SC_OK || selection.matching_copy != sidecar_write_copy ||
         !candidates[sidecar_write_copy].storage_valid ||
         candidates[sidecar_write_copy].storage_sequence !=
