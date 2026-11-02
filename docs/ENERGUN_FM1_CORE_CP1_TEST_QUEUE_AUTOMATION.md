@@ -49,6 +49,16 @@ When a stage is implemented, the same work unit must add its executable test and
 - A ready-stage command failure is a CI failure and blocks all downstream stages.
 - A not-yet-implemented stage is reported as BLOCKED, not PASS. The orchestration step completes so the report can be inspected; its explicit queue status is BLOCKED.
 
+## First verified automation run (2026-11-02)
+
+- Workflow: [ENERGUN METAL CORE fast regression](https://github.com/energundenis/Felucca/actions/runs/41455462517)
+- Exact tested commit: `5fc1228d032f39aa84abd6bb9684d94f35dd4e95`
+- GitHub Actions result: **success**.
+- Focused regression: **21 test programs/suites passed**; the queue-controller Python suite contains **4 unit tests**, all passed.
+- Queue prerequisite stages: Felucca Storage A/B **PASS**; existing FM6 staging/recovery **PASS**.
+- Sequential CP1 queue result: **BLOCKED at `sidecar-format`**, as intended, because the production Sidecar ABI/parser and its executable acceptance tests do not yet exist. All dependent Sidecar stages remain blocked; none is reported as passed.
+- Evidence artifact: [download from the workflow run](https://github.com/energundenis/Felucca/actions/runs/41455462517/artifacts/13146433895).
+
 ## Safety
 
 This is host-only automation using simulated NOR Flash and existing host-test evidence. It does not connect to or write a physical FM-1. It does not select Flash sectors, assign Sidecar object IDs, change `OBJ_COUNT`, or alter bootloader/OTA/recovery behavior. CP1.4.11 and explicit physical-device authorization remain independent gates.
