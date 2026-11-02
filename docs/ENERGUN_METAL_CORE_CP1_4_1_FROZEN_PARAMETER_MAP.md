@@ -130,8 +130,9 @@ MCX0–MCX6 remain a separate extension namespace. No MCX motion support is impl
 ## 9. Known unresolved source facts
 
 These are explicit gates, not permission to guess:
-1. **E0–E7 allocation conflict:** the 2026-10-30 Frozen Draft used E0 FREQ / E1 OSC2 LEVEL / E2 TIMBRE / E3 WEST COAST DRIVE / E4 METAL RATIO / E5 FOLD / E6 CUTOFF / E7 RESONANCE, while this CP1.4 proposal uses a different E0–E7 order. The earlier frozen order remains the governing baseline until the original approval record is recovered and any superseding user decision is explicit. Do not assign final E descriptors from the candidate table.
-2. **Stable IDs and encoding:** no numeric IDs, serialized field IDs, byte encodings or backward-compatibility rules are approved.
+1. **Host stored-value resolution:** source physical ranges/steps are not the Felucca stored representation. Project, preset and Motion Lock values are limited to -64..127 (one byte after offset); several v98 controls have more source positions than this permits. Define either a monotonic 7-bit/192-code conversion per control or a high-resolution sidecar-backed value/API before freezing firmware descriptors. Do not claim that the source UI step is available on FM-1 without that mapping.
+2. **E0–E7 allocation conflict:** the 2026-10-30 Frozen Draft used E0 FREQ / E1 OSC2 LEVEL / E2 TIMBRE / E3 WEST COAST DRIVE / E4 METAL RATIO / E5 FOLD / E6 CUTOFF / E7 RESONANCE, while this CP1.4 proposal uses a different E0–E7 order. The earlier frozen order remains the governing baseline until the original approval record is recovered and any superseding user decision is explicit. Do not assign final E descriptors from the candidate table.
+3. **Stable IDs and encoding:** no numeric IDs, serialized field IDs, byte encodings or backward-compatibility rules are approved.
 
 ## 10. CP1.4.1 acceptance result
 
@@ -156,9 +157,10 @@ Acceptance checks:
 - [x] Verify FREQ unit and quantization: Hz, 1 Hz step, range 30–500 Hz, default 160 Hz.
 - [ ] Recover/reconcile the earlier E0–E7 freeze against the CP1.4 candidate order; earlier frozen order remains authoritative pending that reconciliation.
 - [x] Derive all previously unspecified source steps from the protected v98 parameter object.
+- [ ] Define target stored-value precision/quantization for source controls whose ranges exceed 192 codes.
 - [ ] Review and sign off the complete map against the protected source artifact.
 
-The decisions checked above supersede the older unresolved notes in this document. Source step values were verified against the protected reference object's parameter declarations; FREQ's Hz unit is corroborated by its direct assignment to the Web Audio oscillator frequency. The unchecked E0–E7 allocation and final map sign-off prevent complete source-level encoding closure. CP1.4.2 may continue its compatibility audit, but must not assign stable IDs or final E descriptors until the slot conflict is resolved.
+The decisions checked above supersede the older unresolved notes in this document. Source step values were verified against the protected reference object's parameter declarations; FREQ's Hz unit is corroborated by its direct assignment to the Web Audio oscillator frequency. The unchecked E0–E7 allocation, target value-precision mapping and final map sign-off prevent complete source-level encoding closure. CP1.4.2 may continue its compatibility audit, but must not assign stable IDs or final E descriptors until the slot conflict and quantization policy are resolved.
 
 ### 10.1 Source-step evidence
 
