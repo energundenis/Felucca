@@ -94,6 +94,11 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
         plan = build_plan(data, ["cp1-persistence"], "FAIL", "CP1 command failed.")
         self.assertEqual(plan["workstreams"][0]["state"], "FAILED")
 
+    def test_overall_plan_status_is_failed_when_a_workstream_fails(self):
+        data = manifest([task("cp1-persistence")])
+        plan = build_plan(data, ["cp1-persistence"], "FAIL", "CP1 command failed.")
+        self.assertEqual(plan["status"], "FAILED")
+
     def test_cp1_report_status_is_read_from_evidence_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "cp1-report.json"
