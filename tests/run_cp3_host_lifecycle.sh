@@ -1,0 +1,28 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-only
+# CP3 host lifecycle/dispatch lane. No production registration or device access.
+set -eu
+cd "$(dirname "$0")/.."
+
+CC="${CC:-cc}"
+OUT="build/cp3-host-lifecycle"
+mkdir -p "$OUT" build/gen
+python3 -c 'import runpy; ns = runpy.run_path("tools/build.py"); ns["generate"]()'
+
+compile_run() {
+    name="$1"; source="$2"; libs="${3:-}"
+    echo "== CP3 compile: $name"
+    # shellcheck disable=SC2086
+    "$CC" -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/$name" "$source" $libs
+    echo "== CP3 run: $name"
+    "$OUT/$name"
+    echo "PASS: $name" >> "$OUT/results.txt"
+}
+: > "$OUT/results.txt"
+compile_run metal_core_vca_harness tests/metal_core_vca_harness_test.c "-lm"
+compile_run metal_core_vca_real_track_adapter tests/metal_core_vca_real_track_adapter_test.c "-lm"
+compile_run metal_core_cp3_memory_accounting tests/metal_core_cp3_memory_accounting_test.c
+compile_run metal_core_cp3_real_dispatch tests/metal_core_cp3_real_dispatch_test.c "-lm"
+compile_run metal_core_cp3_real_vca_dispatch tests/metal_core_cp3_real_vca_dispatch_test.c "-lm"
+compile_run metal_core_osc_real_dispatch tests/metal_core_osc_real_dispatch_test.c "-lm"
+echo "CP3 host lifecycle lane: all 6 tests passed"
