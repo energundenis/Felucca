@@ -22,9 +22,9 @@ The branch-local source documents remain intact. This canonical register records
 
 ### Product and safety
 - Target: custom ENERGUN firmware for the physical M-VAVE FM-1, based on Felucca.
-- The factory M-VAVE V1.5 firmware remains protected.
+- The factory M-VAVE V1.5 firmware remains protected. **Accepted project premise (user-confirmed 2026-11-02): the factory firmware image already available to the project is 100% identical to the firmware on the user's physical FM-1. Treat this image as the exact factory baseline for this unit; do not schedule another device read solely to recreate that image.**
 - No physical device read, SysEx write, Flash write, firmware installation, bootloader operation or recovery operation has been performed by this consolidation.
-- A device-specific full-flash backup and verified recovery route are mandatory gates before any future write operation.
+- Before the first physical write, verify the integrity and availability of the accepted factory image and confirm a practical restore route. A second device dump is not a prerequisite under the accepted premise.
 - No production engine registration, persistent-format change, stable parameter-ID assignment or PR merge is authorized by this documentation update.
 
 ### Current project truth
@@ -32,7 +32,7 @@ The branch-local source documents remain intact. This canonical register records
 - CP2.23 is a passing VCA-only real-track integration harness, not a complete METAL CORE integration.
 - CP3 lifecycle tests and CP3 DSP/filter/platform workstreams are branch-local; exact-head CI and target qualification are not uniformly complete.
 - Sequencer V0.3 JSON/dry-run bridge is host/offline only; no physical device write has been validated.
-- Factory backup is a documented read-only plan; no user-device backup exists yet.
+- The separate Mac/M-Flasher two-read backup workflow is no longer an active development stream: it is superseded for planning purposes by the user-confirmed exact factory image already held by the project. Keep its technical notes as reference only; do not spend parallel development time on duplicate reads.
 
 ## 3. Approved sound and control semantics
 
@@ -109,18 +109,19 @@ Audited HEAD: `4d66cbf5d08f1abe33563fac8d288d9ff1561439`
 - Per-step Gate remains unresolved: P_SGATE is track-wide and Motion Lock support is not hardware-verified; 128 shared motion-record capacity must be audited.
 - No physical FM-1 read/write, SysEx write or live integration test has occurred.
 
-## 6. Factory backup and recovery
+## 6. Factory image and recovery gate
 
-Source branch: `fm1-factory-backup-plan-20261031`  
-Audited HEAD: `053129351fd951fe364ee01958cdf7dee94d0255`
+**Accepted premise, user-confirmed 2026-11-02:** the factory firmware image already available to the project is 100% identical to the firmware on the user's physical FM-1. It is therefore treated as the exact factory firmware baseline for this unit. No separate device read or duplicate two-read backup workflow is scheduled.
 
-The macOS M-Flasher 0.7.0 plan describes a read-only full 1 MiB factory V1.5 backup, two independent reads, byte/hash comparison and CRC verification. This is **preparation only**. The user's device has not been queried or backed up. Public dumps from other devices are not substitutes.
+The branch `fm1-factory-backup-plan-20261031` (audited HEAD `053129351fd951fe364ee01958cdf7dee94d0255`) and its macOS M-Flasher 0.7.0 procedure remain reference material only; the workflow is not an active parallel stream.
 
-Before any future device write, require:
-1. Two matching device-specific full-flash backups and metadata.
-2. A tested recovery path for this exact unit.
-3. Audited before/after region diff and exact write scope.
-4. Separate explicit user authorization.
+Before the first physical write, require:
+1. Verify the accepted factory image file is present, intact and preserved unchanged.
+2. Confirm a practical restore route for this FM-1 and the required tool/connection mode.
+3. Audit the exact before/after region diff and write scope.
+4. Obtain separate explicit user authorization.
+
+This is a pre-write safety checkpoint, not a separate development workstream. No device read or write is authorized by this decision.
 
 ## 7. Source branch inventory and provenance
 
@@ -147,7 +148,7 @@ Additional repositories referenced by the sequencer bridge:
 4. **CP1.4.3–4.4** — Private API/UI per-part read/write/display and P_MC Motion Lock whitelist/regression.
 5. **CP1.4.5–4.7** — Sidecar schema, capacity and A/B transaction/power-loss tests.
 6. **CP1.4.8–4.10** — project/preset integration, four stored projects, autosave, user presets, Backup/Restore and migration regression.
-7. **CP1.4.11** — physical Flash audit only after a device-specific full V1.5 dump and recovery constraints are available.
+7. **CP1.4.11** — physical Flash audit against the accepted exact factory image and known platform constraints; no new device dump is required under the user-confirmed premise. Resolve any device-specific non-firmware data/sector questions before write scope is approved.
 8. **Engine integration gate** — only after parameter ABI, lifecycle, DSP/filter, memory and target CPU gates pass; separate reviewable change and explicit approval before registration/merge.
 9. **Sequencer live integration** — only after read-only compatibility and device-specific recovery gates; resolve accent and Gate mapping separately.
 
@@ -157,7 +158,7 @@ This consolidation:
 - does not merge or cherry-pick any source branch;
 - does not register METAL CORE in production;
 - does not assign stable parameter IDs or change storage formats;
-- does not alter factory firmware or query/write the physical FM-1;
+- does not alter factory firmware or query/write the physical FM-1; the exact factory image is treated as already available per the user's confirmation;
 - does not authorize PR merge, firmware packaging or flashing.
 
 ## 10. Source documents
@@ -174,7 +175,7 @@ Key source records, with branch-local provenance:
 - FOLLOW / MOD RATIO: `metal-core-dsp-stage1-osc:docs/ENERGUN_METAL_CORE_FOLLOW_MOD_RATIO_DECISION_01.md`
 - CP3 host contract and memory: `energun-fm1-cp3-host-integration:docs/ENERGUN_METAL_CORE_CP3_0_HOST_CONTRACT_AUDIT.md`, `...CP3_1_STATE_MEMORY_ACCOUNTING.md`
 - Sequencer mapping: `fm1-dryrun-pattern-20261031:docs/ENERGUN_V03_FM1_PATTERN_MAPPING_AUDIT_02.md`
-- Factory backup: `fm1-factory-backup-plan-20261031:docs/FM1_FACTORY_V15_BACKUP_PLAN_MACOS.md`
+- Factory image/recovery reference (not an active stream): `fm1-factory-backup-plan-20261031:docs/FM1_FACTORY_V15_BACKUP_PLAN_MACOS.md`
 
 ---
 This register is the canonical cross-branch status snapshot as of 2026-11-02. If a source branch advances, update its audited HEAD and re-evaluate the affected decisions before treating its new contents as canonical.
