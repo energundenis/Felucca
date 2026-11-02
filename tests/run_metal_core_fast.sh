@@ -95,12 +95,15 @@ run_test metal_core_parameter_quantization
 compile_test_strict metal_core_parameter_inventory tests/metal_core_parameter_inventory_test.c
 run_test metal_core_parameter_inventory
 
-echo "== ENERGUN METAL CORE fast regression: all 20 tests passed"
+python3 tests/test_cp1_test_queue.py
+echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
+
+echo "== ENERGUN METAL CORE fast regression: all 21 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 20 focused host tests."
+        echo "Generated headers and compiled/executed all 21 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
