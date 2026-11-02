@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "registry_id": "ENERGUN-FM1-CODING-WORKERS",
+  "status": "registry-schema-only",
+  "policy": {
+    "require_isolated_branch": true,
+    "allow_main_write": false,
+    "allow_auto_merge": false,
+    "allow_physical_device_access": false,
+    "allow_flash_write": false,
+    "require_review": true,
+    "max_parallel_assignments": 2
+  },
+  "capability_catalog": [
+    "dsp",
+    "storage",
+    "firmware-integration",
+    "ui",
+    "sequencer",
+    "test-automation",
+    "ci-infrastructure",
+    "documentation",
+    "code-review"
+  ],
+  "workers": [],
+  "notes": [
+    "No external coding worker is currently registered or connected.",
+    "Do not add credentials or tokens to this file.",
+    "Worker identity and permissions must be provisioned outside untrusted pull-request code.",
+    "Workers must receive task-scoped paths and isolated feature branches."
+  ]
+}
