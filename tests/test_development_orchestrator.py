@@ -77,6 +77,23 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
         self.assertEqual(plan["available_slots"], 0)
 
 
+
+    def test_manifest_registers_cp2_cp3_worker_commands_and_sources(self):
+        root = Path(__file__).resolve().parents[1]
+        config = json.loads((root / "tests/cp0_cp7_development_orchestrator.json").read_text(encoding="utf-8"))
+        policy = config["execution_policy"]
+        allowed = {tuple(command) for command in policy["allowed_commands"]}
+        expected = {
+            "cp2-dsp-qualification": ("sh", "tests/run_cp2_dsp_qualification.sh"),
+            "cp3-host-lifecycle": ("sh", "tests/run_cp3_host_lifecycle.sh"),
+        }
+        for task_id, command in expected.items():
+            task_data = next(item for item in config["workstreams"] if item["id"] == task_id)
+            self.assertEqual(tuple(task_data["command"]), command)
+            self.assertIn(command, allowed)
+            self.assertTrue((root / command[1]).is_file())
+            self.assertEqual(task_data["depends_on"], ["cp0-baseline"])
+
     def test_cp2_cp3_dispatch_in_parallel_after_cp0_passes(self):
         data = manifest([
             task("cp0", "passed"),
