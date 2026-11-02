@@ -173,22 +173,22 @@ static void test_real_engine_memory_pool_contract(void)
                   part0 != part1 && sizeof(eng_mem[0].b) == ENG_MEM_PART);
 
     /* Re-exercise the production allocator's first-claim zeroing contract. */
-    memset(part0, 0xA5, ENG_METAL_VCA_PART_BYTES);
+    memset(part0, 0xA5, sizeof(eng_metal_vca_part_state_t));
     eng_mem_owner[0] = 0u;
     eng_mem_claim(&trk[0]);
     {
         int zero = 1;
-        for (i = 0; i < ENG_METAL_VCA_PART_BYTES; ++i)
+        for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
             zero &= part0[i] == 0u;
         cp3_vca_check("first engine claim zeroes the declared VCA state bytes", zero);
     }
 
     /* Same owner must retain its state instead of clearing it on every claim. */
-    memset(part0, 0x5Au, ENG_METAL_VCA_PART_BYTES);
+    memset(part0, 0x5Au, sizeof(eng_metal_vca_part_state_t));
     eng_mem_claim(&trk[0]);
     {
         int retained = 1;
-        for (i = 0; i < ENG_METAL_VCA_PART_BYTES; ++i)
+        for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
             retained &= part0[i] == 0x5Au;
         cp3_vca_check("reclaim by the same engine preserves its state", retained);
     }
@@ -200,9 +200,9 @@ static void test_real_engine_memory_pool_contract(void)
     eng_mem_claim(&trk[0]);
     {
         int cleared = 1, tail_kept = 1;
-        for (i = 0; i < ENG_METAL_VCA_PART_BYTES; ++i)
+        for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
             cleared &= part0[i] == 0u;
-        for (i = ENG_METAL_VCA_PART_BYTES; i < sizeof(eng_mem[0].b); ++i)
+        for (i = sizeof(eng_metal_vca_part_state_t); i < sizeof(eng_mem[0].b); ++i)
             tail_kept &= part0[i] == 0xA5u;
         cp3_vca_check("different engine claim clears only its declared mem bytes",
                       cleared && tail_kept);
