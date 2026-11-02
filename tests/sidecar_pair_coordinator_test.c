@@ -202,6 +202,10 @@ static energun_sc_pair_status_t commit(sim_context_t *ctx,
     memset(&request, 0, sizeof request);
     request.identity_kind = ENERGUN_SC_ID_PROJECT;
     request.identity_index = 0u;
+    /* The old Base has one legacy Motion event; the new Base has none.
+     * The new Sidecar may therefore occupy all 128 remaining pool slots.
+     */
+    request.current_base_motion_count = 1u;
     request.base_motion_count = 0u;
     request.base_payload = base_payload;
     request.base_payload_length = 300u;
