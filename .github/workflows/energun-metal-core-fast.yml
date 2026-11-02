@@ -71,6 +71,9 @@ jobs:
       - name: Test CP8 durable CI queue record invariants
         run: python3 tests/test_cp8_ci_queue.py
 
+      - name: Test CP8 durable Git-ref queue store and lease recovery
+        run: python3 tests/test_cp8_ci_queue_store.py
+
       - name: Test CP8 worker routing and safety policy
         run: python3 tests/test_cp8_dispatch_planner.py
 
