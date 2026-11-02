@@ -107,32 +107,42 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 
 ## 8. Implementation phases
 
-### Phase 1 — registry and contract (this change)
+### Phase 1 — registry and contract (complete)
 
-- Add the CP0–CP7 machine-readable workstream registry.
-- Document dependency, state, evidence, concurrency and safety rules.
-- Preserve existing CP1 scheduler and all current work branches.
+- Added the CP0–CP7 machine-readable workstream registry and dependency contract.
+- Preserved the existing CP1 queue and its manifest.
 
-### Phase 2 — global DAG scheduler
+### Phase 2 — global DAG planner and safe executor (initial slice implemented)
 
-- Implement a generic CP0–CP7 scheduler that consumes the registry.
-- Add unit tests for overlap, joins, max concurrency, blocked descendants, failure handling, cycles, evidence validation and deterministic reports.
-- Keep CP1 execution delegated to the existing CP1 runner; parse its report status rather than treating process exit zero as CP1 PASS.
-- Initially run in plan/report mode for all workstreams; enable execution only for audited commands.
+- Added `tests/run_development_orchestrator.py` to validate the registry and produce JSON/Markdown reports.
+- Added `--execute` with a bounded worker pool. It runs only exact argv entries in `execution_policy.allowed_commands`, uses `shell=False`, applies per-task timeouts and records results.
+- CP1 is the first registered executor. A zero process exit is not enough: the runner imports CP1's explicit JSON `PASS` / `BLOCKED` / `FAIL` result.
+- Added unit coverage for dependency waits, blocked descendants, max parallel, allow-list enforcement, shell-free invocation and refusing to execute tasks whose prerequisites have not passed.
+- The fast regression workflow invokes the executor and uploads its report.
+- CP0 remains `checking` until baseline evidence is tied to the exact candidate commit. Therefore CP1 is correctly held at the dependency gate; no CP1 command is dispatched by the global executor yet.
+- CP2 and CP3 are represented as independent workstreams, but have no separate registered executor commands yet. They are not falsely reported as running.
 
-### Phase 3 — unified CI dispatch
+### Phase 3 — unified CI dispatch (not complete)
 
-- Route CP1 fast regression, CP2 DSP checks, CP3 lifecycle checks and platform/build qualification through a common dispatcher or a shared concurrency controller.
-- Avoid duplicate execution of existing workflows.
-- Enforce one global concurrency budget and retain per-lane artifacts.
-- Add reproducible sequential-vs-parallel benchmarks using the same task set and commit.
+- Register separate CP2 DSP and CP3 lifecycle host-test commands.
+- Route the relevant checks through the shared dispatcher without duplicating the existing fast regression.
+- Add a global concurrency lock across workflows, task timing, critical-path and dependency-wait metrics.
+- Benchmark equivalent sequential and parallel task sets on the same commit.
 
-### Phase 4 — controlled work execution
+### Phase 4 — controlled implementation execution (not complete)
 
-- Add isolated branch/worktree execution for implementation tasks only where a real coding executor is available.
-- Require a task-specific scope, acceptance criteria, timeout, artifact list and rollback boundary.
+- Add isolated branch/worktree execution only when a real coding executor is available.
+- Require task scope, acceptance criteria, timeout, artifacts and rollback boundary.
 - Open reviewable PRs; never auto-merge.
 - Keep physical-device actions disabled.
+
+## 9. Current implementation status
+
+Implemented: CP0–CP7 registry, DAG validation/planning, bounded shell-free allow-listed command execution, CP1 report handoff, unit tests and fast-workflow integration.
+
+Not implemented: CP2/CP3 executor commands, automatic promotion of implementation tasks, a global concurrency lock across separate GitHub workflows, autonomous coding agents, persistent background workers, automatic branch/PR creation or automatic merges.
+
+A green workflow does not imply that every CP0–CP7 workstream is passed. Workstream status is determined by explicit evidence and dependency gates.
 
 ## 9. First acceptance criteria
 
