@@ -17,7 +17,7 @@ Start here:
 - **Private access / Motion Lock:** `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md` (source audit) and `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_MOTION_IMPLEMENTATION_DESIGN_DRAFT.md` (typed per-part cache, editor capability protocol, explicit P_MC whitelist and test matrix; design draft only, implementation open).
 - **Host VCA / sequencer lifecycle:** CP1.17–CP1.20 records, including final CI evidence in `ENERGUN_FM1_CORE_CP1_20_DEVELOPMENT_CHECKPOINT.md`.
 - **V98 behavior and V1 decisions:** CP1.5, CP1.8, CP1.12–CP1.16. Their source records currently remain in `energun-fm1-cp3-host-integration`; the canonical decisions are summarized in the cross-branch register.
-- **DSP / engine:** DSP Stage 1–7 and FOLLOW/MOD RATIO decision, source branch `metal-core-dsp-stage1-osc`. Latest sync commit `3bd73cec9f22bc9fb7f47afb3d2ba8f4160ca577`; branch ahead 88 / behind 0. Latest stage CI [41429773790](https://github.com/energundenis/Felucca/actions/runs/41429773790) PASS. Adapter remains unregistered in `ENGINES[]`.
+- **DSP / engine:** DSP Stage 1–7 and FOLLOW/MOD RATIO decision, source branch `metal-core-dsp-stage1-osc`. Latest documentation-resync commit `7b47c18556e94b60d66c40f2676fac4d91c4d2af`; branch was ahead 89 / behind 0 at verification. Latest stage CI [41430073973](https://github.com/energundenis/Felucca/actions/runs/41430073973) PASS. Adapter remains unregistered in `ENGINES[]`.
 - **VCA / lifecycle / memory:** CP2.23 and CP3.0/3.1, source branch `energun-fm1-cp3-host-integration`.
 - **Filter qualification:** `energun-fm1-cp3-dsp-filter`.
 - **AC79 / platform QA:** `energun-fm1-cp3-platform-qa`.
