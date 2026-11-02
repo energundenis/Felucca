@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from run_development_orchestrator import build_plan, load_and_validate
+from run_development_orchestrator import build_plan, load_and_validate, read_cp1_status
 
 
 def manifest(tasks, max_parallel=3):
@@ -73,6 +73,32 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
         plan = build_plan(data, ["a", "b", "c"])
         self.assertEqual(plan["dispatch_candidates"], ["a", "b"])
         self.assertEqual(plan["available_slots"], 0)
+
+    def test_cp1_pass_evidence_does_not_bypass_cp0_dependency(self):
+        data = manifest([
+            task("cp0-baseline", "checking"),
+            task("cp1-persistence", "ready", deps=["cp0-baseline"]),
+        ])
+        plan = build_plan(data, ["cp0-baseline", "cp1-persistence"], "PASS", "CP1 queue passed.")
+        states = {row["id"]: row["state"] for row in plan["workstreams"]}
+        self.assertEqual(states["cp1-persistence"], "WAITING")
+
+    def test_cp1_blocked_evidence_is_preserved(self):
+        data = manifest([task("cp1-persistence")])
+        plan = build_plan(data, ["cp1-persistence"], "BLOCKED", "Pair Commit Ordering is blocked.")
+        self.assertEqual(plan["workstreams"][0]["state"], "BLOCKED")
+        self.assertIn("Pair Commit Ordering", plan["workstreams"][0]["detail"])
+
+    def test_cp1_failed_evidence_is_preserved(self):
+        data = manifest([task("cp1-persistence")])
+        plan = build_plan(data, ["cp1-persistence"], "FAIL", "CP1 command failed.")
+        self.assertEqual(plan["workstreams"][0]["state"], "FAILED")
+
+    def test_cp1_report_status_is_read_from_evidence_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cp1-report.json"
+            path.write_text(json.dumps({"queue_id": "ENERGUN-FM1-CP1", "status": "BLOCKED"}), encoding="utf-8")
+            self.assertEqual(read_cp1_status(path), ("BLOCKED", "Imported explicit CP1 queue result: BLOCKED."))
 
 
 if __name__ == "__main__":
