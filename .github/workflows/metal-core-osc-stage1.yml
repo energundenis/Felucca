@@ -1,0 +1,66 @@
+name: METAL CORE OSC stage 1
+
+on:
+  push:
+    branches:
+      - metal-core-dsp-stage1-osc
+  pull_request:
+    branches:
+      - metal-core-dsp-stage1-osc
+  workflow_dispatch:
+
+jobs:
+  fixed-point-osc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Felucca and pinned submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Generate Felucca engine tables
+        run: |
+          mkdir -p build/gen
+          python3 tools/gen_tables.py build/gen/felucca_tables.h
+          python3 tools/gen_samples.py build/gen/felucca_samples.h
+          python3 tools/gen_fm6_patches.py build/gen/felucca_fm6.h
+      - name: Syntax-check complete Felucca engine translation unit
+        run: cc -w -std=c99 -Ibuild/gen -fsyntax-only tests/metal_engines_compile_test.c
+      - name: Compile isolated METAL CORE OSC test
+        run: |
+          cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_osc_test tests/metal_osc_test.c
+      - name: Run OSC tests
+        run: build/metal_osc_test
+      - name: Compile Complex Oscillator modulator tests
+        run: cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_fm_modulator_test tests/metal_fm_modulator_test.c
+      - name: Run Complex Oscillator modulator tests
+        run: build/metal_fm_modulator_test
+      - name: Compile Complex FM curve tests
+        run: cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_fm_curve_test tests/metal_fm_curve_test.c
+      - name: Run Complex FM curve tests
+        run: build/metal_fm_curve_test
+      - name: Compile audio-rate Complex FM tests
+        run: cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_complex_fm_test tests/metal_complex_fm_test.c
+      - name: Run audio-rate Complex FM tests
+        run: build/metal_complex_fm_test
+      - name: Compile feedback delay tests at 44.1 kHz
+        run: |
+          cc -O2 -w -std=c99 -Ibuild/gen -o build/metal_feedback_delay_test tests/metal_feedback_delay_test.c
+      - name: Run feedback delay tests at 44.1 kHz
+        run: build/metal_feedback_delay_test
+      - name: Generate 96 kHz engine tables
+        run: |
+          mkdir -p build/gen96
+          python3 firmware/engines/tools/gen_engine_tables.py --fs 96000 build/gen96/felucca_tables.h
+      - name: Compile Complex FM feedback route tests at 96 kHz
+        run: cc -O2 -w -std=c99 -Ibuild/gen96 -o build/metal_complex_fm_test_96 tests/metal_complex_fm_test.c
+      - name: Run Complex FM feedback route tests at 96 kHz
+        run: build/metal_complex_fm_test_96
+      - name: Compile feedback delay tests at 96 kHz
+        run: |
+          cc -O2 -w -std=c99 -Ibuild/gen96 -o build/metal_feedback_delay_test_96 tests/metal_feedback_delay_test.c
+      - name: Run feedback delay tests at 96 kHz
+        run: build/metal_feedback_delay_test_96

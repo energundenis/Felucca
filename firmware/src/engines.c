@@ -38,6 +38,8 @@ static uint8_t eng_mem_owner[NPART];       /* engine index + 1 whose state is in
 #include "eng_drum.c"           /* DRUM: the 8-lane kit (drum_voice.c) */
 #include "../engines/src/eng_noise.c"
 #include "eng_fm6.c"            /* FM6: 6-operator FM, msfa ported (fm6_core.c, Apache-2.0) */
+#include "eng_metal_core.c"     /* isolated ENERGUN METAL CORE DSP; not registered in ENGINES[] */
+#include "eng_metal_core_adapter.inc" /* host callback/lifecycle probe; descriptor remains unregistered */
 #include "fm4_convert.c"        /* DIGITAL's tables, and its sounds -> FM6 */
 #if FELUCCA_FM4
 #include "eng_digital.c"        /* DIGITAL: four-operator FM (retired; FELUCCA_FM4=1 builds it) */
