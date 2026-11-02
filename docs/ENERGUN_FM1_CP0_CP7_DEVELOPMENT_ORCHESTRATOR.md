@@ -120,13 +120,14 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 - Added unit coverage for dependency waits, blocked descendants, max parallel, allow-list enforcement, shell-free invocation, refusal to execute tasks whose prerequisites have not passed, and a barrier-based proof that independent executor workers overlap.
 - The fast regression workflow invokes the executor and uploads its report.
 - CP0 remains `checking` until baseline evidence is tied to the exact candidate commit. Therefore CP1 is correctly held at the dependency gate; no CP1 command is dispatched by the global executor yet.
-- CP2 and CP3 now have separate host-only scripts: `tests/run_cp2_dsp_qualification.sh` (8 focused DSP tests) and `tests/run_cp3_host_lifecycle.sh` (6 lifecycle/dispatch tests). Both commands are registered in the allow-list and can run beside CP1 in the three-worker pool after CP0 is passed.
-- The test suite includes a dispatch-gate check proving CP1, CP2 and CP3 become the three parallel candidates only after CP0 is passed.
+- CP2's eight listed host tests and CP3's six lifecycle/dispatch host tests are already compiled and executed by `tests/run_metal_core_fast.sh`. Separate CP2/CP3 worker scripts were therefore duplicate execution paths and have been removed from the registry, allow-list and repository.
+- CP2 and CP3 remain `checking` with no executor until their additional acceptance evidence is produced. Fast-regression host-test coverage is evidence for a subset only; it does not establish CP2 sample-rate/reference-vector, AC79 target/compiler and resource-budget qualification, nor CP3 production engine integration.
+- Unit tests now assert that CP2/CP3 are not dispatched as duplicate workers even after CP0 passes. CP1 remains the only registered child executor in this iteration.
 
 ### Phase 3 — unified CI dispatch (not complete)
 
-- Register separate CP2 DSP and CP3 lifecycle host-test commands.
-- Route the relevant checks through the shared dispatcher without duplicating the existing fast regression.
+- Route already-existing CP2/CP3 host-test coverage through the canonical fast regression only; add new executors only for genuinely new acceptance checks, not for tests already run in the fast lane.
+- Add dedicated CP2 reference-vector, sample-rate, target-compiler and resource-budget checks, and CP3 production-integration checks when their implementations and acceptance criteria are ready.
 - Add a global concurrency lock across workflows, task timing, critical-path and dependency-wait metrics.
 - Benchmark equivalent sequential and parallel task sets on the same commit.
 
@@ -139,7 +140,7 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 
 ## 9. Current implementation status
 
-Implemented: CP0–CP7 registry, DAG validation/planning, bounded shell-free allow-listed command execution, CP1 report handoff, unit tests and fast-workflow integration.
+Implemented: CP0–CP7 registry, DAG validation/planning, bounded shell-free allow-listed command execution, CP1 report handoff, duplicate CP2/CP3 host-worker removal, unit tests and fast-workflow integration.
 
 Not implemented: automatic CP0 evidence handoff from the separate baseline workflow, automatic promotion of implementation tasks, a global concurrency lock across separate GitHub workflows, autonomous coding agents, persistent background workers, automatic branch/PR creation or automatic merges.
 
