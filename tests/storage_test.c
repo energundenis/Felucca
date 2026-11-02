@@ -202,6 +202,69 @@ int main(void)
         bad += check("small destination rejects whole object", st_load(OBJ_PROJECT0, got, sizeof got - 1u) < 0 && got[0] == 'X');
         bad += check("oversized save rejected", st_save(OBJ_PROJECT0, a, ST_PAYLOAD_MAX + 1u) < 0);
     }
+    {
+        st_hdr_t h;
+        uint32_t obj = OBJ_PROJECT0 + 1u;
+        char old_data[32], new_data[32];
+        memset(old_data, 'O', sizeof old_data);
+        memset(new_data, 'N', sizeof new_data);
+        memset(nor, 0xFF, sizeof nor);
+        bad += check("header integrity fixture saves both copies",
+                     st_save(obj, old_data, sizeof old_data) == 0 &&
+                     st_save(obj, new_data, sizeof new_data) == 0);
+        /* A bad header CRC must make the newer copy ineligible and preserve the older copy. */
+        memcpy(&h, nor + st_sector(obj, 1), sizeof h);
+        h.hcrc ^= 1u;
+        memcpy(nor + st_sector(obj, 1), &h, sizeof h);
+        n = st_load(obj, got, sizeof got);
+        bad += check("bad newest header CRC falls back to older valid copy",
+                     n == (int)sizeof old_data && !memcmp(got, old_data, sizeof old_data));
+    }
+    {
+        st_hdr_t h;
+        uint32_t obj = OBJ_PROJECT0 + 1u;
+        char old_data[32], new_data[32];
+        memset(old_data, 'L', sizeof old_data);
+        memset(new_data, 'H', sizeof new_data);
+        memset(nor, 0xFF, sizeof nor);
+        bad += check("length-boundary fixture saves both copies",
+                     st_save(obj, old_data, sizeof old_data) == 0 &&
+                     st_save(obj, new_data, sizeof new_data) == 0);
+        memcpy(&h, nor + st_sector(obj, 1), sizeof h);
+        h.len = ST_PAYLOAD_MAX + 1u;
+        h.hcrc = st_crc32(&h, sizeof h - 4u);
+        memcpy(nor + st_sector(obj, 1), &h, sizeof h);
+        n = st_load(obj, got, sizeof got);
+        bad += check("oversized committed header is rejected with older-copy fallback",
+                     n == (int)sizeof old_data && !memcmp(got, old_data, sizeof old_data));
+    }
+    {
+        uint32_t obj = OBJ_PROJECT0 + 1u;
+        st_hdr_t a_hdr, b_hdr;
+        char a_data[16], b_data[16];
+        memset(a_data, 'A', sizeof a_data);
+        memset(b_data, 'B', sizeof b_data);
+        memset(nor, 0xFF, sizeof nor);
+        bad += check("sequence-tie fixture saves both copies",
+                     st_save(obj, a_data, sizeof a_data) == 0 &&
+                     st_save(obj, b_data, sizeof b_data) == 0);
+        memcpy(&a_hdr, nor + st_sector(obj, 0), sizeof a_hdr);
+        memcpy(&b_hdr, nor + st_sector(obj, 1), sizeof b_hdr);
+        b_hdr.seq = a_hdr.seq;
+        b_hdr.hcrc = st_crc32(&b_hdr, sizeof b_hdr - 4u);
+        memcpy(nor + st_sector(obj, 1), &b_hdr, sizeof b_hdr);
+        n = st_load(obj, got, sizeof got);
+        bad += check("equal valid sequences deterministically prefer copy A",
+                     n == (int)sizeof a_data && !memcmp(got, a_data, sizeof a_data));
+    }
+    {
+        uint32_t obj = OBJ_PROJECT0 + 1u;
+        char empty[1], got_empty[1];
+        (void)empty;
+        memset(nor, 0xFF, sizeof nor);
+        bad += check("zero-length object commits and reloads",
+                     st_save(obj, got_empty, 0u) == 0 && st_load(obj, got_empty, sizeof got_empty) == 0);
+    }
     printf("%s\n", bad ? "STORAGE TEST FAILED" : "storage test passed");
     return bad != 0;
 }
