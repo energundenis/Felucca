@@ -274,3 +274,10 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - The existing real VCA dispatch test calls production `eng_mem_claim()` and declares `engine_t.mem=288`, but its VCA callbacks actually use a separate `cp3_test_mem[]` array rather than `ENG_MEM(p)`.
 - Thus the current test does not yet prove VCA state placement/isolation in Felucca's actual per-part engine-memory pool. This is a test-evidence limitation, not a production defect.
 - Next safe increment: route the test state into `ENG_MEM(p)`, reset the pool/owner only in host setup, and verify per-part isolation plus real claim/zero/retention behavior. No engine ID or production memory layout change is needed.
+
+
+### CP3.1 VCA state now backed by real Felucca engine memory — 2026-11-02
+- Updated `tests/metal_core_cp3_real_vca_dispatch_test.c`: VCA callbacks now read/write the actual `ENG_MEM(p)` pool, not a duplicate test array.
+- Added five assertions for pool identity, per-part separation, first-claim zeroing, same-owner retention and exact-range clearing on owner change.
+- Fast CI [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) PASS on code HEAD `33327eb`; all 17 focused test programs passed, including all five new assertions.
+- This closes only host evidence for VCA's 288-byte per-part backing. The full METAL CORE state layout, target linker map, AC79 CPU/memory qualification and hardware remain open. Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) is still in progress.
