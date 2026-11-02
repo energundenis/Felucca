@@ -98,7 +98,7 @@ static int sc_private_value_valid(unsigned int key, uint8_t value)
 static energun_sc_status_t sc_validate_project(
     const uint8_t *payload, uint16_t length, uint16_t base_motion_count)
 {
-    unsigned int i, j, k;
+    unsigned int i, j;
     uint8_t motion_count;
 
     if (length < SC_PROJECT_MOTION_OFF)
@@ -149,10 +149,6 @@ static energun_sc_status_t sc_validate_project(
             const uint8_t *prior = payload + SC_PROJECT_MOTION_OFF + j * 3u;
             if (prior[0] == place && (prior[1] & 0x7Fu) == (param & 0x7Fu))
                 return ENERGUN_SC_ERR_MOTION_EVENT;
-        }
-        /* Keep the loop arithmetic explicitly bounded for static analyzers. */
-        for (k = 0; k < 1u; ++k) {
-            (void)k;
         }
     }
     return ENERGUN_SC_OK;
