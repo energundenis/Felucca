@@ -268,3 +268,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - CP1.4.2 compatibility tests now include the old-FUN10 rejection of an expanded parameter count and old-firmware mapping of a 127-value user-preset record: 16 inserted P_MC values are skipped and the final E0..E7 values are retained. The fixture uses the existing `ENGI_SAMPLE` constant; it does not allocate an engine ID.
 - Earlier full-baseline attempt [41408456680](https://github.com/energundenis/Felucca/actions/runs/41408456680) failed while compiling the new preset test because it referred to nonexistent symbol `ENGI_FM6`. This was a test-fixture compile error, not a firmware build or target-compiler failure. The fixture was corrected in commit `baaf8b1106bce93377dfda692423d5b363d657c4`.
 - Full-baseline rerun [41408630704](https://github.com/energundenis/Felucca/actions/runs/41408630704) on the corrected code HEAD has passed the unmodified firmware build and AC79 VCA compile-only probe; the host/web regression step was still running when this note was recorded. No full-baseline pass is claimed yet.
+
+
+### CP3.1 real engine-memory backing gap — source audit, 2026-11-02
+- The existing real VCA dispatch test calls production `eng_mem_claim()` and declares `engine_t.mem=288`, but its VCA callbacks actually use a separate `cp3_test_mem[]` array rather than `ENG_MEM(p)`.
+- Thus the current test does not yet prove VCA state placement/isolation in Felucca's actual per-part engine-memory pool. This is a test-evidence limitation, not a production defect.
+- Next safe increment: route the test state into `ENG_MEM(p)`, reset the pool/owner only in host setup, and verify per-part isolation plus real claim/zero/retention behavior. No engine ID or production memory layout change is needed.

@@ -331,3 +331,23 @@ near / far interpolation weights = 21203 / 32768 and 11565 / 32768
 This supersedes the earlier provisional 44,100 Hz / 132.3-sample assumption in Sections 13 and 15. The 133-slot ring capacity and 532-byte per-voice storage do not change, but the interpolation split changes from 0.7 / 0.3 to approximately 0.64706 / 0.35294. The host candidate header and impulse assertions have been corrected accordingly.
 
 The audio source constant is stronger evidence than the earlier `HALF_FRAMES` comment, but remains a source-derived nominal rate rather than a measured runtime clock on physical hardware. The production delay candidate remains host-only and unapproved: AC79 code-generation review, production arithmetic saturation/overflow tests, v98 response comparison and actual callback CPU timing are still required.
+
+
+## 20. CP3.0 VCA dispatch test backing-store audit — 2026-11-02
+
+A source review of `tests/metal_core_cp3_real_vca_dispatch_test.c` found an important boundary in the existing host evidence:
+
+- The private descriptor declares `engine_t.mem = 288` and `cp3_vca_init()` calls the real `eng_mem_claim(&trk[p])` for all four parts.
+- However, the test's `cp3_part_state()` currently returns a separate test-only `cp3_test_mem[p].bytes` array (13,344 bytes per part), not the production `ENG_MEM(p)` pool declared in `firmware/src/engines.c`.
+- Therefore the test exercises the real host allocator/render/switch lifecycle and invokes the real memory-claim function, but its VCA callback state is not yet backed by the actual Felucca engine-memory pool. Its current cross-part state-isolation assertions are against the test array, not the production pool.
+- The source-defined production pool is `ENG_MEM_PART=12888` bytes with ADPCM disabled and `13344` bytes with ADPCM enabled. `ENG_MEM(p)`, `eng_mem_owner[]` and `eng_mem_claim()` are visible to a host test that includes `tests/hostsim.c` in the same translation unit.
+
+### Next safe CP3.1 implementation increment
+
+1. Change the host VCA dispatch test's part-state accessor to use the real `ENG_MEM(p)` region; remove the duplicate `cp3_test_mem[]` backing array.
+2. Reset `eng_mem[]` and `eng_mem_owner[]` only inside the isolated host-test setup, then exercise the production `eng_mem_claim()` path.
+3. Assert distinct part regions, zero-on-first-claim, preservation when the same engine retains ownership, and zeroing of the declared byte range when a different memory-owning descriptor claims the part.
+4. Keep the descriptor private and use only already-defined test slots; do not register METAL CORE or assign an engine ID.
+5. Run focused and full regression. This will prove the host VCA state can occupy the real per-part engine-memory pool, but still will not establish the final complete METAL CORE state layout or AC79 runtime cost.
+
+This is a newly identified test-coverage gap, not a production firmware defect. No source behavior or memory layout was changed by this audit.
