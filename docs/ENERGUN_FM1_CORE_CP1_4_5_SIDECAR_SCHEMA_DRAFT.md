@@ -97,10 +97,10 @@ The current `st_current()` helper chooses the newest valid copy without a base-s
 
 ### 5.2 Save ordering
 
-When a base project or preset bank changes together with its extension:
-1. Snapshot the complete extension and validate it.
+When a base project or preset bank changes, even if the Private/P_MC values themselves did not change:
+1. Snapshot the complete current extension and validate it; carry forward unchanged values/events as well as edits.
 2. Determine the next sequence the base object will receive.
-3. Write the extension to its inactive A/B copy, tagged with that next base sequence; verify its outer commit record and payload.
+3. Write the complete extension to its inactive A/B copy, tagged with that next base sequence; verify its outer commit record and payload.
 4. Commit the new base object to its inactive A/B copy, receiving the tagged sequence.
 5. Read back both and verify that the current base sequence and selected Sidecar binding match.
 
@@ -110,7 +110,7 @@ Power-cut behavior:
 - Cut after base commit: new base selects the new matching Sidecar.
 - A torn base commit leaves the previous base sequence active, which continues matching the previous Sidecar copy.
 
-For an extension-only edit with no base-object change, write the new Sidecar copy tagged with the current base sequence; no unnecessary base rewrite is required.
+For an extension-only edit with no base-object change, write the new Sidecar copy tagged with the current base sequence; no unnecessary base rewrite is required. Conversely, every base-object rewrite must rebind the complete current Sidecar snapshot to the next base sequence, or the loader will correctly treat the old extension as stale.
 
 ### 5.3 Required storage-layer additions
 
