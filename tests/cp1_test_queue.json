@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently after storage/FM6 foundations; A/B selection joins both; pair ordering and power-loss matrix then run as dependent stages.",
+  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently after storage/FM6 foundations; A/B selection joins both; pair ordering and power-loss matrix then run as dependent stages, followed by exact-generation reader validation.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -85,15 +85,27 @@
       "enable_when": "Pair transaction ordering stage passes and every injected power-loss case recovers a coherent pair."
     },
     {
+      "id": "sidecar-read-validation",
+      "title": "Exact-generation Sidecar reader validation",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "pair-power-loss"
+      ],
+      "command": "sh tests/run_sidecar_reader_test.sh",
+      "blocker": "The reusable reader API returns only the newest semantically valid Sidecar bound to the exact selected Base sequence and payload CRC. Strict host tests cover stale/orphan exclusion, storage-CRC gate, semantic rejection, sequence wrap/tie, no-match and Motion pool bounds.",
+      "enable_when": "Exact-generation reader API and focused strict host acceptance suite committed together."
+    },
+    {
       "id": "sidecar-integrity",
       "title": "Sidecar CRC, schema and semantic integrity",
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "pair-power-loss"
+        "sidecar-read-validation"
       ],
       "command": null,
-      "blocker": "Production Sidecar reader/validator and frozen envelope are not implemented. Do not treat outer storage CRC alone as semantic validation."
+      "blocker": "Reader selection and semantic validation are now independently host-tested. Full integrity acceptance remains blocked until the V1 envelope/ABI and P_MC ID whitelist are frozen and the reader is wired to a production storage backend. Do not treat outer storage CRC alone as semantic validation."
     },
     {
       "id": "pair-recovery-roundtrip",
