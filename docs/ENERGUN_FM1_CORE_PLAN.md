@@ -846,3 +846,9 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Rechecked `upreset.c` and the 144-byte packed parameter capacity: P_COUNT=127 fits in the ordinary user-preset base record. P_MC therefore remains in the base user-preset record; only the 13 Private values per slot require Sidecar extension storage.
 - Corrected user-preset bank Sidecar estimate from 464 to **208 value bytes** (16 slots × 13 Private values), plus slot bitmap/envelope. Project Sidecar estimate remains 501 bytes including up to 128 P_MC motion records.
 - Existing count-based preset migration uses the final eight stored values as E0–E7, so older firmware can map those final eight back to its current E positions and ignore the inserted P_MC common values. This expected 127-count cross-version path still requires an exact fixture; no production code changed.
+
+
+## CP1.4.2 / CP3 focused regression update — 2026-11-02
+- Added the real host `track_render()` / `voice_start()` OSC dispatch test to the focused suite; the suite now runs 17 tests.
+- Fast CI [41408456648](https://github.com/energundenis/Felucca/actions/runs/41408456648) SUCCESS on code HEAD `992e4591629277d9952fc76610928972e515a6f0`; 17/17 tests passed. CP1.4.2 quantization reference: 0 failures across 30 controls.
+- Full baseline for this exact HEAD remains pending.
