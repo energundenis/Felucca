@@ -52,12 +52,13 @@
       "id": "sidecar-ab-selection",
       "title": "Sidecar A/B matching-copy selection",
       "kind": "executable-host-test",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
         "base-generation-binding"
       ],
-      "command": null,
-      "blocker": "Production dual-copy inspection and matching-copy selection are not implemented. Include orphan/future/stale candidates and sequence wrap/tie cases."
+      "command": "sh tests/run_sidecar_ab_selection_test.sh",
+      "blocker": "Implemented explicit validated A/B copy reads in storage.c and orphan-aware Sidecar selector. Host acceptance covers exact Base match, orphan/stale candidates, matching-vs-newest distinction, wrap/tie, malformed records, outer CRC rejection and no-valid-copy initialization.",
+      "enable_when": "Real explicit A/B copy reader, selector and simulated-NOR acceptance test committed together."
     },
     {
       "id": "pair-commit-order",
