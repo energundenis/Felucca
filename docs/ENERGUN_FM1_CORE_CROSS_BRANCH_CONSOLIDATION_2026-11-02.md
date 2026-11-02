@@ -161,7 +161,7 @@ Additional repositories referenced by the sequencer bridge:
 - Updated map: `docs/ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`.
 
 ### CP1.4.2 compatibility audit
-- Added `docs/ENERGUN_FM1_CORE_CP1_4_2_COMPATIBILITY_AUDIT.md`.
+- Added `docs/ENERGUN_FM1_CORE_CP1_4_2_COMPATIBILITY_AUDIT.md` and `docs/ENERGUN_FM1_CORE_CP1_4_2_PARAMETER_CONVERSION_TABLE_DRAFT.md`.
 - Confirmed `P_COUNT=111`, `P_E0=103`; 16 common IDs would yield `P_COUNT=127`, `P_E0=119`, within the 7-bit ID ceiling but consuming all common-ID headroom.
 - Count-based migration preserves the final eight E values and corresponding motion IDs. FUN10 rejects `np > P_COUNT`; naive 127-value project writes would be unreadable by the factory firmware and exceed the fixed 3840-byte project object.
 - Recommended compatibility strategy for review: keep base FUN10 at legacy `np=111` and pair P_MC/private values in a sidecar. This is a proposal, not approved implementation.
