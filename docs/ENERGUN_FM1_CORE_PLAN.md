@@ -798,3 +798,13 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - The naive option of serializing all 127 runtime parameters into FUN10 is invalid: the main object is fixed at 3840 bytes and older firmware rejects `np > P_COUNT`. A base-compatible FUN10 (`np=111`) plus matching extension sidecar is recommended for review, not yet approved or implemented.
 - User presets are stored in two banks of 16 slots. The 13 Private values must be persisted for all 32 presets, not just four stored projects plus live autosave. If separate preset-bank sidecars are used, logical sidecar scope grows to seven identities × A/B = 14 sectors. This is capacity planning only; no Flash sectors are selected.
 - CP1.4.2 remains OPEN. No stable IDs or binary encoding are assigned pending the resolution policy, E0–E7 conflict, user-preset extension and regression design.
+
+
+## CP1.4.2 execution update — host quantization reference (2026-11-02)
+
+- Added `tests/metal_core_parameter_quantization_test.c`, a host-only C reference for all 30 continuous V1 controls, with verified v98 source-step metadata.
+- Added strict compilation/execution to `tests/run_metal_core_fast.sh`; focused suite now runs 16 tests.
+- Source-step coverage: 9,434 declared boundary values across 30 controls. The test checks exact endpoints, exhaustive legal-code round trips, decoded range, monotonicity across 10,001 points, source-step boundary monotonicity, defaults and invalid/non-finite inputs.
+- Fast CI run [41404580795](https://github.com/energundenis/Felucca/actions/runs/41404580795) passed on code HEAD `29125b419a83b10965036d85ab7b313755dcd1eb`; 16/16 tests passed. The corrected FOLD SYMMETRY mapping uses the existing Felucca signed bipolar descriptor range -64..63, piecewise centered so physical zero maps to code 0.
+- Source audit distinguished the generic FUN10 serialized value range (-64..127, stored as value+64) from the existing bipolar descriptor range (-64..63). Do not use the 192-value container range as if it were a signed 7-bit bipolar descriptor.
+- CP1.4.2 remains OPEN: per-control error acceptance limits and exact legacy project/preset compatibility fixtures remain outstanding. Full baseline CI for the corrected code HEAD is pending. No production firmware source or binary format changed.
