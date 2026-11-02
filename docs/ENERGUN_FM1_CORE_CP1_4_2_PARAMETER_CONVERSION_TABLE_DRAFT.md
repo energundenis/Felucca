@@ -96,7 +96,7 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 - Added `tests/metal_core_parameter_quantization_test.c` as a standalone C host oracle; it is not linked into firmware and does not assign IDs or persistence ABI.
 - Added it to `tests/run_metal_core_fast.sh` as strict C11 / `-Wall -Wextra -Werror` compilation and execution.
 - Coverage: 30 continuous controls; expected default codes; exact endpoints; exhaustive encode(decode(code)) for all 128 unipolar or 192 bipolar codes; decoded-range checks; 10,001-point monotonicity sweep; invalid/non-finite input rejection; absolute/relative/default quantization error metrics.
-- FOLD SYMMETRY's signed domain has 192 codes and therefore an even number of code points: zero cannot be represented exactly. The provisional mapping selects code 32 (decoded approximately +0.00524); code 33 is the equally close negative-side neighbor. This is now an explicit design observation, not a silent assumption.
+- FOLD SYMMETRY's signed domain has 192 codes and therefore an even number of code points: zero cannot be represented exactly. The provisional mapping selects code 32 (decoded approximately +0.00524); code 31 is the equally close negative-side neighbor. This is now an explicit design observation, not a silent assumption.
 - The first run is pending. Error metrics are reported for review; numerical acceptance thresholds are intentionally not invented before inspecting results and source-step/perceptual priorities.
 - Source step-boundary tests are not yet included because the full per-control source-step metadata has not yet been added to this conversion table. They remain a closure requirement.
 
