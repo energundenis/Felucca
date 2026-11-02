@@ -79,12 +79,15 @@ run_test metal_core_follow
 compile_test metal_core_follow_host tests/metal_core_follow_host_test.c
 run_test metal_core_follow_host
 
-echo "== ENERGUN METAL CORE fast regression: all 15 tests passed"
+compile_test_strict metal_core_parameter_quantization tests/metal_core_parameter_quantization_test.c -lm
+run_test metal_core_parameter_quantization
+
+echo "== ENERGUN METAL CORE fast regression: all 16 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 15 focused host tests."
+        echo "Generated headers and compiled/executed all 16 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
