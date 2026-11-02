@@ -152,7 +152,7 @@ energun_sc_pair_status_t energun_sc_pair_commit(
     rc = sc_pair_select(
         candidates, request->identity_kind, request->identity_index,
         base.valid, base.sequence, base.payload_crc32,
-        request->base_motion_count, &selection);
+        request->current_base_motion_count, &selection);
     if (rc != ENERGUN_SC_OK)
         return sc_pair_finish(coordinator, ENERGUN_SC_PAIR_ERR_SELECT);
 
