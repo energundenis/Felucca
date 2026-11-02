@@ -44,14 +44,27 @@ Every request must record:
 - Repeated requests for the same idempotency key must not start duplicate builds.
 - Newer commits may supersede older unstarted requests for the same ref/lane, but this policy must be explicit and recorded; different PRs must not silently supersede one another.
 
-## Phase 1 implementation note (2026-11-03)\n\nAdded `tests/cp8_ci_queue.py` and `tests/test_cp8_ci_queue.py`. The validator enforces a fixed lane allow-list, deterministic idempotency identity over repository + sorted lane set + ref + exact 40-character commit SHA, explicit queue states, claim ownership and lease timestamp ordering, exact-SHA PASS evidence, and legal state transitions. It is intentionally storage-agnostic and has no GitHub write permissions or execution side effects. The fast-regression workflow now runs these unit tests. This does **not** implement durable persistence, atomic claims, a coordinator, or a global lock.\n\n## Required implementation phases
+## Phase 1 implementation note (2026-11-03)\n\nAdded `tests/cp8_ci_queue.py` and `tests/test_cp8_ci_queue.py`. The validator enforces a fixed lane allow-list, deterministic idempotency identity over repository + sorted lane set + ref + exact 40-character commit SHA, explicit queue states, claim ownership and lease timestamp ordering, exact-SHA PASS evidence, and legal state transitions. It is intentionally storage-agnostic and has no GitHub write permissions or execution side effects. The fast-regression workflow now runs these unit tests. This does **not** implement durable persistence, atomic claims, a coordinator, or a global lock.\n\n## Phase 2 implementation note (2026-11-03)
 
-1. Add a queue-record schema and validation tests.
-2. Implement durable request creation and idempotency.
-3. Implement the single coordinator and periodic reconciliation.
+Added `tests/cp8_ci_queue_store.py` and `tests/test_cp8_ci_queue_store.py`.
+
+- The durable ledger is a single JSON blob at `queue/ledger.json` on a dedicated data branch (`energun-ci-queue` by default), separate from source branches and current CI triggers.
+- Writers read the exact branch head, create a new blob/tree/commit with that head as parent, then update the ref with `force: false`. A competing commit based on the same old head is non-fast-forward and must retry from the new head; no force-push is used.
+- Enqueue is idempotent on repository + sorted lane set + ref + exact SHA.
+- Claims are exclusive, bound to workflow/run identity, heartbeat-extended, and recoverable only after lease expiry.
+- PASS requires evidence URLs and the exact requested SHA. Owner mismatch and expired-lease heartbeats are rejected.
+- Unit tests simulate competing writers and claimants. This is not yet a live GitHub integration test.
+
+The store is **not wired into either existing workflow**. No queue branch is provisioned by this change, no write token is granted to pull-request code, and no global CI lock is enabled. A trusted coordinator integration and live Git-ref contention test remain required.
+
+## Required implementation phases
+
+1. [x] Add a queue-record schema and validation tests.
+2. [x] Implement the Git-ref ledger adapter, enqueue idempotency, claim/heartbeat/finish and lease-recovery primitives with simulated contention tests.
+3. Implement a trusted single coordinator and periodic reconciliation.
 4. Route fast-regression and baseline lanes through the coordinator; prevent direct expensive execution outside approved manual recovery.
-5. Implement lease expiry, recovery, timeout and cancellation handling.
-6. Prove mutual exclusion, no lost requests, no duplicate execution and exact-SHA evidence using integration tests.
+5. Implement lease expiry, recovery, timeout and cancellation handling in the live coordinator.
+6. Prove mutual exclusion, no lost requests, no duplicate execution and exact-SHA evidence using live GitHub integration tests.
 
 ## Security boundaries
 
