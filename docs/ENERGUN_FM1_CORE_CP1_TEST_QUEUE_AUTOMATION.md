@@ -62,8 +62,8 @@ When a stage is implemented, the same work unit must add its executable test and
 ## Sidecar Format stage now enabled (2026-11-02)
 
 - Stage `sidecar-format` is `ready` in `tests/cp1_test_queue.json` and runs `sh tests/run_sidecar_v1_test.sh` after the existing Storage A/B and FM6 staging prerequisites.
-- Verified workflow: [41458503150](https://github.com/energundenis/Felucca/actions/runs/41458503150), exact tested code commit `8d19ad63e19443dbd38bb631b424945956f58a3a`, **SUCCESS**.
-- Strict C11 compile (`-Wall -Wextra -Werror`) passed; Sidecar V1 acceptance suite: **35 checks, 0 failures**.
+- Verified workflow: [41459497619](https://github.com/energundenis/Felucca/actions/runs/41459497619), exact tested code commit `eecb9c37f2022640c9568985339d580ca21317a5`, **SUCCESS**.
+- Strict C11 compile (`-Wall -Wextra -Werror`) passed; Sidecar V1 acceptance suite: **38 checks, 0 failures**.
 - Queue outcome: Storage A/B PASS → FM6 staging/recovery PASS → Sidecar Format PASS → BLOCKED at Base-generation binding. This is expected because the production sequence-aware Base metadata reader has not been implemented. All later dependent stages remain blocked.
 - The Sidecar V1 module is host-tested and storage-independent. It is not yet connected to `storage.c`, project/preset/autosave call sites or physical Flash.
 
