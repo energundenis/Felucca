@@ -831,7 +831,7 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 
 - Added `docs/ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_SCHEMA_DRAFT.md`.
 - Seven logical identities: four project slots, live autosave, two user-preset banks; each requires an A/B pair (14 logical copies).
-- Estimated maximum project payload: 501 bytes (116 parameter values + one count byte + up to 128 P_MC motion records at 3 bytes each). User-preset bank extension: 464 value bytes plus bitmap/envelope.
+- Estimated maximum project payload: 501 bytes (116 parameter values + one count byte + up to 128 P_MC motion records at 3 bytes each). User-preset bank extension: 208 Private-value bytes plus bitmap/envelope; P_MC remains in the 144-byte base preset record (P_COUNT=127 fits).
 - Identified base-object sequence binding as necessary because current storage A/B sequence is independent per object. Sidecar must be written/rebound to the next base sequence before every base rewrite; loader must search both Sidecar copies for an exact base-sequence match.
 - This is a logical design draft only. No storage source, object IDs, binary ABI, sector addresses or Flash allocations changed. CP1.4.5 not frozen; CP1.4.6–4.11 remain open.
 
@@ -840,3 +840,9 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 
 - Full baseline CI [41406252564](https://github.com/energundenis/Felucca/actions/runs/41406252564) also completed SUCCESS on the same code HEAD `89528e4948b58b98232543014d805ec3bd306616`: unmodified Felucca firmware build, AC79 target-compiler VCA probe, all host/web regressions and artifact upload completed. Artifact [energum-fm1-baseline-89528e4948b58b98232543014d805ec3bd306616.zip](https://github.com/energundenis/Felucca/actions/runs/41406252564/artifacts/13124032492), SHA-256 `209f57ff896b4dff66c5be24b9f7c570c2ddc7b371b935192247229199660ef1`.
 - This is baseline/toolchain/regression evidence only. It does not register/build METAL CORE as a production engine, qualify its complete DSP graph on AC79, or validate hardware behavior.
+
+
+### CP1.4.5 user-preset capacity correction — 2026-11-02
+- Rechecked `upreset.c` and the 144-byte packed parameter capacity: P_COUNT=127 fits in the ordinary user-preset base record. P_MC therefore remains in the base user-preset record; only the 13 Private values per slot require Sidecar extension storage.
+- Corrected user-preset bank Sidecar estimate from 464 to **208 value bytes** (16 slots × 13 Private values), plus slot bitmap/envelope. Project Sidecar estimate remains 501 bytes including up to 128 P_MC motion records.
+- Existing count-based preset migration uses the final eight stored values as E0–E7, so older firmware can map those final eight back to its current E positions and ignore the inserted P_MC common values. This expected 127-count cross-version path still requires an exact fixture; no production code changed.
