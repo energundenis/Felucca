@@ -335,11 +335,18 @@ static void test_guards(void)
         init == 0 && commit(&ctx,&coordinator,&workspace,new_base,new_sc,501u,5u)
             == ENERGUN_SC_PAIR_OK && ctx.nested_result == ENERGUN_SC_PAIR_ERR_BUSY);
 }
-int main(void)
+int main(int argc, char **argv)
 {
-    test_success();
-    test_power_cuts();
-    test_guards();
+    if (argc == 2 && strcmp(argv[1], "--ordering") == 0) {
+        test_success();
+        test_guards();
+    } else if (argc == 2 && strcmp(argv[1], "--power-loss") == 0) {
+        test_power_cuts();
+    } else {
+        test_success();
+        test_power_cuts();
+        test_guards();
+    }
     printf("sidecar pair: %s (%u checks, %u failures)\n",
         failures ? "FAIL" : "PASS", checks, failures);
     return failures ? 1 : 0;
