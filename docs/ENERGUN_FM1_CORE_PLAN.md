@@ -817,3 +817,11 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Fast CI [41406252578](https://github.com/energundenis/Felucca/actions/runs/41406252578) SUCCESS on code HEAD `89528e4948b58b98232543014d805ec3bd306616`; all 16 focused tests passed, 0 quantization-reference failures.
 - Maximum measured logarithmic relative error: 2.7569% (ATTACK/FM ENV ATTACK). Linear error is bounded at 0.5/127 of full scale; bipolar FOLD SYMMETRY at 0.5/63 absolute units. These are mathematical quantizer bounds, not musical acceptance/sign-off.
 - CP1.4.2 remains OPEN for review of musical resolution, base-compatible FUN10 migration, user-preset sidecar scope and exact expanded-count compatibility fixtures.
+
+
+## CP1.4.3 / CP1.4.4 design draft update — 2026-11-02
+
+- Added `docs/ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_MOTION_IMPLEMENTATION_DESIGN_DRAFT.md`.
+- CP1.4.3 now has a proposed typed per-part runtime cache/access contract, lifecycle, generation-aware persistence handoff and capability-probed editor/UI model.
+- CP1.4.4 now has a proposed explicit P_MC whitelist, common value conversion, global 128-record merged motion capacity and regression matrix.
+- Design remains symbolic: no numeric IDs, editor command numbers, UI page IDs, Sidecar fields, Flash sectors or production code were assigned/changed. CP1.4.3/4.4 remain OPEN pending map, encoding and Sidecar dependencies.
