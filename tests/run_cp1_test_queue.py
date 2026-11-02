@@ -113,6 +113,7 @@ def main() -> int:
                 rows.append(row)
                 results[sid] = "FAIL"
                 overall = "FAIL"
+                blocked_at = sid
                 break
             evidence = evidence_path.read_text(encoding="utf-8", errors="replace")
             if not needle or needle not in evidence:
@@ -151,12 +152,25 @@ def main() -> int:
             rows.append(row)
             results[sid] = "FAIL"
             overall = "FAIL"
+            blocked_at = sid
             print(f"::error::CP1 queue stage {sid} failed.")
             break
         row = {"id": sid, "title": title, "result": "PASS", "detail": f"Command passed: {command}"}
         rows.append(row)
         results[sid] = "PASS"
         print(f"PASS: {sid}")
+
+    # Include every later stage in the report as BLOCKED after the first
+    # missing prerequisite/test or failure; never silently omit queued work.
+    if len(rows) < len(stages):
+        halt = blocked_at or (rows[-1]["id"] if rows else "manifest-validation")
+        for stage in stages[len(rows):]:
+            rows.append({
+                "id": stage.get("id", "unknown"),
+                "title": stage.get("title", "unnamed stage"),
+                "result": "BLOCKED",
+                "detail": f"Queue stopped at {halt}; this dependent stage was not executed.",
+            })
 
     write_report(overall, rows, blocked_at)
     print(f"CP1_QUEUE_STATUS={overall}")
