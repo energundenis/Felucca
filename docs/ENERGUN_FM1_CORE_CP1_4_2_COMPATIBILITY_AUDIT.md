@@ -22,6 +22,30 @@ Verified current state:
 - The 8/16/13 proposal's 16 P_MC values inserted immediately before E0 would yield `P_COUNT=127`, `P_E0=119`, E0..E7 = 119..126. This fits, but consumes all available common-ID headroom. No MCX IDs may be placed in this namespace.
 - This numeric allocation is a capacity calculation only. Do not assign final IDs while the E0..E7 conflict remains unresolved.
 
+## 2.1 Stored-value precision is a separate limit from ID capacity
+
+The Felucca parameter array is `int16_t` in RAM, but the existing project and user-preset formats do not preserve arbitrary 16-bit parameter values:
+
+- `proj_pack()` rejects values outside -64..127 and writes each parameter as one byte, `value + 64`.
+- `up_to_v4()` applies the same -64..127 range and writes one byte per parameter.
+- The motion event stores its value as `int8_t` and validates -64..127.
+- Therefore each ordinary P_* / E* parameter has at most 192 stored codes (and normally 128 codes for a unipolar 0..127 descriptor), despite the source HTML exposing finer physical steps.
+
+Examples from the verified v98 source:
+- FREQ: 30–500 Hz at 1 Hz = 471 source values.
+- METAL RATIO: 0.50–12.00 at 0.01 = 1,151 source values.
+- MOD RATIO: 0.25–16.00 at 0.01 = 1,576 source values.
+- CUTOFF: 100–8,000 Hz at 10 Hz = 791 source values.
+- FM/voice envelope times also exceed 192 source positions.
+
+These source steps are now documented correctly in CP1.4.1, but they are **not** automatically achievable as exact stored FM-1 parameter resolution.
+
+Two implementation paths exist and must not be conflated:
+1. **Standard Felucca parameter path:** map the physical source range monotonically onto the available -64..127 (or narrower) stored codes. This preserves compatibility with normal EDIT/P_MC descriptors, existing project/preset arrays and Motion Lock, but reduces resolution. Each control needs a documented forward/inverse mapping and quantization test.
+2. **High-resolution extension path:** retain physical values at 16-bit or another explicitly sized precision in the sidecar-backed runtime cache. This can preserve the source steps, but requires Private-style editor read/write commands, high-resolution persistence in project and preset sidecars, and a separate high-resolution motion event representation if per-step locks are required. It cannot be achieved by changing only the descriptor range.
+
+**No resolution compromise is approved by this audit.** Before final parameter descriptors and encodings, the project must decide whether V1 prioritizes exact v98 control resolution or the simpler standard 7-bit Felucca parameter path. The E0–E7 controls are especially constrained because they are ordinary engine EDIT values and modulation destinations.
+
 ## 3. Project compatibility
 
 ### Existing migration behavior
@@ -93,8 +117,9 @@ Required consequence:
 - Editor transport for common P_MC: source path verified; client compatibility tests not run.
 - Old-firmware project downgrade behavior: source-verified; base-compatible FUN10 strategy recommended but not implemented.
 - User-preset Private persistence: missing from current five-project sidecar model; scope expanded to include two preset-bank identities.
+- Stored-value precision mapping: **open**; source steps exceed the ordinary 7-bit/192-code project, preset and motion representation for several controls.
 - Stable IDs, final E0..E7 allocation, binary encodings and migration code: **not assigned / not implemented**.
-- CP1.4.2 remains OPEN pending explicit acceptance of the compatibility strategy and regression evidence.
+- CP1.4.2 remains OPEN pending a decision on standard 7-bit quantization versus high-resolution sidecar-backed values, acceptance of the base-compatible FUN10 strategy, user-preset extension scope and regression evidence.
 
 ## 9. Safety
 
