@@ -71,6 +71,12 @@ The API must distinguish invalid part, unknown key, wrong type, out-of-range val
 
 ### 2.4 UI and editor transport
 
+Source-specific protocol constraint:
+- Firmware `ED_INFO` already uses tagged capability blocks (tag, version, payload). The current web parser recognizes a fixed sequence of tags and fixed offsets; it is not a general unknown-TLV iterator.
+- Any future Private capability must therefore be appended after the current final known tag, never inserted between existing tags. The web parser must be updated to recognize the new tail while old clients continue ignoring trailing bytes.
+- A new command must be capability-probed before use. Unknown command IDs receive no reply, so the editor must time out/fallback safely rather than assuming support.
+- Update `web/EDITOR_PROTOCOL.md`, the real `web/editor.html` parser and `tests/editor_test.c` / `tests/test_web.mjs` together. Host-only parser tests do not establish physical SysEx interoperability.
+
 - Private controls are displayed on a dedicated Metal Core page family, separate from the eight Engine EDIT destinations.
 - The UI uses the typed access API; it does not use `param_desc_of()` for Private keys.
 - Common P_MC controls remain in the common parameter transport after their IDs are approved. Private values do not enter `ED_DUMP` or pretend to be common `P_COUNT` entries.
