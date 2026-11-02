@@ -241,6 +241,44 @@ static void test_source_step_boundaries(void) {
            total_boundaries, CONTROL_COUNT);
 }
 
+static void test_quantization_bounds_and_clamping(void) {
+    size_t i;
+    for (i = 0; i < CONTROL_COUNT; ++i) {
+        const control_t *c = &controls[i];
+        double max_error = 0.0, bound;
+        int sample, ok = 1, lo = 999, hi = 999;
+        char label[176];
+        for (sample = 0; sample <= 100000; ++sample) {
+            double fraction = (double)sample / 100000.0;
+            double value = c->min_value + fraction * (c->max_value - c->min_value);
+            double decoded = 0.0, error;
+            int code = 0;
+            if (c->map == MAP_LOG)
+                value = c->min_value * pow(c->max_value / c->min_value, fraction);
+            if (!encode_value(c, value, &code) || !decode_code(c, code, &decoded)) {
+                ok = 0; break;
+            }
+            if (c->map == MAP_LOG) error = fabs(decoded / value - 1.0);
+            else if (c->map == MAP_BIPOLAR_LINEAR) error = fabs(decoded - value);
+            else error = fabs(decoded - value) / (c->max_value - c->min_value);
+            if (error > max_error) max_error = error;
+        }
+        if (c->map == MAP_LOG) {
+            double ratio = pow(c->max_value / c->min_value, 1.0 / 127.0);
+            bound = fmax(ratio - 1.0, 1.0 - 1.0 / ratio);
+        } else if (c->map == MAP_BIPOLAR_LINEAR) bound = 0.5 / 63.0;
+        else bound = 0.5 / 127.0;
+        (void)snprintf(label, sizeof(label), "%s dense-grid error stays within nearest-code bound", c->name);
+        check(label, ok && max_error <= bound + 1e-10);
+        printf("CP1.4.2 BOUND-METRIC %-25s measured=%0.9g limit=%0.9g\n", c->name, max_error, bound);
+        ok = encode_value(c, c->min_value - (c->max_value - c->min_value), &lo) &&
+             encode_value(c, c->max_value + (c->max_value - c->min_value), &hi) &&
+             lo == code_min(c) && hi == code_max(c);
+        (void)snprintf(label, sizeof(label), "%s out-of-range finite values clamp to exact endpoints", c->name);
+        check(label, ok);
+    }
+}
+
 static void test_invalid_inputs_and_bipolar_center(void) {
     int code = 0;
     double value = 0.0;
@@ -263,6 +301,7 @@ int main(void) {
     test_endpoints_and_roundtrip();
     test_monotonicity_and_error();
     test_source_step_boundaries();
+    test_quantization_bounds_and_clamping();
     test_invalid_inputs_and_bipolar_center();
     printf("CP1.4.2 quantization reference: %s (%d failures; %zu controls)\n",
            failures ? "FAIL" : "PASS", failures, CONTROL_COUNT);
