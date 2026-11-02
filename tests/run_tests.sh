@@ -490,6 +490,14 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "ENERGUN METAL CORE: FOLLOW fixed-point pitch mapping and source selector (host-only)" "$OUT/metal_core_follow_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_core_follow_host_test" tests/metal_core_follow_host_test.c
     run "ENERGUN METAL CORE: host FOLLOW adapter with real Felucca pitch table (host-only)" "$OUT/metal_core_follow_host_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_osc_test" tests/metal_osc_test.c -lm
+    run "ENERGUN METAL CORE Stage 1: fixed-point OSC1 / OSC2 waveforms, mix, detune, phase continuity and bounds" "$OUT/metal_osc_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_fm_modulator_test" tests/metal_fm_modulator_test.c -lm
+    run "ENERGUN METAL CORE: Complex Oscillator wcMod waveforms, ratio, phase continuity and bounds" "$OUT/metal_fm_modulator_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_fm_curve_test" tests/metal_fm_curve_test.c -lm
+    run "ENERGUN METAL CORE: fixed-point Complex FM CHARACTER and WEST COAST DRIVE curves" "$OUT/metal_fm_curve_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/metal_complex_fm_test" tests/metal_complex_fm_test.c -lm
+    run "ENERGUN METAL CORE: audio-rate Complex FM, signed carrier frequency and bounded output" "$OUT/metal_complex_fm_test"
     # SLICE is in the standard build (firmware/src/core.h): its test always runs (after #22 by andreahaku)
     if grep -q '^#define SLC_BREAK_BPM ' build/gen/felucca_samples.h; then
         mkdir -p build/slice_demo
