@@ -474,6 +474,17 @@ int main(void)
             ok &= !memcmp(c.fm6[k], FM6_FACTORY[k * 2u], FM6_PACKED) && c.t[k].engine == ENGI_FM6 &&
                   !memcmp(st.raw + PROJ_FM6_OFF + k * FM6_PACKED, FM6_FACTORY[k * 2u], FM6_PACKED);
         bad += check("FUN10: the four FM6 patches round trip (bytes at PROJ_FM6_OFF)", ok && !memcmp(c.name, "FM SONG", 7));
+        {
+            uint8_t old_np = st.raw[66];
+            uint32_t expanded_sum;
+            st.raw[66] = 127u;                         /* a new writer must not put this count in legacy FUN10 */
+            expanded_sum = proj_hash(st.raw, PROJ_STORE_SIZE - 4u);
+            memcpy(st.raw + PROJ_STORE_SIZE - 4u, &expanded_sum, 4);
+            bad += check("legacy FUN10 reader rejects np=127 even with a valid checksum", !proj_import(&c, &st, sizeof st));
+            st.raw[66] = old_np;
+            expanded_sum = proj_hash(st.raw, PROJ_STORE_SIZE - 4u);
+            memcpy(st.raw + PROJ_STORE_SIZE - 4u, &expanded_sum, 4);
+        }
         st.raw[PROJ_FM6_OFF + 5] ^= 1u;
         bad += check("FUN10: a patch byte changed: the hash refuses it", !proj_import(&c, &st, sizeof st));
         st.raw[PROJ_FM6_OFF + 5] ^= 1u;
