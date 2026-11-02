@@ -11,7 +11,7 @@ The Sidecar carries V1 values that cannot safely be inserted into the legacy FUN
 - 13 Private values for each of four parts;
 - P_MC Motion Lock records removed from the legacy base motion list so old firmware cannot misinterpret new IDs as E0..E7.
 
-For user presets, the Sidecar carries 16 P_MC + 13 Private values for each of the 16 slots in a preset bank.
+User presets are different: the existing record has 144 parameter bytes, enough for P_COUNT=127. P_MC values can remain in the ordinary user-preset base record; the Sidecar is required only for the 13 Private values per slot, which the ordinary serializer does not store.
 
 Dependencies:
 - CP1.4.1 must resolve E0–E7 ordering and the OSC2 LEVEL / TIMBRE overlap before stable key IDs are assigned.
@@ -29,8 +29,8 @@ Seven independently versioned extension identities are required:
 |---|---:|---|
 | Project slots | 4 | P_MC values for four parts, Private values for four parts, P_MC motion extension |
 | Live autosave | 1 | Same project payload shape as a project slot |
-| User preset bank 0 | 1 | P_MC + Private extension data for all 16 preset slots |
-| User preset bank 1 | 1 | P_MC + Private extension data for all 16 preset slots |
+| User preset bank 0 | 1 | Private extension data for all 16 preset slots; P_MC remains in the 144-byte base preset record |
+| User preset bank 1 | 1 | Private extension data for all 16 preset slots; P_MC remains in the 144-byte base preset record |
 | **Total** | **7** | Each identity has an A/B copy pair |
 
 The user-preset extension is bank-scoped, not a single unpaired record per preset. This is necessary because the current factory storage object writes each bank as one object containing 16 slots. The Sidecar must be rebound whenever the bank is rewritten, including rename, category, overwrite, erase, migration or compaction operations.
@@ -62,13 +62,11 @@ This 501-byte estimate excludes the Sidecar envelope and any future alignment/re
 
 ### 3.2 User-preset bank identity
 
-Each used preset slot carries:
-- 16 P_MC raw codes;
-- 13 Private typed values.
+Each used preset slot carries only the 13 Private typed values. P_MC values are stored in the base preset record's 144-byte parameter array; the proposed P_COUNT=127 fits without exceeding that capacity.
 
-16 slots × 29 values = **464 bytes**. A slot-presence bitmap and envelope metadata are additional. Empty slots must not accidentally inherit stale extension values from a previously occupied slot.
+16 slots × 13 Private values = **208 bytes**. A slot-presence bitmap and envelope metadata are additional. Empty slots must not accidentally inherit stale extension values from a previously occupied slot.
 
-The extension is bank-generation-bound. Rewriting any preset bank requires carrying forward all still-used slot extension records and clearing the erased slot's extension before committing the new bank.
+The extension is bank-generation-bound. Rewriting any preset bank requires carrying forward all still-used Private extension records and clearing the erased slot's extension before committing the new bank.
 
 ## 4. Envelope and versioning model
 
@@ -129,7 +127,7 @@ The current storage implementation has A/B commit semantics, but it does not yet
 |---|---:|---:|---:|
 | Project slot | 4 | 501 bytes + envelope | 8 |
 | Live autosave | 1 | 501 bytes + envelope | 2 |
-| User preset bank | 2 | 464 bytes + bitmap + envelope | 4 |
+| User preset bank | 2 | 208 bytes + bitmap + envelope | 4 |
 | **Total** | **7** | — | **14 logical copies** |
 
 If each copy eventually uses one 4 KiB sector, the logical reservation would be 14 sectors (56 KiB). This is a capacity estimate only, not a Flash map or permission to reserve/erase any sector. CP1.4.11 must independently audit the full 1 MiB image, bootloader/OTA/recovery ranges, all live objects and restore procedure before any physical allocation is considered.
@@ -142,7 +140,7 @@ If each copy eventually uses one 4 KiB sector, the logical reservation would be 
 - On new firmware load, import/migrate the base project first, then validate and merge matching Sidecar P_MC values and motion events.
 - Combined base + Sidecar motion events must remain <=128. Duplicate (track, step, parameter) keys, invalid IDs, invalid values or overflow reject the extension atomically.
 - Old firmware ignores Sidecar objects and continues to load the legacy base. New firmware with no matching Sidecar loads the base and applies defaults for all extension values.
-- User preset bank Sidecar is bound to the exact base bank sequence. Old firmware reads the base bank and ignores the extension.
+- User preset base records may store np=127 within their 144 parameter bytes. Existing count-based mapping uses the final eight values as E0..E7; older firmware maps those final eight back to its own E0..E7 positions and ignores the inserted P_MC values in the expanded common range. The Private Sidecar is bound to the exact base bank sequence and ignored by old firmware.
 
 ## 8. Open decisions and implementation gates
 
