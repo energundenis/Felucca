@@ -50,3 +50,13 @@ The FM6 bank test proves the existing FM6 staging behavior under its current hos
 - Strict C11 compile with -Wall -Wextra -Werror: PASS. Sidecar V1 acceptance: **38 checks, 0 failures**.
 - Sequential queue: Storage A/B PASS; FM6 staging/recovery PASS; Sidecar Format PASS; Base-generation binding BLOCKED pending the production storage metadata reader.
 - This is format/validator host evidence only. No physical device, storage object ID, OBJ_COUNT, Flash sector, archive V1, bootloader, OTA or recovery path was changed.
+
+## Base-generation binding acceptance — 2026-11-02
+
+- Added internal st_meta_t / st_current_meta() in firmware/src/storage.c. It reports the exact copy, sequence, length and payload CRC selected by the real storage A/B reader after payload CRC validation. st_load() now consumes this helper.
+- Added tests/sidecar_base_binding_test.c and tests/run_sidecar_base_binding_test.sh. This suite compiles the actual storage.c and Sidecar V1 C module together against simulated NOR.
+- Verified CI: [41462258057](https://github.com/energundenis/Felucca/actions/runs/41462258057), code HEAD 95a95e383015d0fb584902770d3ea9125cd3074c, SUCCESS.
+- Base-generation binding suite: **15 checks, 0 failures**. Sidecar V1 suite: **38 checks, 0 failures**. Existing focused regression: 21/21 passed.
+- Verified stale Sidecar rejection after Base rewrite and acceptance against the old Base generation after a corrupted newer Base payload falls back to A.
+- Next stage: Sidecar A/B matching-copy inspection and selection. It remains blocked until production dual-copy reader and tests are implemented.
+- No physical Flash, object IDs, OBJ_COUNT, archive V1, bootloader, OTA or physical device changed.
