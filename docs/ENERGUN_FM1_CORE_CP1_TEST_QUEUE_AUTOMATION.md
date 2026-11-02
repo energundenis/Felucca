@@ -79,3 +79,15 @@ When a stage is implemented, the same work unit must add its executable test and
 ## Safety
 
 This is host-only automation using simulated NOR Flash and existing host-test evidence. It does not connect to or write a physical FM-1. It does not select Flash sectors, assign Sidecar object IDs, change `OBJ_COUNT`, or alter bootloader/OTA/recovery behavior. CP1.4.11 and explicit physical-device authorization remain independent gates.
+
+## Sidecar A/B selection stage now enabled (2026-11-02)
+
+- Added `st_read_copy_meta()` in the real `firmware/src/storage.c`: explicit A/B read, outer header/payload CRC validation, caller-owned payload buffer and local storage sequence metadata. No object ID or physical sector was allocated.
+- Added `energun_sc_v1_inspect()` and `energun_sc_v1_select_ab()`: the newest Sidecar matching exact Base sequence + payload CRC is protected; newest valid local sequence is tracked separately, including orphan records; write target is the opposite copy. Sequence wrap and ties follow the defined half-range/A-wins policy.
+- Added `tests/sidecar_ab_selection_test.c` and strict runner `tests/run_sidecar_ab_selection_test.sh` using the real storage and Sidecar code against simulated NOR.
+- Verified fast workflow: [41478848470](https://github.com/energundenis/Felucca/actions/runs/41478848470), exact tested code commit `277313eeda4bd3805ea0c910e3298633c041d03b`, **SUCCESS**.
+- Results: existing focused regression **21/21**; Sidecar V1 **38/38**; Base-generation binding **16/16**; Sidecar A/B selection **17/17**.
+- Queue passes Storage A/B → FM6 staging/recovery → Sidecar Format → Base-generation binding → Sidecar A/B selection, then stops at **Pair Commit Ordering**. The production pair coordinator is the next unimplemented prerequisite.
+- Latest baseline build [41478848463](https://github.com/energundenis/Felucca/actions/runs/41478848463) for the same code HEAD was still running the host/web regression at the time of this update; no final baseline PASS is claimed yet.
+- No physical Flash map, object IDs, `OBJ_COUNT`, archive V1/V2, bootloader, OTA, recovery or physical FM-1 access changed.
+
