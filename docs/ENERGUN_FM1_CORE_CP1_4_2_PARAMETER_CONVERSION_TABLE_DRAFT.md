@@ -101,7 +101,9 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 - Measured worst-case relative error for logarithmic mappings: FREQ 1.114%, METAL RATIO 1.259%, CUTOFF 1.740%, RESONANCE 1.463%, LPG DECAY 1.830%, MOD RATIO 1.651%, FM ENV ATTACK / ATTACK 2.757%, FM ENV DECAY / RELEASE 2.271%, METAL DECAY / DECAY 1.625%. These are dense-grid measurements, not acceptance thresholds.
 - For linear controls near zero, relative-to-value error is not a useful quality metric (it becomes 100% at zero even when absolute error is one code step). Use absolute error normalized to the control's full-scale span for linear controls when setting acceptance limits.
 - Numerical acceptance thresholds are intentionally not invented before reviewing source-step/perceptual priorities.
-- Source step-boundary tests are not yet included because the full per-control source-step metadata has not yet been added to this conversion table. They remain a closure requirement.
+- Added verified v98 source-step metadata for all 30 continuous controls and exercised every declared step boundary in the host reference. Fast CI run [41404054183](https://github.com/energundenis/Felucca/actions/runs/41404054183) passed all 16 tests with 0 failures. The quantizer checked **9,434 source-step boundary values** across the 30 controls; every boundary mapped monotonically and decoded within the declared physical range.
+- Maximum measured source-step-unit errors are largest for the log-mapped controls with fine source UI increments: FM ENV ATTACK 26.0 steps, normal ATTACK 26.0, MOD RATIO 25.55, METAL RATIO 14.66, CUTOFF 13.13, FM ENV DECAY / RELEASE 6.18. This is expected loss of source UI granularity under 7-bit quantization; the corresponding dense-grid relative errors remain below 2.76% for all log controls. These measurements do not by themselves establish acceptable musical resolution.
+- The full baseline build/regression run [41404054153](https://github.com/energundenis/Felucca/actions/runs/41404054153) was still in progress at the time of this update; only the focused lane is confirmed green.
 
 ## 5. Known constraints and open gates
 
