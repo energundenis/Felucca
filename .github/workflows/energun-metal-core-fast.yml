@@ -57,7 +57,7 @@ jobs:
       - name: Run focused ENERGUN METAL CORE regression
         run: sh tests/run_metal_core_fast.sh
 
-      - name: Run sequential CP1 persistence test queue
+      - name: Run dependency-aware parallel CP1 persistence test queue
         id: cp1-queue
         run: python3 tests/run_cp1_test_queue.py
 
