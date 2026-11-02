@@ -32,43 +32,45 @@ MCX0–MCX6 are a separate extension namespace and are not included in this 37-c
 
 ## 3. Engine EDIT — eight controls
 
-These are the eight existing engine edit slots. They remain the modulation-matrix destinations and the primary E0–E7 edit controls.
+These are the eight engine edit slots. Their order is the earlier user-approved 2026-10-30 freeze and remains authoritative.
 
 | Slot | Control | Type | Source range | Default | Source step / unit | Notes |
-|---|---|---|---:|---:|---|---|
-| E0 | FREQ | Continuous | 30–500 Hz | 160 Hz | Step 1 Hz | Directly sets the main Web Audio oscillator frequency; the source uses `OscillatorNode.frequency` (Hz). |
-| E1 | FM INDEX | Continuous | 0–1 | 0 | Step 0.01 in source UI | Complex FM base depth |
-| E2 | METAL RATIO | Continuous | 0.5–12 | 4.20 | Step 0.01 in source UI | Separate METAL FM and ring ratio |
-| E3 | WEST COAST DRIVE | Continuous | 0–1 | 0 | Step 0.01 in source UI | FM/METAL depth scaling; not folder drive |
-| E4 | FOLD | Continuous | 0–1 | 0.25 | Step 0.01 in source UI | Second-stage fold blend |
-| E5 | CUTOFF | Continuous | 100–8000 Hz | 1200 Hz | Step 10 Hz in source UI | Main low-pass filter |
-| E6 | RESONANCE | Continuous | 0.5–20 | 2.0 | Step 0.1 in source UI | Main filter Q |
-| E7 | LPG DECAY | Continuous | 0.02–2 s | 0.25 s | Step 0.01 s | LPG triggered tail |
+|---|---|---|---:|---:|---:|---|
+| E0 | FREQ | Continuous | 30–500 Hz | 160 Hz | Step 1 Hz | Main oscillator frequency |
+| E1 | OSC2 LEVEL | Continuous | 0–1 | 0.50 | Step 0.01 | Direct-audio OSC2 level |
+| E2 | TIMBRE | Continuous | 0–1 | 0 | Step 0.01 | First fixed wavefolder-stage input gain |
+| E3 | WEST COAST DRIVE | Continuous | 0–1 | 0 | Step 0.01 | FM/METAL depth scaling; not folder drive |
+| E4 | METAL RATIO | Continuous | 0.5–12 | 4.20 | Step 0.01 | Separate METAL FM and ring ratio |
+| E5 | FOLD | Continuous | 0–1 | 0.25 | Step 0.01 | Second-stage fold blend |
+| E6 | CUTOFF | Continuous | 100–8000 Hz | 1200 Hz | Step 10 Hz | Main low-pass filter |
+| E7 | RESONANCE | Continuous | 0.5–20 | 2.0 | Step 0.1 | Main filter Q |
 
-The E0–E7 ordering above is the CP1.4 proposal candidate, not the final slot allocation. A previously frozen 2026-10-30 E0–E7 order is recorded in the project decision history and differs from this candidate; the earlier accepted freeze remains authoritative until the conflict is explicitly resolved. The eight controls are candidate modulation/motion destinations because the existing host exposes those eight edit slots.
+The CP1.4 candidate ordering that placed FM INDEX and LPG DECAY in E slots is superseded by the earlier accepted freeze. FM INDEX and LPG DECAY belong to the reconciled P_MC set below.
 
 ## 4. Common P_MC — sixteen continuous controls
 
-These are common per-track controls. Their logical membership is frozen; stable numeric IDs and insertion/migration details are not assigned here.
+These are the remaining 16 common per-track continuous controls after preserving the earlier frozen E0–E7 map and the 13 Private controls. Their logical membership is reconciled; stable numeric IDs and insertion/migration details are not assigned here.
 
 | # | Control | Type | Source range | Default | Source step / unit | Notes |
-|---:|---|---|---:|---:|---|---|
-| 1 | OSC2 LEVEL | Continuous | 0–1 | 0.50 | Step 0.01 | Direct-audio OSC2 level |
-| 2 | OSC2 DETUNE | Continuous | 0–30 cents | 7 cents | Step 0.5 cents | Must not alias host P_DETUNE |
-| 3 | TIMBRE | Continuous | 0–1 | 0 | Step 0.01 | First fixed wavefolder-stage input gain |
-| 4 | MOD RATIO | Continuous | 0.25–16 | 3.07 | Step 0.01 | Complex modulator ratio; distinct from METAL RATIO |
-| 5 | AM DEPTH | Continuous | 0–1 | 0 | Step 0.01 | Complex AM depth |
-| 6 | FM FEEDBACK | Continuous | 0–0.8 | 0 | Step 0.01 | Dedicated delayed feedback |
-| 7 | FM ENV AMT | Continuous | 0–1 | 0.50 | Step 0.01 | Triggered increase over base FM index |
-| 8 | FM ENV ATTACK | Continuous | 0.001–1 s | 0.005 s | Step 0.001 s | Complex FM-index envelope attack |
-| 9 | FM ENV DECAY | Continuous | 0.01–3 s | 0.25 s | Step 0.01 s | Complex FM-index envelope decay |
-| 10 | METAL DECAY | Continuous | 0.05–3 s | 0.40 s | Step 0.01 s | METAL trigger decay |
-| 11 | FOLD SYMMETRY | Continuous | -1–1 | 0 | Step 0.01 | Second-stage transfer offset |
-| 12 | WAVEFOLDER DRIVE | Continuous | 0–1 | 0.20 | Step 0.01 | Second-stage pre-fold gain; not WEST COAST DRIVE |
-| 13 | LPG RESPONSE | Continuous | 0–1 | 0.50 | Step 0.01 | LPG transient response |
+|---:|---|---|---:|---:|---:|---|
+| 1 | OSC2 DETUNE | Continuous | 0–30 cents | 7 cents | Step 0.5 cents | Must not alias host P_DETUNE |
+| 2 | FM INDEX | Continuous | 0–1 | 0 | Step 0.01 | Complex FM base depth |
+| 3 | MOD RATIO | Continuous | 0.25–16 | 3.07 | Step 0.01 | Complex modulator ratio; distinct from METAL RATIO |
+| 4 | AM DEPTH | Continuous | 0–1 | 0 | Step 0.01 | Complex AM depth |
+| 5 | FM FEEDBACK | Continuous | 0–0.8 | 0 | Step 0.01 | Dedicated delayed feedback |
+| 6 | FM ENV AMT | Continuous | 0–1 | 0.50 | Step 0.01 | Triggered increase over base FM index |
+| 7 | FM ENV ATTACK | Continuous | 0.001–1 s | 0.005 s | Step 0.001 s | Complex FM-index envelope attack |
+| 8 | FM ENV DECAY | Continuous | 0.01–3 s | 0.25 s | Step 0.01 s | Complex FM-index envelope decay |
+| 9 | METAL DECAY | Continuous | 0.05–3 s | 0.40 s | Step 0.01 s | METAL trigger decay |
+| 10 | FOLD SYMMETRY | Continuous | -1–1 | 0 | Step 0.01 | Second-stage transfer offset |
+| 11 | WAVEFOLDER DRIVE | Continuous | 0–1 | 0.20 | Step 0.01 | Second-stage pre-fold gain; not WEST COAST DRIVE |
+| 12 | LPG RESPONSE | Continuous | 0–1 | 0.50 | Step 0.01 | LPG transient response |
+| 13 | LPG DECAY | Continuous | 0.02–2 s | 0.25 s | Step 0.01 s | LPG triggered tail |
 | 14 | VOICE VCA LEVEL | Continuous | 0–1 | 0.50 | Step 0.01 | Triggered voice VCA peak; not host P_LEVEL |
 | 15 | WAVEFOLDER MODULE VOLUME | Continuous | 0–1 | 1 | Step 0.01 | Output level after second folder stage |
 | 16 | WEST COAST VOLUME | Continuous | 0–1 | 1 | Step 0.01 | Final engine output gain; effective steady-state v98 mapping is VOLUME × 5 |
+
+OSC2 LEVEL and TIMBRE are E1/E2 and are deliberately not duplicated here. FM INDEX and LPG DECAY are included here rather than in the later CP1.4 E-order candidate.
 
 P_MC motion/parameter-lock support requires an explicit whitelist and tests. Continuous type alone does not imply that the current host automatically accepts these IDs. The current modulation-matrix destination list remains E0–E7 unless separately extended and approved.
 
@@ -131,7 +133,7 @@ MCX0–MCX6 remain a separate extension namespace. No MCX motion support is impl
 
 These are explicit gates, not permission to guess:
 1. **Host stored-value resolution:** source physical ranges/steps are not the Felucca stored representation. Project, preset and Motion Lock values are limited to -64..127 (one byte after offset); several v98 controls have more source positions than this permits. **Decision accepted 2026-11-02:** V1 uses standard Felucca 7-bit parameter encoding; frequency/ratio/time controls use suitable nonlinear mappings and levels/depths use linear mappings. The per-control conversion table and quantization evidence are tracked in `ENERGUN_FM1_CORE_CP1_4_2_PARAMETER_CONVERSION_TABLE_DRAFT.md`. Do not claim source UI step granularity is available on FM-1.
-2. **E0–E7 allocation conflict:** the 2026-10-30 Frozen Draft used E0 FREQ / E1 OSC2 LEVEL / E2 TIMBRE / E3 WEST COAST DRIVE / E4 METAL RATIO / E5 FOLD / E6 CUTOFF / E7 RESONANCE, while this CP1.4 proposal uses a different E0–E7 order. The earlier frozen order remains the governing baseline until the original approval record is recovered and any superseding user decision is explicit. Do not assign final E descriptors from the candidate table. The earlier E1/E2 entries (OSC2 LEVEL and TIMBRE) also appear in the current 16-control P_MC table; treating both entries as independent controls would duplicate the logical inventory, while treating them as aliases would conflict with the current non-alias rules. This overlap must be explicitly reconciled in the control inventory before any stable ID allocation. Do not silently deduplicate, alias or move these controls.
+2. **E0–E7 / P_MC membership reconciliation:** the earlier 2026-10-30 user-approved E0–E7 order is authoritative. The CP1.4 candidate E ordering is superseded. The reconciled P_MC set removes duplicate OSC2 LEVEL and TIMBRE entries and includes FM INDEX and LPG DECAY instead. The exact 8 + 16 + 13 unique-control allocation is recorded in `ENERGUN_FM1_CORE_CP1_4_1_E0_E7_RECONCILIATION.md`. No aliasing or control removal occurs.
 3. **Stable IDs and encoding:** no numeric IDs, serialized field IDs, byte encodings or backward-compatibility rules are approved.
 
 ## 10. CP1.4.1 acceptance result
@@ -155,13 +157,13 @@ Acceptance checks:
 - [x] FOLLOW / MOD RATIO Option A approved.
 - [x] Short-Gate VCA Option B approved.
 - [x] Verify FREQ unit and quantization: Hz, 1 Hz step, range 30–500 Hz, default 160 Hz.
-- [ ] Recover/reconcile the earlier E0–E7 freeze against the CP1.4 candidate order; earlier frozen order remains authoritative pending that reconciliation.
+- [x] Reconcile the earlier accepted E0–E7 freeze with the 8/16/13 logical allocation; corrected P_MC membership removes duplicate OSC2 LEVEL/TIMBRE and includes FM INDEX/LPG DECAY.
 - [x] Derive all previously unspecified source steps from the protected v98 parameter object.
 - [x] Select standard Felucca 7-bit parameter encoding for V1; high-resolution sidecar-backed parameter values are not selected.
 - [ ] Complete per-control conversion curves, code allocation and quantization-error tests in CP1.4.2.
 - [ ] Review and sign off the complete map against the protected source artifact.
 
-The decisions checked above supersede the older unresolved notes in this document. Source step values were verified against the protected reference object's parameter declarations; FREQ's Hz unit is corroborated by its direct assignment to the Web Audio oscillator frequency. The unchecked E0–E7 allocation, per-control conversion/quantization verification and final map sign-off prevent complete source-level encoding closure. CP1.4.2 may continue its compatibility audit, but must not assign stable IDs or final E descriptors until the slot conflict and quantization policy are resolved.
+The decisions checked above supersede the older unresolved notes in this document. Source step values were verified against the protected reference object's parameter declarations; FREQ's Hz unit is corroborated by its direct assignment to the Web Audio oscillator frequency. The E0–E7 allocation and logical membership are reconciled. Per-control conversion/quantization verification and final map sign-off remain separate CP1.4.2 gates. CP1.4.2 may continue its compatibility audit, but must not assign stable IDs or final E descriptors until the slot conflict and quantization policy are resolved.
 
 ### 10.1 Source-step evidence
 
