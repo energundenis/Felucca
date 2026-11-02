@@ -75,6 +75,9 @@ run_test metal_core_cp3_real_vca_dispatch
 compile_test_strict metal_core_feedback_delay_candidate tests/metal_core_feedback_delay_candidate_test.c
 run_test metal_core_feedback_delay_candidate
 
+compile_test_strict metal_core_biquad_candidate tests/metal_core_biquad_candidate_test.c -lm
+run_test metal_core_biquad_candidate
+
 compile_test metal_core_follow tests/metal_core_follow_test.c -lm
 run_test metal_core_follow
 
@@ -87,12 +90,12 @@ run_test metal_core_parameter_quantization
 compile_test_strict metal_core_parameter_inventory tests/metal_core_parameter_inventory_test.c
 run_test metal_core_parameter_inventory
 
-echo "== ENERGUN METAL CORE fast regression: all 18 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 19 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 18 focused host tests."
+        echo "Generated headers and compiled/executed all 19 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
