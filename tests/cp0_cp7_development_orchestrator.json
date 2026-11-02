@@ -19,6 +19,14 @@
       [
         "python3",
         "tests/run_cp1_test_queue.py"
+      ],
+      [
+        "sh",
+        "tests/run_cp2_dsp_qualification.sh"
+      ],
+      [
+        "sh",
+        "tests/run_cp3_host_lifecycle.sh"
       ]
     ]
   },
@@ -75,7 +83,8 @@
       "evidence": {
         "existing_queue": "tests/cp1_test_queue.json",
         "known_gate": "Pair Commit Ordering was the last verified blocker"
-      }
+      },
+      "timeout_seconds": 1800
     },
     {
       "id": "cp2-dsp-qualification",
@@ -87,7 +96,10 @@
       ],
       "parallel_group": "dsp-and-lifecycle",
       "executor": "workstream-branch",
-      "command": null,
+      "command": [
+        "sh",
+        "tests/run_cp2_dsp_qualification.sh"
+      ],
       "acceptance": [
         "DSP primitives have reference-vector and stability coverage",
         "44.1 kHz and 96 kHz host behavior is covered where applicable",
@@ -97,7 +109,8 @@
       ],
       "evidence": {
         "known_candidate": "Draft PR #1 contains an isolated Q2.30 DF2T biquad candidate; it is not production-qualified."
-      }
+      },
+      "timeout_seconds": 900
     },
     {
       "id": "cp3-host-lifecycle",
@@ -109,7 +122,10 @@
       ],
       "parallel_group": "dsp-and-lifecycle",
       "executor": "workstream-branch",
-      "command": null,
+      "command": [
+        "sh",
+        "tests/run_cp3_host_lifecycle.sh"
+      ],
       "acceptance": [
         "Fresh note, retrigger, released-slot reuse and mono legato are tested",
         "Voice stealing, MIDI Gate-off and sequencer Gate-off are tested",
@@ -118,7 +134,8 @@
       ],
       "evidence": {
         "known_candidate": "Draft PR #2 records the CP3 host lifecycle workstream."
-      }
+      },
+      "timeout_seconds": 900
     },
     {
       "id": "cp3-production-integration",
