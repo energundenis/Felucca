@@ -702,7 +702,7 @@ Status: **logical architecture adopted as the working V1 baseline; CP1.4 remains
 
 ### Implementation/verification work added to the plan
 
-- [ ] Freeze the exact 8/16/13 control table against the CP1.3 37-control inventory, including units, ranges, defaults, enum encodings and ownership per part.
+- [x] Freeze the 8/16/13 logical control table against the CP1.3 37-control inventory. FREQ is now source-verified as Hz, 30–500 Hz, 160 Hz default, 1 Hz step; all previously unspecified v98 source steps have been recovered. The E0–E7 legacy freeze conflict and final map sign-off remain open.
 - [ ] Implement/verify private per-track value access and UI edit/write callbacks without using volatile DSP memory.
 - [ ] Implement explicit P_MC motion whitelist handling and tests; keep discrete/private values excluded.
 - [ ] Specify a versioned Sidecar record schema: magic, schema version, project identity/generation, payload length, per-track values, CRC and A/B commit state. Exact byte packing remains subject to size/compatibility review.
@@ -710,11 +710,11 @@ Status: **logical architecture adopted as the working V1 baseline; CP1.4 remains
 - [ ] Specify preset save/load and archive-v2 backup/restore representation, including all four project slots and live autosave.
 - [ ] Add migration tests: legacy project/preset without Sidecar, new project with Sidecar, older archive restore, missing/corrupt Sidecar and downgrade/forward-compatibility behavior.
 - [ ] Confirm the logical Sidecar capacity with exact encoded payload sizes and metadata before any physical allocation.
-- [ ] Obtain and audit the complete FM-1 V1.5 dump and source-verify loader/recovery constraints before selecting any Flash sectors.
+- [ ] Before first physical write, verify integrity/preservation of the factory image already held by the project (user-confirmed 100% identical to this unit), confirm the practical restore route, and audit exact write scope. No duplicate device read is scheduled.
 
 ### CP1.4 exit gate
 
-CP1.4 may be marked **closed at the logical/software-architecture level** only after the control table, access/edit path, Motion Lock policy, Sidecar schema, preset/archive migration and host/emulator transaction tests are complete and reviewed. Physical Flash allocation is a separate later safety gate and is not required to close the logical architecture, but it must remain blocked until the full device dump and recovery analysis are available.
+CP1.4 may be marked **closed at the logical/software-architecture level** only after the control table, access/edit path, Motion Lock policy, Sidecar schema, preset/archive migration and host/emulator transaction tests are complete and reviewed. Physical Flash allocation is a separate later safety gate and is not required to close the logical architecture, but it must remain blocked until the accepted factory image is integrity-checked and the practical recovery route is confirmed.
 
 No firmware implementation, stable parameter ID assignment, Sidecar byte layout, Flash address, device write or factory-firmware change is claimed by this planning update.
 
@@ -733,7 +733,7 @@ The user accepted the proposed dependency-aware execution order. This is the con
 8. **CP1.4.8 — Project/preset integration:** cover four stored projects, live autosave and user presets; base projects must still load when Sidecar is missing/invalid.
 9. **CP1.4.9 — Backup/restore integration:** version archive representation and maintain legacy restore behavior.
 10. **CP1.4.10 — Full migration/regression:** test old/new projects, presets, archives, failure recovery and compatibility.
-11. **CP1.4.11 — Physical Flash audit:** obtain the full FM-1 V1.5 dump and verify loader/recovery constraints before any sector selection.
+11. **CP1.4.11 — Pre-write Flash safety checkpoint:** verify the integrity of the accepted exact factory image, confirm the restore route and audit the exact write scope. No new device dump is required under the user's 2026-11-02 confirmation.
 
 ### Parallel work policy
 
@@ -749,7 +749,7 @@ The user accepted the proposed dependency-aware execution order. This is the con
 - **B:** Private access path and Sidecar schema defined.
 - **C:** persistence, restore and migration tests pass.
 - **D:** CP1.4 closed at software-architecture level after review.
-- **E:** physical Flash safety separately confirmed from full dump/recovery audit.
+- **E:** physical Flash safety separately confirmed from factory-image integrity and restore-route audit.
 
 This accepted order is a planning decision only. It does not claim any of these tasks are completed, assign stable parameter IDs, approve Flash sectors or authorize device writes.
 
@@ -762,6 +762,30 @@ The user accepted the parallel work model. Run three independent lanes concurren
 - **CP2 DSP qualification:** continue isolated DSP, oscillator, filter, VCA, memory and target-resource qualification independently. Do not represent isolated primitive tests as a complete engine.
 - **CP3 host/audio integration:** continue MIDI/Sequencer dispatch, voice allocation/modes, Gate/Accent and VCA lifecycle tests independently.
 
-CP1.4.2 follows preliminary control-table agreement; CP1.4.6–1.4.7 follow Sidecar schema agreement; CP1.4.8–1.4.10 follow stable persistence format. CP1.4.11 remains a separate physical-Flash safety gate requiring the complete FM-1 V1.5 dump and verified recovery route.
+CP1.4.2 follows preliminary control-table agreement; CP1.4.6–1.4.7 follow Sidecar schema agreement; CP1.4.8–1.4.10 follow stable persistence format. CP1.4.11 is a pre-write safety checkpoint using the user-confirmed exact factory image already held by the project; it requires image-integrity verification, a practical restore route and exact write-scope review, not a duplicate device read.
 
 This records accepted scheduling/dependencies, not evidence that tasks are currently running continuously or completed. Start/verify each concrete job through its actual GitHub/CI action and report status with commit/workflow evidence. No change to the restrictions on `main`, factory firmware, physical Flash, or device flashing.
+
+
+## Execution update — 2026-11-02
+
+### CP1.4.1 source verification
+- FREQ is confirmed as oscillator frequency in Hz: source range 30–500 Hz, default 160 Hz, source step 1 Hz.
+- All source steps previously marked unspecified in the CP1.4.1 map were recovered from the protected v98 parameter object and recorded.
+- The older frozen E0–E7 order still conflicts with the later CP1.4 candidate ordering. The earlier accepted freeze remains authoritative until a superseding user decision is explicit. No final E descriptors or stable IDs are assigned.
+
+### CP1.4.3 / CP1.4.4 source audit
+- Added `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md`.
+- Confirmed the eight-slot engine EDIT limit, absence of a persistent Private bank API/UI path, and prohibition on storing patch values in volatile `engine_t.mem`.
+- Confirmed P_MC needs an explicit Motion Lock whitelist because P_MC IDs would be inserted before E0. The existing Motion Lock pool is 128 records shared across all four tracks.
+- Source audit is complete; implementation and regression remain open.
+
+### Factory image / stream D
+- User confirmed on 2026-11-02 that the factory firmware image already held by the project is 100% identical to the firmware on their physical FM-1.
+- The separate duplicate-read backup stream is removed from active parallel development. Before first physical write, verify the accepted image's integrity, practical restore route and exact write scope. No physical read/write or Flash operation is authorized.
+
+### CI evidence
+- Source HEAD `42e79344b561df8b106d4183c593b010ae8b88c9`: full baseline run `41356473081` SUCCESS; focused Metal Core run `41356472886` SUCCESS with 15 tests passed.
+- Full baseline covered the unmodified Felucca firmware build, AC79 VCA compile-only probe, and host/web regression. It did not build/register the production METAL CORE engine or validate hardware.
+- Subsequent commits through this documentation update changed documentation only; successful CI still covers the current code tree.
+
