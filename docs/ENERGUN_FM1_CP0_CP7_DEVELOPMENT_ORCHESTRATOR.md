@@ -117,7 +117,7 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 - Added `tests/run_development_orchestrator.py` to validate the registry and produce JSON/Markdown reports.
 - Added `--execute` with a bounded worker pool. It runs only exact argv entries in `execution_policy.allowed_commands`, uses `shell=False`, applies per-task timeouts and records results.
 - CP1 is the first registered executor. A zero process exit is not enough: the runner imports CP1's explicit JSON `PASS` / `BLOCKED` / `FAIL` result.
-- Added unit coverage for dependency waits, blocked descendants, max parallel, allow-list enforcement, shell-free invocation and refusing to execute tasks whose prerequisites have not passed.
+- Added unit coverage for dependency waits, blocked descendants, max parallel, allow-list enforcement, shell-free invocation, refusal to execute tasks whose prerequisites have not passed, and a barrier-based proof that independent executor workers overlap.
 - The fast regression workflow invokes the executor and uploads its report.
 - CP0 remains `checking` until baseline evidence is tied to the exact candidate commit. Therefore CP1 is correctly held at the dependency gate; no CP1 command is dispatched by the global executor yet.
 - CP2 and CP3 are represented as independent workstreams, but have no separate registered executor commands yet. They are not falsely reported as running.
@@ -144,18 +144,3 @@ Not implemented: CP2/CP3 executor commands, automatic promotion of implementatio
 
 A green workflow does not imply that every CP0–CP7 workstream is passed. Workstream status is determined by explicit evidence and dependency gates.
 
-## 9. First acceptance criteria
-
-This architecture increment is accepted when:
-
-- the CP0–CP7 registry parses as valid JSON;
-- every dependency ID exists and the graph is acyclic;
-- CP2 and CP3 host lifecycle are represented as parallel lanes after CP0;
-- CP3 production integration waits for both;
-- CP6 joins the required upstream gates;
-- CP7 remains blocked behind CP6 and explicit device authorization;
-- the existing CP1 runner and manifest are unchanged.
-
-## 10. Current implementation status
-
-This commit establishes the registry and contract only. It does not yet implement the global scheduler, a coding agent, a persistent background worker, a global concurrency lock or automatic branch/PR creation. Those are explicit Phase 2–4 tasks, not implied capabilities.
