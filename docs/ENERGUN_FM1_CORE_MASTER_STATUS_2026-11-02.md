@@ -3,7 +3,7 @@ Date: 2026-11-02
 Canonical repository: `energundenis/Felucca`
 Canonical working branch: `energun-metal-core`
 Documentation synchronization base HEAD: `069b43f1aac4a08aaf927fac92c2852526a03cf5`
-Latest code/test HEAD with confirmed fast-lane result: `8d19ad63e19443dbd38bb631b424945956f58a3a`
+Latest code/test HEAD with confirmed fast-lane result: `eecb9c37f2022640c9568985339d580ca21317a5`
 
 ## Authority and percentage method
 This is the current status entry point. It supersedes stale checkbox/status wording in the original planning baseline and older checkpoint snapshots. The detailed source documents remain authoritative for technical scope and acceptance.
@@ -49,7 +49,7 @@ CP1.4 percentages distinguish completion of an audit/design deliverable from imp
 - PR #2 branch head `1090091999c87f94da7068b5879dec39bc235820`: focused fast regression [41426956119](https://github.com/energundenis/Felucca/actions/runs/41426956119) and baseline [41426956021](https://github.com/energundenis/Felucca/actions/runs/41426956021) both completed SUCCESS. The baseline includes the unmodified Felucca build, AC79 VCA compile-only probe and host/web regression.
 - Isolated DSP branch documentation-resync commit `7b47c18556e94b60d66c40f2676fac4d91c4d2af`: branch `metal-core-dsp-stage1-osc` is ahead 89 / behind 0 against `energun-metal-core`. Latest stage workflow [41430073973](https://github.com/energundenis/Felucca/actions/runs/41430073973) completed SUCCESS, including the real `engines.c` syntax-only check and OSC/FM/feedback host tests at 44.1 and 96 kHz. The branch remains isolated and unregistered.
 
-- Fast regression [41458503150](https://github.com/energundenis/Felucca/actions/runs/41458503150): **SUCCESS**, 21/21 existing focused regression programs/suites plus the new Sidecar V1 strict C11 suite (**35 checks, 0 failures**); sequential CP1 queue passes stages 1–4 and stops at stage 5 (`base-generation-binding`) because the production sequence-aware storage reader is not implemented. Exact tested code HEAD `8d19ad63e19443dbd38bb631b424945956f58a3a`.
+- Fast regression [41459497619](https://github.com/energundenis/Felucca/actions/runs/41459497619): **SUCCESS**, 21/21 existing focused regression programs/suites plus the Sidecar V1 strict C11 suite (**38 checks, 0 failures**); sequential CP1 queue passes stages 1–4 and stops at stage 5 (`base-generation-binding`) because the production sequence-aware storage reader is not implemented. Exact tested code HEAD `eecb9c37f2022640c9568985339d580ca21317a5`.
 - Full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732): **IN PROGRESS at last inspection** on the same code HEAD. Build and AC79 VCA compile-only probe had passed; Felucca host/web regression was still running. Do not report this run as successful until GitHub records completed SUCCESS.
 - Previous full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166): SUCCESS on older code HEAD `33327eb312a36b83b3751560d899c577147125e4`; useful historical evidence, not a replacement for exact-head CI.
 - CP3.1 VCA real-pool run [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181): SUCCESS, 17/17 on its exact older code HEAD. It remains a scoped historical result, not full engine qualification.
@@ -105,6 +105,6 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - Validator checks identity, exact Base fingerprint, lengths, P_MC domains (including signed FOLD SYMMETRY -64..63), Private Boolean/enum/7-bit domains, shared 128-event capacity, duplicate Motion keys and empty preset-slot zeroing. P_MC numeric-ID whitelist remains open until CP1.4.4 assigns IDs.
 - Reuses Felucca's existing outer storage CRC-32; no duplicate inner CRC. This module is not connected to storage.c and defines no object IDs or physical sectors.
 - Added `tests/energun_sidecar_v1_test.c` and `tests/run_sidecar_v1_test.sh`; the queue stage `sidecar-format` is now enabled and executes the strict C11 `-Wall -Wextra -Werror` suite.
-- CI [41458503150](https://github.com/energundenis/Felucca/actions/runs/41458503150): SUCCESS. Sidecar V1: **35 checks, 0 failures**. Queue: Storage A/B PASS, FM6 staging baseline PASS, Sidecar Format PASS; next stage BLOCKED at Base-generation binding because the production storage metadata reader is not implemented.
-- Exact tested code HEAD: `8d19ad63e19443dbd38bb631b424945956f58a3a`. Baseline firmware build on the same code HEAD was still running at the time of this update; do not claim its result until completed.
+- CI [41459497619](https://github.com/energundenis/Felucca/actions/runs/41459497619): SUCCESS. Sidecar V1: **35 checks, 0 failures**. Queue: Storage A/B PASS, FM6 staging baseline PASS, Sidecar Format PASS; next stage BLOCKED at Base-generation binding because the production storage metadata reader is not implemented.
+- Exact tested code HEAD: `eecb9c37f2022640c9568985339d580ca21317a5`. This is host compile/test evidence; the standalone module is not linked into the firmware build.
 - Updated CP1.4.5 to 50%, CP1.4.7 to 35%, CP1.4.8 to 40%. CP1 overall remains 70%; equal-weight CP0–CP7 overall remains 40%.
