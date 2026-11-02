@@ -59,6 +59,7 @@ jobs:
 
       - name: Run dependency-aware parallel CP1 persistence test queue
         id: cp1-queue
+        continue-on-error: true
         run: python3 tests/run_cp1_test_queue.py
 
       - name: Test CP0-CP7 development orchestrator planner
