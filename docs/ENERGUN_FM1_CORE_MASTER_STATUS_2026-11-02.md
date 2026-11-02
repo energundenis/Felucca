@@ -35,7 +35,7 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 | CP1.4.4 | P_MC Motion Lock policy | **45%** | Explicit whitelist and shared 128-event-pool rules are designed. No production whitelist/merge/split implementation. |
 | CP1.4.5 | Sidecar schema and pair transaction | **40%** | Logical schema, identity binding and sidecar-first A/B ordering are drafted. No frozen binary ABI, transaction coordinator or production storage code. |
 | CP1.4.6 | Sidecar logical capacity | **100%** | Capacity arithmetic verified: 501-byte project/live payload and 210-byte preset-bank payload before provisional envelope; no physical sector allocation. |
-| CP1.4.7 | CRC/integrity | **0%** | No completed Sidecar-specific CRC/integrity implementation and acceptance evidence recorded. |
+| CP1.4.7 | CRC/integrity | **30%** | Existing CRC-32/header/payload validation, A/B fallback and generic fault tests audited; Sidecar-specific base-binding and semantic-validation contract drafted. No production Sidecar reader or Sidecar-specific acceptance tests yet. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
 | CP1.4.8 | Automated storage/fault regression | **35%** | Existing host regression infrastructure and focused tests are in place; pair-commit, power-loss, stale-generation and complete Sidecar round-trip matrix remains open. |
 | CP1.4.9 | Backup/Restore audit | **100% audit** | Source audit complete: archive V1 omits Sidecar; archive V2 needs pair-aware restore and destination-sequence rebinding. Implementation remains 0%. |
 | CP1.4.10 | Integration | **20%** | Integration dependencies and boundaries are documented; production Private/P_MC/Sidecar integration is not implemented. |
@@ -44,6 +44,10 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 CP1.4 percentages distinguish completion of an audit/design deliverable from implementation. In particular, CP1.4.6 and the CP1.4.9 source audit are complete only within their stated scopes; neither authorizes Flash allocation or archive V2 implementation.
 
 ## Current CI evidence
+
+- PR #1 branch head `304085f743c748fa657cf7199a6d79de803c0d73`: fast regression [41426208152](https://github.com/energundenis/Felucca/actions/runs/41426208152), biquad candidate/target probe [41426208192](https://github.com/energundenis/Felucca/actions/runs/41426208192), and baseline build [41426208286](https://github.com/energundenis/Felucca/actions/runs/41426208286) all completed SUCCESS. The baseline workflow built unmodified Felucca, compiled the VCA probe with AC79, and completed host/web regression; this is not a METAL CORE full-engine target build.
+- PR #2 branch head `1090091999c87f94da7068b5879dec39bc235820`: focused fast regression [41426956119](https://github.com/energundenis/Felucca/actions/runs/41426956119) completed SUCCESS. Baseline [41426956021](https://github.com/energundenis/Felucca/actions/runs/41426956021) passed the unmodified Felucca build and AC79 VCA compile-only probe; host/web regression was still in progress at the last inspection.
+- Isolated DSP branch merge commit `41f79d88fead7eb28f5c568506522d96edd67f73`: branch `metal-core-dsp-stage1-osc` is now ahead 87 / behind 0 against `energun-metal-core`. Stage workflow [41428775323](https://github.com/energundenis/Felucca/actions/runs/41428775323) completed SUCCESS, including the real `engines.c` syntax-only check and OSC/FM/feedback host tests at 44.1 and 96 kHz. The branch remains isolated and unregistered.
 
 - Fast regression [41417141686](https://github.com/energundenis/Felucca/actions/runs/41417141686): **SUCCESS**, 18/18 focused host test programs, source code HEAD `7ec54a19bb1e18992c1dbc3603deba60015d411f`.
 - Full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732): **IN PROGRESS at last inspection** on the same code HEAD. Build and AC79 VCA compile-only probe had passed; Felucca host/web regression was still running. Do not report this run as successful until GitHub records completed SUCCESS.
@@ -70,6 +74,13 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 7. Continue CP3 production engine integration in parallel only where its dependencies are already fixed; keep production registration gated.
 8. Start CP4/CP5 production UI and sequencer integration after stable parameter and engine contracts exist.
 9. Close CP6 target resource/stress qualification and CP7 package/recovery/device validation only after prior gates pass.
+
+## CP1.4.7 integrity audit update — 2026-11-02
+
+- Added [CP1.4.7 Sidecar CRC and integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md).
+- Confirmed the existing storage layer already provides zlib-compatible CRC-32 over the complete object payload, a separate CRC-32 over the 32-byte commit header (excluding its own CRC field), header-last A/B commits, read-back verification and fallback to an older valid copy.
+- Recommended reusing the outer storage CRC without duplicating an inner Sidecar CRC by default. Sidecar must add semantic validation and a reader that evaluates both copies against the exact base-object sequence; `st_current()` alone cannot safely select a base-bound Sidecar.
+- CP1.4.7 is now **30%** for source audit and policy draft only. No production Sidecar reader, transaction code, Sidecar-specific acceptance tests, binary ABI or Flash allocation exists. CP1.4.7 remains OPEN.
 
 ## Safety invariants
 
