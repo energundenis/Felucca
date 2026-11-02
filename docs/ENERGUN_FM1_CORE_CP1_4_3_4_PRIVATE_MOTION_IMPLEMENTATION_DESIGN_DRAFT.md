@@ -13,7 +13,7 @@ This draft translates the source audit into an implementation contract for:
 This document assigns no numeric parameter IDs, editor command numbers, UI page IDs, sidecar byte offsets, Flash sectors or stable binary ABI. It does not alter production source or authorize firmware integration.
 
 Dependencies:
-- CP1.4.1 must resolve the E0–E7 order and the OSC2 LEVEL / TIMBRE overlap before numeric IDs are allocated.
+- CP1.4.1 logical membership is now reconciled against the earlier accepted E0–E7 freeze; numeric IDs remain unassigned until CP1.4.2 encoding/compatibility and CP1.4.5 Sidecar gates are complete.
 - CP1.4.2 must complete per-control curve review and legacy compatibility decisions.
 - CP1.4.5 must define the shared Sidecar schema before persistent implementation.
 - The current factory image and physical device remain untouched.
@@ -103,25 +103,25 @@ Source-specific protocol constraint:
 - The final conversion must be shared by capture, editor SET, project import/export, playback and lock restore. No path may use a different scaling.
 - Validate the decoded motion value against the target descriptor before inserting or applying an event.
 
-### 3.3 Candidate symbolic whitelist and raw value domains
+### 3.3 Reconciled symbolic P_MC whitelist and raw value domains
 
-The following is a symbolic candidate derived from the frozen 16-control P_MC proposal. It is not a final approved list because OSC2 LEVEL and TIMBRE overlap the earlier frozen E1/E2 assignment.
+The earlier user-approved E0–E7 freeze is authoritative. The 16-control P_MC set is reconciled in `ENERGUN_FM1_CORE_CP1_4_1_E0_E7_RECONCILIATION.md`. OSC2 LEVEL and TIMBRE are E1/E2 and are not P_MC whitelist members; FM INDEX and LPG DECAY are P_MC members.
 
 | Logical control | Candidate Motion value domain | Notes |
 |---|---:|---|
-| OSC2 LEVEL | 0..127 | Unipolar 7-bit code |
-| OSC2 DETUNE | 0..127 | Unipolar 7-bit code; decode through the same nonlinear/linear descriptor curve used by the parameter |
-| TIMBRE | 0..127 | Unipolar 7-bit code; E2 overlap unresolved |
-| MOD RATIO | 0..127 | Unipolar 7-bit code |
+| OSC2 DETUNE | 0..127 | Unipolar 7-bit code; decode through the same descriptor curve used by the parameter |
+| FM INDEX | 0..127 | Unipolar 7-bit code |
+| MOD RATIO | 0..127 | Unipolar 7-bit code; nonlinear display conversion is shared with the parameter |
 | AM DEPTH | 0..127 | Unipolar 7-bit code |
 | FM FEEDBACK | 0..127 | Unipolar 7-bit code |
 | FM ENV AMT | 0..127 | Unipolar 7-bit code |
-| FM ENV ATTACK | 0..127 | Unipolar 7-bit code |
-| FM ENV DECAY | 0..127 | Unipolar 7-bit code |
-| METAL DECAY | 0..127 | Unipolar 7-bit code |
+| FM ENV ATTACK | 0..127 | Unipolar 7-bit code; logarithmic display conversion is shared with the parameter |
+| FM ENV DECAY | 0..127 | Unipolar 7-bit code; logarithmic display conversion is shared with the parameter |
+| METAL DECAY | 0..127 | Unipolar 7-bit code; logarithmic display conversion is shared with the parameter |
 | FOLD SYMMETRY | -64..63 | Centered signed 7-bit code; physical zero is raw 0 |
 | WAVEFOLDER DRIVE | 0..127 | Unipolar 7-bit code |
 | LPG RESPONSE | 0..127 | Unipolar 7-bit code |
+| LPG DECAY | 0..127 | Unipolar 7-bit code; logarithmic display conversion is shared with the parameter |
 | VOICE VCA LEVEL | 0..127 | Unipolar 7-bit code |
 | WAVEFOLDER MODULE VOLUME | 0..127 | Unipolar 7-bit code |
 | WEST COAST VOLUME | 0..127 | Unipolar 7-bit code |
@@ -140,7 +140,7 @@ The Motion event should store the same stored parameter code that `param_desc_of
 
 ## 4. Required implementation sequence
 
-1. Close CP1.4.1 logical ordering/overlap and CP1.4.2 encoding/compatibility gates.
+1. CP1.4.1 logical ordering/overlap is reconciled; close the remaining CP1.4.2 encoding/compatibility gates.
 2. Freeze the typed Private logical descriptor table (symbolic keys, types, defaults, ranges).
 3. Freeze the Sidecar identity and generation model in CP1.4.5.
 4. Implement the per-part runtime cache and typed access API.
