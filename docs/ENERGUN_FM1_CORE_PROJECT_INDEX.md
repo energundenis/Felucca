@@ -17,7 +17,7 @@ Start here:
 - **Private access / Motion Lock:** `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md` (source audit) and `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_MOTION_IMPLEMENTATION_DESIGN_DRAFT.md` (typed per-part cache, editor capability protocol, explicit P_MC whitelist and test matrix; design draft only, implementation open).
 - **Host VCA / sequencer lifecycle:** CP1.17–CP1.20 records, including final CI evidence in `ENERGUN_FM1_CORE_CP1_20_DEVELOPMENT_CHECKPOINT.md`.
 - **V98 behavior and V1 decisions:** CP1.5, CP1.8, CP1.12–CP1.16. Their source records currently remain in `energun-fm1-cp3-host-integration`; the canonical decisions are summarized in the cross-branch register.
-- **DSP / engine:** DSP Stage 1–7 and FOLLOW/MOD RATIO decision, source branch `metal-core-dsp-stage1-osc`.
+- **DSP / engine:** DSP Stage 1–7 and FOLLOW/MOD RATIO decision, source branch `metal-core-dsp-stage1-osc`. Latest sync commit `3bd73cec9f22bc9fb7f47afb3d2ba8f4160ca577`; branch ahead 88 / behind 0. Latest stage CI [41429773790](https://github.com/energundenis/Felucca/actions/runs/41429773790) PASS. Adapter remains unregistered in `ENGINES[]`.
 - **VCA / lifecycle / memory:** CP2.23 and CP3.0/3.1, source branch `energun-fm1-cp3-host-integration`.
 - **Filter qualification:** `energun-fm1-cp3-dsp-filter`.
 - **AC79 / platform QA:** `energun-fm1-cp3-platform-qa`.
@@ -47,6 +47,9 @@ The cross-branch register is a status/decision index, not permission to merge so
 
 - **CP1.4.1 inventory contract (2026-11-02):** logical map is frozen at 8 Engine EDIT + 16 P_MC + 13 Private per part (52 Private values across four parts). New host test `tests/metal_core_parameter_inventory_test.c` guards counts, E0–E7 order, uniqueness, no E1/E2 duplication, FM INDEX/LPG DECAY placement, and independent FOLLOW/METAL booleans. Fast run [41417141686](https://github.com/energundenis/Felucca/actions/runs/41417141686) passed 18/18 on exact HEAD `7ec54a1`. This freezes logical membership only—not IDs, descriptors, Private API, Motion Lock, storage ABI or Flash layout. Full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732) was still running at the latest check.
 
+
+
+- **Latest PR CI (2026-11-02):** PR #1 baseline/fast/biquad probe [41426208286](https://github.com/energundenis/Felucca/actions/runs/41426208286), [41426208152](https://github.com/energundenis/Felucca/actions/runs/41426208152), [41426208192](https://github.com/energundenis/Felucca/actions/runs/41426208192) all PASS. PR #2 fast/baseline [41426956119](https://github.com/energundenis/Felucca/actions/runs/41426956119), [41426956021](https://github.com/energundenis/Felucca/actions/runs/41426956021) both PASS. Both PRs remain unmerged.
 
 ## Status authority — 2026-11-02
 
