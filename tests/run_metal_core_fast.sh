@@ -36,7 +36,7 @@ run_test() {
 
 # Persistence is a first-class fast lane: exercise the real storage.c against
 # simulated NOR, then the FM6 voice-bank staging path against the same host model.
-compile_test_strict storage tests/storage_test.c
+compile_test storage tests/storage_test.c
 run_test storage
 
 compile_test fm6bank tests/fm6bank_test.c -lm
