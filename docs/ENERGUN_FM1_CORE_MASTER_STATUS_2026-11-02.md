@@ -33,7 +33,7 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 | CP1.4.2 | 7-bit conversion and compatibility | **80%** | Standard Felucca 7-bit V1 encoding accepted. 30-control reference, 9,434 source-step boundaries, 100,001-point nearest-code sweeps, endpoint clamping and corrected bipolar mapping are documented/tested. Remaining: musical-resolution review, final per-control acceptance, base-compatible FUN10/preset strategy and exact-head compatibility evidence. |
 | CP1.4.3 | Private parameter access/runtime model | **45%** | Typed four-part cache, lifecycle and capability-probed editor protocol are designed. No production Private API/cache/editor implementation. |
 | CP1.4.4 | P_MC Motion Lock policy | **45%** | Explicit whitelist and shared 128-event-pool rules are designed. No production whitelist/merge/split implementation. |
-| CP1.4.5 | Sidecar schema and pair transaction | **40%** | Logical schema, identity binding and sidecar-first A/B ordering are drafted. No frozen binary ABI, transaction coordinator or production storage code. |
+| CP1.4.5 | Sidecar schema and pair transaction | **40%** | Logical schema, identity binding, write-path audit and pair-coordinator design are documented. No frozen binary ABI, production coordinator or storage code. |
 | CP1.4.6 | Sidecar logical capacity | **100%** | Capacity arithmetic verified: 501-byte project/live payload and 210-byte preset-bank payload before provisional envelope; no physical sector allocation. |
 | CP1.4.7 | CRC/integrity | **30%** | Existing CRC-32/header/payload validation, A/B fallback and generic fault tests audited; Sidecar-specific base-binding and semantic-validation contract drafted. No production Sidecar reader or Sidecar-specific acceptance tests yet. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
 | CP1.4.8 | Automated storage/fault regression | **35%** | Existing host regression infrastructure and focused tests are in place; pair-commit, power-loss, stale-generation and complete Sidecar round-trip matrix remains open. |
@@ -74,6 +74,14 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 7. Continue CP3 production engine integration in parallel only where its dependencies are already fixed; keep production registration gated.
 8. Start CP4/CP5 production UI and sequencer integration after stable parameter and engine contracts exist.
 9. Close CP6 target resource/stress qualification and CP7 package/recovery/device validation only after prior gates pass.
+
+## CP1.4.5 coordinator design update — 2026-11-02
+
+- Added [Sidecar Pair Transaction Coordinator design](ENERGUN_FM1_CORE_CP1_4_5_PAIR_TRANSACTION_COORDINATOR_DESIGN.md).
+- Defines a protected matching-copy rule, staged future-bound Sidecar, base commit, and final pair verification; includes load selection, sequence-wrap rules, re-entrancy/serialization constraints and a host fault-injection matrix.
+- The design explicitly uses the real `storage.c` behavior and extends the existing NOR simulation in `tests/storage_test.c`; it does not propose a copied test model.
+- This is a logical design deliverable only. No firmware source, object IDs, `OBJ_COUNT`, Sidecar ABI, Flash sectors, archive V1/V2 behavior, factory image or physical device changed.
+- CP1.4.5 remains **40%**; no implementation progress is claimed.
 
 ## CP1.4.7 integrity audit update — 2026-11-02
 
