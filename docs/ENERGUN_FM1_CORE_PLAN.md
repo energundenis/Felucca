@@ -808,3 +808,12 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Fast CI run [41404580795](https://github.com/energundenis/Felucca/actions/runs/41404580795) passed on code HEAD `29125b419a83b10965036d85ab7b313755dcd1eb`; 16/16 tests passed. The corrected FOLD SYMMETRY mapping uses the existing Felucca signed bipolar descriptor range -64..63, piecewise centered so physical zero maps to code 0.
 - Source audit distinguished the generic FUN10 serialized value range (-64..127, stored as value+64) from the existing bipolar descriptor range (-64..63). Do not use the 192-value container range as if it were a signed 7-bit bipolar descriptor.
 - CP1.4.2 remains OPEN: per-control error acceptance limits and exact legacy project/preset compatibility fixtures remain outstanding. Full baseline CI for the corrected code HEAD is pending. No production firmware source or binary format changed.
+
+
+## CP1.4.2 quantization test update — 2026-11-02
+
+- Host-only conversion reference covers 30 continuous controls and 9,434 declared v98 source-step boundaries.
+- Added a 100,001-point-per-control sweep enforcing nearest-code mathematical error bounds, plus finite out-of-range clamp checks.
+- Fast CI [41406252578](https://github.com/energundenis/Felucca/actions/runs/41406252578) SUCCESS on code HEAD `89528e4948b58b98232543014d805ec3bd306616`; all 16 focused tests passed, 0 quantization-reference failures.
+- Maximum measured logarithmic relative error: 2.7569% (ATTACK/FM ENV ATTACK). Linear error is bounded at 0.5/127 of full scale; bipolar FOLD SYMMETRY at 0.5/63 absolute units. These are mathematical quantizer bounds, not musical acceptance/sign-off.
+- CP1.4.2 remains OPEN for review of musical resolution, base-compatible FUN10 migration, user-preset sidecar scope and exact expanded-count compatibility fixtures.
