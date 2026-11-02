@@ -76,6 +76,18 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
         self.assertEqual(plan["dispatch_candidates"], ["a", "b"])
         self.assertEqual(plan["available_slots"], 0)
 
+
+    def test_cp2_cp3_dispatch_in_parallel_after_cp0_passes(self):
+        data = manifest([
+            task("cp0", "passed"),
+            task("cp1", deps=["cp0"], command=["python3", "cp1.py"]),
+            task("cp2", deps=["cp0"], command=["sh", "cp2.sh"]),
+            task("cp3", deps=["cp0"], command=["sh", "cp3.sh"]),
+        ], max_parallel=3)
+        plan = build_plan(data, ["cp0", "cp1", "cp2", "cp3"])
+        self.assertEqual(plan["dispatch_candidates"], ["cp1", "cp2", "cp3"])
+        self.assertEqual(plan["max_parallel"], 3)
+
     def test_cp1_pass_evidence_does_not_bypass_cp0_dependency(self):
         data = manifest([
             task("cp0-baseline", "checking"),
