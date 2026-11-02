@@ -138,3 +138,14 @@ A source-level recheck of `params.c`, `project.c` and `motion.c` identified an i
 - Corrected signed-mapping fast CI run [41404580795](https://github.com/energundenis/Felucca/actions/runs/41404580795) passed on code HEAD `29125b419a83b10965036d85ab7b313755dcd1eb`: FOLD SYMMETRY now uses exactly 128 signed codes (-64..63), maps physical zero to code 0, and passes endpoint, exhaustive round-trip, monotonicity and all 201 source-step boundary checks. All 16 focused tests passed.
 - Source evidence: `firmware/src/params.c` existing `F_BIPCT` descriptors use -64..63; `firmware/src/project.c` packs `p + 64` and rejects bytes above 191 on load; `firmware/src/motion.c` stores motion values as `int8_t` and validates against descriptor min/max as well as -64..127.
 - This correction is a host reference/test change only. No production parameter descriptor, ID, serializer, project format or firmware source was changed.
+
+
+## 4D. Strict mathematical quantization-bound regression — 2026-11-02
+
+- Extended the host reference with a 100,001-point sweep per control, enforcing nearest-code mathematical error bounds, plus finite out-of-range clamping checks.
+- Linear controls: maximum absolute error <= 0.5/127 of the physical span.
+- Log controls: maximum relative error <= the exact half-code multiplicative bound derived from each range. Worst measured value is 2.7569% for ATTACK and FM ENV ATTACK.
+- Bipolar FOLD SYMMETRY: maximum absolute error <= 0.5/63 (0.00793651) with the centered -64..63 mapping.
+- Linear worst-case measured error is 0.3937% of full scale. All 30 controls passed the nearest-code bound and endpoint-clamp checks.
+- Fast CI [41406252578](https://github.com/energundenis/Felucca/actions/runs/41406252578) passed on code HEAD `89528e4948b58b98232543014d805ec3bd306616`: 16/16 focused tests passed; 0 quantization-reference failures.
+- These are mathematical quantizer-correctness bounds, not a musical/perceptual approval. CP1.4.2 remains open for review of musical resolution, base-compatible FUN10 migration, user-preset extension scope and exact expanded-count compatibility fixtures.
