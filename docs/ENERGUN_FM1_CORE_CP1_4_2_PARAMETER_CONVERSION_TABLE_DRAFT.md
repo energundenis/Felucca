@@ -199,3 +199,9 @@ Interpretation: log is strongly advantageous around short attack times, resonanc
 
 - Full baseline CI [41406252564](https://github.com/energundenis/Felucca/actions/runs/41406252564) also completed SUCCESS on the same code HEAD `89528e4948b58b98232543014d805ec3bd306616`: unmodified Felucca firmware build, AC79 target-compiler VCA probe, all host/web regressions and artifact upload completed. Artifact [energum-fm1-baseline-89528e4948b58b98232543014d805ec3bd306616.zip](https://github.com/energundenis/Felucca/actions/runs/41406252564/artifacts/13124032492), SHA-256 `209f57ff896b4dff66c5be24b9f7c570c2ddc7b371b935192247229199660ef1`.
 - This is baseline/toolchain/regression evidence only. It does not register/build METAL CORE as a production engine, qualify its complete DSP graph on AC79, or validate hardware behavior.
+
+
+## 4H. Expanded fast-regression suite — 2026-11-02
+- Fast CI [41408456648](https://github.com/energundenis/Felucca/actions/runs/41408456648) SUCCESS on code HEAD `992e4591629277d9952fc76610928972e515a6f0`: all 17 focused tests passed.
+- The suite now also includes the real Felucca `track_render()` / `voice_start()` OSC dispatch lifecycle test. The CP1.4.2 quantization reference remains PASS: 30 controls, 9,434 source-step boundaries, 100,001-point nearest-code bound sweep, endpoint clamping, 0 failures.
+- Full baseline CI for this exact HEAD is still running; the new legacy FUN10 np=127 rejection and old-firmware 127-value user-preset mapping fixtures are pending that full lane.
