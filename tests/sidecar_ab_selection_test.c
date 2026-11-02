@@ -68,7 +68,7 @@ static void candidate(energun_sc_candidate_t *c, const uint8_t *record,
 
 int main(void)
 {
-    uint8_t base[32];
+    uint8_t base[32], base_readback[32];
     uint8_t rec_a[ENERGUN_SC_V1_MAX_RECORD], rec_b[ENERGUN_SC_V1_MAX_RECORD];
     uint8_t read_a[ENERGUN_SC_V1_MAX_RECORD], read_b[ENERGUN_SC_V1_MAX_RECORD];
     size_t len_a, len_b;
@@ -87,6 +87,9 @@ int main(void)
           st_current_meta(OBJ_PROJECT0, &base_meta) == 0 &&
           base_meta.copy == 0u && base_meta.sequence == 1u &&
           base_meta.payload_crc == st_crc32(base, sizeof base));
+    check("ordinary Base load remains unchanged with the new copy reader",
+          st_load(OBJ_PROJECT0, base_readback, sizeof base_readback) == (int)sizeof base &&
+          memcmp(base_readback, base, sizeof base) == 0);
 
     /* Test fixture only: OBJ_SETTINGS is reused as an isolated simulated
      * A/B container. It is NOT an assigned production Sidecar object ID.
