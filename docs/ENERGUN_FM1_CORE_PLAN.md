@@ -864,3 +864,10 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Code HEAD: `33327eb312a36b83b3751560d899c577147125e4` (later branch commits are documentation-only).
 - Fast regression [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181): SUCCESS, 17/17 focused test programs. Includes real `ENG_MEM(p)` VCA state and five memory-ownership assertions.
 - Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166): firmware build and AC79 VCA compile probe passed; full host/web regression stage still in progress. Do not mark CP1.4.2 full compatibility fixture lane closed until this run finishes.
+
+
+### CP1.4.5 persistence entry-point audit — 2026-11-02
+- Audited actual write paths: project save, rename, erase and live autosave; user-preset bank save, rename and erase all converge on the listed storage calls in `project.c` / `upreset.c`.
+- Sidecar coordinator must be placed below UI entry points, rebind on rename as well as content changes, and write an empty/tombstone extension on erase. Autosave is a distinct seventh identity.
+- Important boundary: user-preset FM6 patch data is committed separately by `upf_store()` after the preset bank's `up_put()`; the Private Sidecar transaction does not make that third object atomic. This needs separate integration tests and must not be described as whole-preset atomicity.
+- Documentation-only source audit; no storage code changed.
