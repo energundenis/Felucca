@@ -18,11 +18,11 @@
       "id": "cp8-1-global-ci-coordination",
       "checkpoint": "CP8.1",
       "title": "Repository-wide CI concurrency coordination",
-      "state": "checking",
-      "progress_percent": 50,
+      "state": "planned",
+      "progress_percent": 0,
       "depends_on": [],
-      "implementation": "GitHub Actions concurrency group energun-fm1-ci-global adopted by the fast-regression and baseline workflows.",
-      "limitation": "GitHub concurrency provides one running and one pending run per group; pending runs may be replaced. This is a coarse serialization guard, not a durable FIFO lock or crash-recoverable lease. Every future ENERGUN workflow must adopt the same group."
+      "implementation": "A shared GitHub Actions concurrency-group prototype was tested on the fast and baseline workflows, but both runs were cancelled because GitHub concurrency groups retain only one pending run and workflows competed for that slot. The unsafe shared group was reverted; each workflow again has its own concurrency group.",
+      "limitation": "No cross-workflow lock is currently active. Implement a durable atomic lease/lock with owner/run identity, heartbeat/expiry, stale-lock recovery, guaranteed release and concurrency tests before enabling global coordination."
     },
     {
       "id": "cp8-2-worker-registry",
