@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for the CP1 sequential queue controller."""
+"""Unit tests for the dependency-aware parallel CP1 queue controller."""
 import contextlib
 import importlib.util
 import io
@@ -34,13 +34,14 @@ class CP1QueueTests(unittest.TestCase):
         os.environ.update(self.env)
         self.temp.cleanup()
 
-    def run_manifest(self, stages):
+    def run_manifest(self, stages, max_parallel=3):
         evidence = self.root / "build" / "metal-core-fast" / "results.txt"
         evidence.parent.mkdir(parents=True, exist_ok=True)
         evidence.write_text("PASS: storage\nPASS: fm6bank\n", encoding="utf-8")
         QUEUE.MANIFEST.write_text(json.dumps({
             "schema_version": 1,
             "queue_id": "TEST",
+            "max_parallel": max_parallel,
             "stages": stages,
         }), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
@@ -48,54 +49,93 @@ class CP1QueueTests(unittest.TestCase):
         report = json.loads((QUEUE.OUT / "report.json").read_text(encoding="utf-8"))
         return result, report
 
-    def test_blocked_stage_stops_queue_and_reports_all_dependents(self):
+    def test_blocked_stage_blocks_only_its_dependents(self):
         stages = [
             {"id": "storage", "title": "Storage", "state": "evidence",
              "evidence_file": "build/metal-core-fast/results.txt", "evidence_contains": "PASS: storage"},
-            {"id": "sidecar", "title": "Sidecar", "state": "blocked",
+            {"id": "blocked", "title": "Blocked lane", "state": "blocked",
              "depends_on": ["storage"], "blocker": "Not implemented."},
-            {"id": "pair", "title": "Pair", "state": "ready", "depends_on": ["sidecar"],
+            {"id": "dependent", "title": "Dependent", "state": "ready", "depends_on": ["blocked"],
              "command": "python3 -c \"raise SystemExit(99)\""},
+            {"id": "independent", "title": "Independent", "state": "ready", "depends_on": ["storage"],
+             "command": "python3 -c \"print('independent passed')\""},
         ]
         code, report = self.run_manifest(stages)
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "BLOCKED")
-        self.assertEqual([x["result"] for x in report["stages"]], ["PASS", "BLOCKED", "BLOCKED"])
+        results = {x["id"]: x["result"] for x in report["stages"]}
+        self.assertEqual(results, {
+            "storage": "PASS", "blocked": "BLOCKED",
+            "dependent": "BLOCKED", "independent": "PASS",
+        })
 
-    def test_ready_stages_execute_in_dependency_order(self):
+    def test_parallel_independent_stages_join_before_dependent(self):
+        wait_a = (
+            "import pathlib,time; pathlib.Path('a.started').write_text('1'); "
+            "d=time.time()+3; "
+            "exec(\"while not pathlib.Path('b.started').exists() and time.time()<d: time.sleep(.01)\"); "
+            "assert pathlib.Path('b.started').exists(); pathlib.Path('a.done').write_text('1')"
+        )
+        wait_b = (
+            "import pathlib,time; pathlib.Path('b.started').write_text('1'); "
+            "d=time.time()+3; "
+            "exec(\"while not pathlib.Path('a.started').exists() and time.time()<d: time.sleep(.01)\"); "
+            "assert pathlib.Path('a.started').exists(); pathlib.Path('b.done').write_text('1')"
+        )
+        join = (
+            "import pathlib; assert pathlib.Path('a.done').exists(); "
+            "assert pathlib.Path('b.done').exists(); pathlib.Path('joined').write_text('1')"
+        )
         stages = [
-            {"id": "storage", "title": "Storage", "state": "evidence",
-             "evidence_file": "build/metal-core-fast/results.txt", "evidence_contains": "PASS: storage"},
-            {"id": "sidecar", "title": "Sidecar", "state": "ready", "depends_on": ["storage"],
-             "command": "python3 -c \"print('sidecar acceptance passed')\""},
-            {"id": "pair", "title": "Pair", "state": "ready", "depends_on": ["sidecar"],
-             "command": "python3 -c \"print('pair acceptance passed')\""},
+            {"id": "lane-a", "title": "Lane A", "state": "ready",
+             "command": "python3 -c '" + wait_a + "'"},
+            {"id": "lane-b", "title": "Lane B", "state": "ready",
+             "command": "python3 -c '" + wait_b + "'"},
+            {"id": "join", "title": "Join", "state": "ready",
+             "depends_on": ["lane-a", "lane-b"],
+             "command": "python3 -c '" + join + "'"},
+        ]
+        code, report = self.run_manifest(stages, max_parallel=2)
+        self.assertEqual(code, 0)
+        self.assertEqual(report["status"], "PASS")
+        self.assertEqual([x["result"] for x in report["stages"]], ["PASS", "PASS", "PASS"])
+        self.assertTrue((self.root / "joined").is_file())
+
+    def test_failed_stage_blocks_dependents_but_not_already_running_peer(self):
+        stages = [
+            {"id": "failing", "title": "Failing", "state": "ready",
+             "command": "python3 -c \"import sys; sys.exit(7)\""},
+            {"id": "peer", "title": "Peer", "state": "ready",
+             "command": "python3 -c \"open('peer.done','w').write('1')\""},
+            {"id": "dependent", "title": "Dependent", "state": "ready",
+             "depends_on": ["failing"], "command": "python3 -c \"raise SystemExit(99)\""},
+        ]
+        code, report = self.run_manifest(stages, max_parallel=2)
+        self.assertEqual(code, 1)
+        results = {x["id"]: x["result"] for x in report["stages"]}
+        self.assertEqual(results["failing"], "FAIL")
+        self.assertEqual(results["dependent"], "BLOCKED")
+        self.assertTrue((self.root / "peer.done").is_file())
+
+    def test_forward_dependencies_are_supported(self):
+        stages = [
+            {"id": "second", "title": "Second", "state": "ready",
+             "depends_on": ["first"], "command": "python3 -c \"print('second')\""},
+            {"id": "first", "title": "First", "state": "ready",
+             "command": "python3 -c \"print('first')\""},
         ]
         code, report = self.run_manifest(stages)
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "PASS")
-        self.assertEqual([x["result"] for x in report["stages"]], ["PASS", "PASS", "PASS"])
 
-    def test_failed_stage_stops_dependents(self):
+    def test_dependency_cycle_is_rejected(self):
         stages = [
-            {"id": "storage", "title": "Storage", "state": "evidence",
-             "evidence_file": "build/metal-core-fast/results.txt", "evidence_contains": "PASS: storage"},
-            {"id": "sidecar", "title": "Sidecar", "state": "ready", "depends_on": ["storage"],
-             "command": "python3 -c \"import sys; sys.exit(7)\""},
-            {"id": "pair", "title": "Pair", "state": "ready", "depends_on": ["sidecar"],
-             "command": "python3 -c \"raise SystemExit(99)\""},
+            {"id": "first", "title": "First", "state": "blocked", "depends_on": ["second"]},
+            {"id": "second", "title": "Second", "state": "blocked", "depends_on": ["first"]},
         ]
-        code, report = self.run_manifest(stages)
-        self.assertEqual(code, 1)
-        self.assertEqual(report["status"], "FAIL")
-        self.assertEqual([x["result"] for x in report["stages"]], ["PASS", "FAIL", "BLOCKED"])
-
-    def test_forward_dependency_is_rejected(self):
-        stages = [
-            {"id": "first", "title": "First", "state": "blocked", "depends_on": ["later"]},
-            {"id": "later", "title": "Later", "state": "blocked"},
-        ]
-        QUEUE.MANIFEST.write_text(json.dumps({"schema_version": 1, "queue_id": "TEST", "stages": stages}), encoding="utf-8")
+        QUEUE.MANIFEST.write_text(json.dumps({
+            "schema_version": 1, "queue_id": "TEST", "stages": stages,
+        }), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             code = QUEUE.main()
         self.assertEqual(code, 1)
