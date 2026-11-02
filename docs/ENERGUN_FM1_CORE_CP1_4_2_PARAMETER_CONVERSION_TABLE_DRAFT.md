@@ -171,3 +171,25 @@ The following values show the approximate physical increment between adjacent ra
 | RELEASE (s) | 0.000459 | 0.009187 | 0.137806 | 1.045935 |
 
 Interpretation: the 7-bit log curve is relatively fine around low frequencies and short times, but its absolute step becomes wider at the upper end. For example, FREQ is about 3.58 Hz/code at its 160 Hz default and 11.2 Hz/code near 500 Hz. The original v98 1 Hz control increment is therefore not retained throughout the range. The user-facing editor must show the decoded physical value, not imply that every source UI step is available.
+
+
+## 4F. Logarithmic curve trade-off against linear mapping
+
+This comparison is a resolution aid for review. “Linear step” is the constant physical increment if the same control used a linear 0..127 mapping; “log step at default” is the approximate adjacent-code physical increment of the current logarithmic candidate near its default.
+
+| Control | Linear step | Log step at default | Log / linear |
+|---|---:|---:|---:|
+| FREQ (Hz) | 3.701 | 3.584 | 0.968× |
+| METAL RATIO | 0.09055 | 0.10643 | 1.175× |
+| CUTOFF (Hz) | 62.205 | 42.128 | 0.677× |
+| RESONANCE | 0.15354 | 0.05894 | 0.384× |
+| LPG DECAY (s) | 0.015591 | 0.009232 | 0.592× |
+| MOD RATIO | 0.12402 | 0.10220 | 0.824× |
+| FM ENV ATTACK (s) | 0.007866 | 0.000279 | 0.036× |
+| FM ENV DECAY (s) | 0.023543 | 0.011484 | 0.488× |
+| METAL DECAY (s) | 0.023228 | 0.013106 | 0.564× |
+| ATTACK (s) | 0.007866 | 0.000559 | 0.071× |
+| DECAY (s) | 0.023228 | 0.009829 | 0.423× |
+| RELEASE (s) | 0.023543 | 0.009187 | 0.390× |
+
+Interpretation: log is strongly advantageous around short attack times, resonance, and lower cutoff values. Near the METAL RATIO default, log is slightly coarser than linear; this is the clearest control-specific trade-off in the current curve family. FREQ near its default has similar absolute resolution under either curve, while log reallocates codes toward its lower range. If later listening tests show the METAL RATIO operating region needs finer increments around 4.2, a segmented/piecewise nonlinear curve may be evaluated, but it would require a new documented curve, recomputed defaults, and a fresh exhaustive regression before acceptance.
