@@ -54,7 +54,8 @@ typedef struct {
 typedef struct {
     energun_sc_identity_kind_t identity_kind;
     uint8_t identity_index;
-    uint16_t base_motion_count;
+    uint16_t current_base_motion_count; /* active Base pool occupancy; ignored if no Base */
+    uint16_t base_motion_count;         /* new Base pool occupancy */
     const uint8_t *base_payload;
     uint32_t base_payload_length;
     const uint8_t *sidecar_payload;
