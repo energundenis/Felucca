@@ -216,9 +216,9 @@ static void test_invalid_inputs_and_bipolar_center(void) {
          decode_code(bipolar, code, &value) && fabs(value) < 0.006;
     check("FOLD SYMMETRY zero maps to nearest signed code (32), not exact zero",
           ok);
-    printf("CP1.4.2 NOTE bipolar zero decoded at code 32 = %.12f; code 33 = ",
+    printf("CP1.4.2 NOTE bipolar zero decoded at code 32 = %.12f; code 31 = ",
            value);
-    (void)decode_code(bipolar, 33, &value);
+    (void)decode_code(bipolar, 31, &value);
     printf("%.12f (the 192-code domain has no exact midpoint)\n", value);
 }
 
