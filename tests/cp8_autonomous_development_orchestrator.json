@@ -19,10 +19,10 @@
       "checkpoint": "CP8.1",
       "title": "Repository-wide CI concurrency coordination",
       "state": "checking",
-      "progress_percent": 10,
+      "progress_percent": 20,
       "depends_on": [],
-      "implementation": "Implemented a storage-agnostic CP8.1 queue-record validator and unit tests for stable idempotency keys, exact-SHA identity, fixed lane allow-list, claim/lease timestamp invariants, terminal evidence requirements and legal state transitions. This is schema/validation foundation only: no durable backend, atomic claim, coordinator workflow or cross-workflow lock is active.",
-      "limitation": "Queue persistence, atomic compare-and-swap claims, lease heartbeat/recovery, coordinator scheduling and routing existing CI workflows remain unimplemented. Do not enable a shared concurrency group until end-to-end no-loss and mutual-exclusion tests pass."
+      "implementation": "Implemented queue-record validation plus a GitHub Git Database API adapter for a dedicated queue branch. The adapter stores a versioned JSON ledger, uses non-forced fast-forward ref updates as a compare-and-swap boundary, retries rejected competing writes, deduplicates enqueue requests, and supports exclusive claims, owner-bound heartbeats, running state, terminal evidence, and expired-lease recovery. Unit tests simulate competing writers and claimants; no production workflow is routed through the store yet.",
+      "limitation": "The queue branch must be provisioned and protected from unrelated writes; the API adapter still needs a trusted workflow integration test against a real GitHub ref. Existing fast and baseline workflows remain independent, no global lock/coordinator is enabled, and no privileged token is exposed to pull-request code."
     },
     {
       "id": "cp8-2-worker-registry",
