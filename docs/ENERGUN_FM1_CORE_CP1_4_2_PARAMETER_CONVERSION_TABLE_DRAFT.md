@@ -31,11 +31,11 @@ For a unipolar linear parameter:
 
 `display = min + code × (max-min)/127`
 
-For the bipolar linear FOLD SYMMETRY range [-1,+1], provisional signed mapping:
+For bipolar FOLD SYMMETRY [-1,+1], use the signed descriptor range -64..63 with exact zero. The two halves have one-code asymmetry because the range contains 128 codes:
 
-`code = round(-64 + (value+1) × 191/2)`
+`value < 0: code = round(64 × value); display = code / 64`
 
-`display = -1 + (code+64) × 2/191`
+`value >= 0: code = round(63 × value); display = code / 63`
 
 Clamp input to the declared physical range before conversion. Clamp stored codes to the allocated range. Do not apply the bipolar formula to ordinary unipolar controls.
 
@@ -63,7 +63,7 @@ The table records the source default's nominal raw code under the formulas above
 | FM ENV ATTACK | 0.001–1 s | 0.005 | logarithmic | 30 |
 | FM ENV DECAY | 0.01–3 s | 0.25 | logarithmic | 72 |
 | METAL DECAY | 0.05–3 s | 0.4 | logarithmic | 65 |
-| FOLD SYMMETRY | -1–1 | 0 | bipolar linear | 32 |
+| FOLD SYMMETRY | -1–1 | 0 | centered bipolar linear | 0 |
 | WAVEFOLDER DRIVE | 0–1 | 0.2 | linear | 25 |
 | LPG RESPONSE | 0–1 | 0.5 | linear | 64 |
 | VOICE VCA LEVEL | 0–1 | 0.5 | linear | 64 |
@@ -96,7 +96,7 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 - Added `tests/metal_core_parameter_quantization_test.c` as a standalone C host oracle; it is not linked into firmware and does not assign IDs or persistence ABI.
 - Added it to `tests/run_metal_core_fast.sh` as strict C11 / `-Wall -Wextra -Werror` compilation and execution.
 - Coverage: 30 continuous controls; expected default codes; exact endpoints; exhaustive encode(decode(code)) for all 128 unipolar or 128 signed bipolar codes; decoded-range checks; 10,001-point monotonicity sweep; invalid/non-finite input rejection; absolute/relative/default quantization error metrics.
-- FOLD SYMMETRY's signed domain has 192 codes and therefore an even number of code points: zero cannot be represented exactly. The correct Felucca bipolar descriptor range is -64..63. Use a centered piecewise linear mapping so FOLD SYMMETRY zero maps exactly to code 0: negative values scale by 64, nonnegative values by 63. The generic FUN10 container can serialize -64..127, but that broader container range must not be mistaken for the signed bipolar descriptor range.
+- FOLD SYMMETRY uses the signed descriptor range -64..63 and a centered piecewise linear mapping so physical zero maps exactly to code 0: negative values scale by 64, nonnegative values by 63. The generic FUN10 container can serialize -64..127, but that broader container range must not be mistaken for the signed bipolar descriptor range.
 - Fast CI run [41403689043](https://github.com/energundenis/Felucca/actions/runs/41403689043) completed successfully on test-code HEAD `726028e9fda0a5d6b174faee0ae4e48e83f6c352`: all 16 focused tests passed, including the new CP1.4.2 reference (0 failures across 30 controls). The full baseline build run `41403689065` was still running when this note was prepared.
 - Measured worst-case relative error for logarithmic mappings: FREQ 1.114%, METAL RATIO 1.259%, CUTOFF 1.740%, RESONANCE 1.463%, LPG DECAY 1.830%, MOD RATIO 1.651%, FM ENV ATTACK / ATTACK 2.757%, FM ENV DECAY / RELEASE 2.271%, METAL DECAY / DECAY 1.625%. These are dense-grid measurements, not acceptance thresholds.
 - For linear controls near zero, relative-to-value error is not a useful quality metric (it becomes 100% at zero even when absolute error is one code step). Use absolute error normalized to the control's full-scale span for linear controls when setting acceptance limits.
@@ -115,7 +115,7 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 
 ## 6. Next action
 
-Review the first host-test run and its worst-case quantization metrics. Add source-step boundary fixtures from the verified v98 descriptors, establish per-control error acceptance limits, and resolve the FOLD SYMMETRY zero-code policy. Then reconcile the E0–E7 ordering and proceed with stable ID allocation.
+Review the corrected signed mapping's test run and worst-case quantization metrics. Establish per-control error acceptance limits and add exact legacy project/preset compatibility fixtures. Then reconcile the E0–E7 ordering and proceed with stable ID allocation.
 
 
 ## 4B. Felucca signed descriptor range clarification — 2026-11-02
