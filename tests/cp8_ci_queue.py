@@ -82,14 +82,14 @@ def validate_queue_record(record: dict[str, Any]) -> dict[str, Any]:
 
     source = record.get("source")
     _require(isinstance(source, dict), "source must be an object")
-    _require(source.get("event") in ALLOWED_EVENTS, "source.event is unsupported")
+    _require(isinstance(source.get("event"), str) and source["event"] in ALLOWED_EVENTS, "source.event is unsupported")
     for optional_id in ("pull_request_number", "workflow_run_id"):
         value = source.get(optional_id)
         _require(value is None or (isinstance(value, int) and not isinstance(value, bool) and value > 0),
                  f"source.{optional_id} must be a positive integer or null")
 
     state = record.get("state")
-    _require(state in ALLOWED_STATES, "state is unsupported")
+    _require(isinstance(state, str) and state in ALLOWED_STATES, "state is unsupported")
     attempts = record.get("attempts")
     _require(isinstance(attempts, int) and not isinstance(attempts, bool) and attempts >= 0,
              "attempts must be a non-negative integer")
@@ -137,6 +137,6 @@ def validate_queue_record(record: dict[str, Any]) -> dict[str, Any]:
 
 def validate_transition(current_state: str, next_state: str) -> None:
     """Reject illegal state changes; storage must still perform an atomic CAS."""
-    _require(current_state in ALLOWED_STATES, "current_state is unsupported")
+    _require(isinstance(current_state, str) and current_state in ALLOWED_STATES, "current_state is unsupported")
     _require(next_state in TRANSITIONS[current_state],
              f"illegal queue transition: {current_state} -> {next_state}")
