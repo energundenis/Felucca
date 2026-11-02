@@ -1,9 +1,8 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Sequential CP1 persistence verification. Existing Felucca host tests are consumed from the fast-regression evidence; Sidecar stages remain blocked until production code and executable tests are added.",
+  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently after storage/FM6 foundations; Sidecar A/B selection joins both results before pair-commit stages.",
   "stop_on_first_failure": true,
-  "stop_on_first_blocked": true,
   "stages": [
     {
       "id": "storage-foundation",
@@ -42,7 +41,7 @@
       "kind": "executable-host-test",
       "state": "ready",
       "depends_on": [
-        "sidecar-format"
+        "fm6-staging-baseline"
       ],
       "command": "sh tests/run_sidecar_base_binding_test.sh",
       "blocker": "The internal st_current_meta() helper returns the exact selected, payload-CRC-validated Base copy, sequence, payload CRC and length. The host test compiles the real storage.c and Sidecar V1 source against simulated NOR and proves stale-generation rejection and fallback binding.",
@@ -54,6 +53,7 @@
       "kind": "executable-host-test",
       "state": "ready",
       "depends_on": [
+        "sidecar-format",
         "base-generation-binding"
       ],
       "command": "sh tests/run_sidecar_ab_selection_test.sh",
@@ -138,5 +138,6 @@
       "blocker": "This final regression runs only after all preceding CP1 acceptance stages have passed.",
       "enable_when": "All preceding stages are ready and pass."
     }
-  ]
+  ],
+  "max_parallel": 3
 }
