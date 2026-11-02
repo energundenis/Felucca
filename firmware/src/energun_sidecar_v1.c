@@ -288,6 +288,52 @@ static int sc_sequence_newer(uint32_t a, uint32_t b)
     return a != b && (uint32_t)(a - b) < 0x80000000u;
 }
 
+energun_sc_status_t energun_sc_v1_read_matching(
+    const energun_sc_candidate_t candidates[2],
+    energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
+    uint32_t current_base_sequence, uint32_t current_base_crc32,
+    uint16_t base_motion_count, energun_sc_read_result_t *result)
+{
+    int selected = -1;
+    unsigned int i;
+
+    if (result != NULL) {
+        sc_zero(result, sizeof *result);
+        result->selected_copy = -1;
+    }
+    if (candidates == NULL || result == NULL)
+        return ENERGUN_SC_ERR_ARGUMENT;
+    if (!sc_identity_valid(expected_kind, expected_index))
+        return ENERGUN_SC_ERR_IDENTITY;
+    if (base_motion_count > ENERGUN_SC_V1_PROJECT_MAX_MOTION)
+        return ENERGUN_SC_ERR_MOTION_COUNT;
+
+    for (i = 0; i < 2u; ++i) {
+        energun_sc_view_t candidate_view;
+        if (!candidates[i].storage_valid || candidates[i].record == NULL)
+            continue;
+        if (energun_sc_v1_validate(
+                candidates[i].record, candidates[i].record_length,
+                expected_kind, expected_index, current_base_sequence,
+                current_base_crc32, base_motion_count,
+                &candidate_view) != ENERGUN_SC_OK)
+            continue;
+        /* Iterate A then B; equal local sequences deterministically retain A. */
+        if (selected < 0 ||
+            sc_sequence_newer(candidates[i].storage_sequence,
+                              candidates[(unsigned int)selected].storage_sequence)) {
+            selected = (int)i;
+            result->view = candidate_view;
+        }
+    }
+
+    if (selected < 0)
+        return ENERGUN_SC_ERR_NO_MATCH;
+    result->selected_copy = (int8_t)selected;
+    result->storage_sequence = candidates[(unsigned int)selected].storage_sequence;
+    return ENERGUN_SC_OK;
+}
+
 energun_sc_status_t energun_sc_v1_select_ab(
     const energun_sc_candidate_t candidates[2],
     energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
@@ -391,7 +437,7 @@ const char *energun_sc_v1_status_string(energun_sc_status_t status)
         "ok", "argument", "magic", "format-version", "schema-version",
         "identity", "base-generation", "reserved", "length",
         "parameter-value", "private-value", "motion-count",
-        "motion-event", "slot-bitmap"
+        "motion-event", "slot-bitmap", "no-match"
     };
     if ((unsigned int)status >= sizeof names / sizeof names[0])
         return "unknown";
