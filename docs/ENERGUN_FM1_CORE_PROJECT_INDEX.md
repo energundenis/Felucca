@@ -30,3 +30,5 @@ The cross-branch register is a status/decision index, not permission to merge so
 - **Sidecar design:** `ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_SCHEMA_DRAFT.md` (seven logical identities, project/preset payload capacity estimates, base-sequence binding and sidecar-first A/B pair-commit model; logical draft only, no binary ABI or Flash allocation).
 
 - Latest fast lane [41408456648](https://github.com/energundenis/Felucca/actions/runs/41408456648) passed all 17 focused tests on code HEAD `992e459`; it includes the real OSC host lifecycle dispatch test. Full baseline for this exact HEAD is still running.
+
+- **CP3.1 VCA real-pool test:** fast regression [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) PASS on code HEAD `33327eb`; 17/17 test programs passed. VCA state is now exercised in real `ENG_MEM(p)` with first-claim zeroing, same-owner retention and owner-change clearing checks. Full METAL CORE memory/CPU qualification remains open.
