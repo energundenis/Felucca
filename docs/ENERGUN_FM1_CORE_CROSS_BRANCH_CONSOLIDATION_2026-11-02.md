@@ -237,3 +237,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Drafted seven logical identities (4 project slots, live autosave, 2 preset banks), 14 A/B copies, project/preset payload capacity estimates and the Sidecar-to-base storage-sequence binding requirement.
 - The existing storage layer has per-object A/B commit headers, but no cross-object pairing API. Proposed transaction writes a complete Sidecar snapshot tagged with the next base sequence before committing the base object; any base rewrite must rebind even an unchanged extension. Load selects a Sidecar copy matching the exact current base sequence.
 - Logical draft only; no byte ABI, object IDs, storage source, Flash sector map or physical allocation selected. CP1.4.5 remains open pending review and CP1.4.11 Flash audit.
+
+
+### Exact-head full baseline CI — 2026-11-02
+
+- Full baseline CI [41406252564](https://github.com/energundenis/Felucca/actions/runs/41406252564) also completed SUCCESS on the same code HEAD `89528e4948b58b98232543014d805ec3bd306616`: unmodified Felucca firmware build, AC79 target-compiler VCA probe, all host/web regressions and artifact upload completed. Artifact [energum-fm1-baseline-89528e4948b58b98232543014d805ec3bd306616.zip](https://github.com/energundenis/Felucca/actions/runs/41406252564/artifacts/13124032492), SHA-256 `209f57ff896b4dff66c5be24b9f7c570c2ddc7b371b935192247229199660ef1`.
+- This is baseline/toolchain/regression evidence only. It does not register/build METAL CORE as a production engine, qualify its complete DSP graph on AC79, or validate hardware behavior.
