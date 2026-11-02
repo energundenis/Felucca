@@ -2,7 +2,7 @@
 
 Date: 2026-11-02
 Branch: `energun-metal-core`
-Status: source-backed compatibility audit; no parameter IDs or firmware/storage formats changed.
+Status: source-backed compatibility audit; V1 standard 7-bit parameter encoding decision accepted on 2026-11-02; no parameter IDs or firmware/storage formats changed.
 
 ## 1. Source pins
 
@@ -40,11 +40,11 @@ Examples from the verified v98 source:
 
 These source steps are now documented correctly in CP1.4.1, but they are **not** automatically achievable as exact stored FM-1 parameter resolution.
 
-Two implementation paths exist and must not be conflated:
-1. **Standard Felucca parameter path:** map the physical source range monotonically onto the available -64..127 (or narrower) stored codes. This preserves compatibility with normal EDIT/P_MC descriptors, existing project/preset arrays and Motion Lock, but reduces resolution. Each control needs a documented forward/inverse mapping and quantization test.
-2. **High-resolution extension path:** retain physical values at 16-bit or another explicitly sized precision in the sidecar-backed runtime cache. This can preserve the source steps, but requires Private-style editor read/write commands, high-resolution persistence in project and preset sidecars, and a separate high-resolution motion event representation if per-step locks are required. It cannot be achieved by changing only the descriptor range.
+Two implementation paths were evaluated and must not be conflated:
+1. **Standard Felucca parameter path — ACCEPTED FOR V1 (2026-11-02):** map each physical source range monotonically onto the available stored codes, using the standard Felucca parameter path. This preserves compatibility with ordinary EDIT/P_MC descriptors, existing project/preset arrays and Motion Lock, but reduces physical resolution. Every control requires a documented forward/inverse mapping, rounding policy and quantization test.
+2. **High-resolution extension path — NOT SELECTED FOR V1:** retaining physical values at 16-bit or another extended precision in a sidecar-backed cache would require separate editor read/write commands, project/preset sidecar persistence and an extended motion-event representation. It is excluded from the V1 parameter-value architecture; reconsideration would require a new explicit decision.
 
-**No resolution compromise is approved by this audit.** Before final parameter descriptors and encodings, the project must decide whether V1 prioritizes exact v98 control resolution or the simpler standard 7-bit Felucca parameter path. The E0–E7 controls are especially constrained because they are ordinary engine EDIT values and modulation destinations.
+**Accepted V1 rule:** standard 7-bit Felucca parameter encoding. Use nonlinear mappings for frequency, ratio and time controls where needed; use linear mappings for levels, depths and other naturally linear controls. The mapping must be monotonic, deterministic, invertible to the displayed physical value within quantization error, and shared by EDIT, project/preset persistence and Motion Lock. This decision does not approve any specific curve, descriptor range, ID allocation or sidecar format. The E0–E7 controls remain subject to the same encoding rule and the unresolved allocation conflict.
 
 ## 3. Project compatibility
 
@@ -117,9 +117,10 @@ Required consequence:
 - Editor transport for common P_MC: source path verified; client compatibility tests not run.
 - Old-firmware project downgrade behavior: source-verified; base-compatible FUN10 strategy recommended but not implemented.
 - User-preset Private persistence: missing from current five-project sidecar model; scope expanded to include two preset-bank identities.
-- Stored-value precision mapping: **open**; source steps exceed the ordinary 7-bit/192-code project, preset and motion representation for several controls.
+- Stored-value architecture: **decision accepted** — standard 7-bit Felucca encoding for V1; high-resolution sidecar-backed parameter values are not selected.
+- Per-control conversion curves, raw code allocation, rounding/display rules and quantization error bounds: **open; must be specified and tested in CP1.4.2**.
 - Stable IDs, final E0..E7 allocation, binary encodings and migration code: **not assigned / not implemented**.
-- CP1.4.2 remains OPEN pending a decision on standard 7-bit quantization versus high-resolution sidecar-backed values, acceptance of the base-compatible FUN10 strategy, user-preset extension scope and regression evidence.
+- CP1.4.2 remains OPEN pending per-control conversion tables and quantization tests, acceptance/review of the base-compatible FUN10 strategy, user-preset extension scope and regression evidence. The V1 choice of standard 7-bit encoding is fixed.
 
 ## 9. Safety
 
