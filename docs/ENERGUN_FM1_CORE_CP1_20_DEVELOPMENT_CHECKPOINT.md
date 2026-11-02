@@ -139,3 +139,17 @@ The automation is not evidence of continuous background development. No complete
 - Focused Metal Core run 41356472886: SUCCESS. The log reports 15 focused tests passed; artifact uploaded.
 - Scope: these results do not register or build METAL CORE as a production engine, do not qualify the complete DSP graph on AC79 and do not establish an installable package or hardware validation.
 - The current branch advanced after this source HEAD through documentation-only commits. Comparison confirmed no firmware, test, workflow, submodule or build-script changes; the successful CI still covers the current code tree, but the current documentation HEAD has not been rerun.
+
+
+## CP1.4.1 inventory contract and latest exact-HEAD CI — 2026-11-02 09:00 UTC
+
+- The logical V1 parameter map is frozen in `ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`: 8 Engine EDIT + 16 common P_MC + 13 Private controls per part. Four independent Private banks contain 52 values. The 37 logical controls are unique; no numeric IDs, page IDs, firmware descriptors or storage ABI are assigned by this freeze.
+- Added `tests/metal_core_parameter_inventory_test.c` and registered it in `tests/run_metal_core_fast.sh`. The host-only contract guards the accepted E0–E7 order, 8+16+13 count, four Private banks, uniqueness, the E1/E2 versus P_MC non-duplication rule, FM INDEX/LPG DECAY membership, and independent FOLLOW/METAL booleans. It does not implement parameter storage or firmware behavior.
+- Fast regression run [41417141686](https://github.com/energundenis/Felucca/actions/runs/41417141686) completed SUCCESS on exact branch HEAD `7ec54a19bb1e18992c1dbc3603deba60015d411f`; all 18 focused host test programs passed.
+- Exact-HEAD full baseline run [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732) was IN PROGRESS at the time of this update. Do not claim full baseline success until GitHub reports a completed SUCCESS conclusion.
+- This is a documentation/test-contract milestone. No production parameter IDs, descriptors, private API, Motion Lock implementation, Sidecar ABI, Flash allocation, production engine registration, installable METAL CORE package, factory image, or physical FM-1 state changed.
+- CP1.4.1 logical inventory contract is now covered by fast regression; this does not close CP1.4 as a whole. CP1.4.2 conversion acceptance, CP1.4.3/4 Private/Motion implementation, CP1.4.5 Sidecar transaction ABI, CP1.4.7 CRC, CP1.4.8 fault/regression completion, CP1.4.9 archive V2, CP1.4.10 integration and CP1.4.11 Flash/recovery audit remain separate gates.
+
+### Supersession note
+
+This update supersedes the earlier CP1.20 priority wording that described the 8/16/13 logical allocation itself as unresolved. The logical map is now frozen and guarded by a host test. Stable IDs, runtime APIs, serialization, Sidecar and physical Flash/recovery remain unresolved and must not be inferred from that freeze.
