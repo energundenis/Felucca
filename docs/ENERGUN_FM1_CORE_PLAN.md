@@ -896,3 +896,12 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Its logs confirm `project_test` rejects a FUN10 `np=127` object even with a valid checksum on the legacy `P_COUNT=111` reader, and `upreset_test` maps a 127-value preset by count, skipping 16 inserted common values while preserving the final eight E0–E7 values.
 - The run also confirms project format, user preset, firmware backup, browser backup and complete host/web regression tests passed.
 - These two named legacy fixtures are now verified. CP1.4.2 remains OPEN for per-control musical-resolution sign-off, new-writer behavior, complete project/preset Sidecar pairing, archive V2 and transaction/migration failure tests.
+
+### CP1.4.6 Sidecar logical capacity audit — 2026-11-02
+
+- Added `docs/ENERGUN_FM1_CORE_CP1_4_6_SIDECAR_CAPACITY_AUDIT.md`.
+- Reconciled project/live logical payload maximum is 501 bytes: 64 P_MC + 52 Private + one motion-count byte + up to 128 × 3-byte P_MC motion events.
+- Each user-preset bank requires 208 Private-value bytes plus a 2-byte slot-presence bitmap = 210 bytes before envelope. P_MC remains in the 144-byte base preset parameter area; P_COUNT=127 fits.
+- A provisional 64-byte envelope allowance yields 565-byte project/live and 274-byte preset-bank planning records, both well below Felucca's 3840-byte storage payload limit. The 64-byte envelope is capacity headroom only, not an approved ABI.
+- Seven logical identities × A/B = 14 copies. 56 KiB is only the one-sector-per-copy arithmetic thought experiment; no physical Flash allocation is selected.
+- CP1.4.6 logical payload arithmetic is verified. Exact envelope widths, AC79 RAM/stack measurement, archive V2 pairing and CP1.4.11 Flash/recovery audit remain open.
