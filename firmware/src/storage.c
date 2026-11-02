@@ -41,6 +41,17 @@ typedef struct {
 } st_hdr_t;
 _Static_assert(sizeof(st_hdr_t) == 32u, "storage commit record layout");
 
+/* Selected, fully CRC-validated object generation. Internal metadata for
+ * pair-aware persistence; copy/sequence/CRC are taken from the same header
+ * whose payload st_current() has just validated and left in st_buf.
+ */
+typedef struct {
+    uint8_t copy;
+    uint32_t sequence;
+    uint32_t payload_length;
+    uint32_t payload_crc;
+} st_meta_t;
+
 static int st_read(uint32_t off, void *dst, uint32_t n);
 static int st_erase(uint32_t off);
 static int st_prog(uint32_t off, const void *src, uint32_t n);
@@ -120,16 +131,37 @@ static int st_current(uint32_t obj, st_hdr_t *h)
     return -1;
 }
 
+/* Return metadata for the exact copy selected by the normal storage
+ * fallback rules. st_current() validates the selected payload CRC, so the
+ * sequence and payload CRC in this result identify the actual readable Base
+ * generation, not merely the newest header.
+ */
+static int st_current_meta(uint32_t obj, st_meta_t *meta)
+{
+    st_hdr_t h;
+    int copy;
+    if (obj >= OBJ_COUNT || meta == 0)
+        return -1;
+    copy = st_current(obj, &h);
+    if (copy < 0)
+        return -1;
+    meta->copy = (uint8_t)copy;
+    meta->sequence = h.seq;
+    meta->payload_length = h.len;
+    meta->payload_crc = h.crc;
+    return 0;
+}
+
 /* load the whole object into dst; returns its length, or -1 if it does not fit */
 static int st_load(uint32_t obj, void *dst, uint32_t max)
 {
     uint32_t i;
-    st_hdr_t h;
-    if (obj >= OBJ_COUNT || st_current(obj, &h) < 0 || h.len > max)
+    st_meta_t meta;
+    if (obj >= OBJ_COUNT || st_current_meta(obj, &meta) < 0 || meta.payload_length > max)
         return -1;
-    for (i = 0; i < h.len; i++)
+    for (i = 0; i < meta.payload_length; i++)
         ((uint8_t *)dst)[i] = st_buf[i];
-    return (int)h.len;
+    return (int)meta.payload_length;
 }
 
 /* save into copy `to` (0 A, 1 B; -1: the one that is not the current copy, as st_save) */
