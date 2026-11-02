@@ -64,6 +64,7 @@ static void test_project_roundtrip_and_binding(void)
           VAL_PROJECT(record, n, PROJECT_SEQ, PROJECT_CRC, 0u, &view) == ENERGUN_SC_OK);
     check("decoded view exposes payload, exact sequence and CRC fingerprint",
           view.base_sequence == PROJECT_SEQ &&
+          view.base_payload_crc32 == PROJECT_CRC &&
           view.payload_length == PROJECT_BASE + 1u &&
           view.payload == record + ENERGUN_SC_V1_HEADER_SIZE);
     check("wrong base sequence is rejected",
