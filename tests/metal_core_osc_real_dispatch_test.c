@@ -144,6 +144,7 @@ static void test_retirement_then_fresh_note_resets_stale_phases(void)
     uint32_t blocks = 0;
 
     trk_note_off(t, 62u);
+    trk_note_off(t, 60u); /* release the older held note after MONO fallback */
     while (v->active && blocks < 1200u) {
         memset(out, 0, sizeof(out));
         (void)track_render(t, out, CTL);
