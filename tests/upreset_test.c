@@ -274,6 +274,30 @@ int main(void)
     for (i = 0; i < 8u; i++)
         ok &= v[P_E0 + i] == (int16_t)(P_E0 - 2u + i);
     bad += check("np < P_COUNT: mapped by count", ok);
+    /* An expanded 127-parameter user preset remains readable by this 111-parameter firmware:
+     * the 16 inserted common P_MC values are skipped, while the final eight engine values return to old E0..E7. */
+    {
+        up_rec_t expanded;
+        int16_t old_values[P_COUNT];
+        uint32_t k;
+        memset(&expanded, 0, sizeof expanded);
+        expanded.used = UP_USED;
+        expanded.ver = UP_VER;
+        expanded.np = 127u;
+        expanded.engine = ENGI_FM6;
+        memcpy(expanded.name, "EXPANDED", 8);
+        for (k = 0; k < 103u; ++k) up_set_value(&expanded, k, (int16_t)(-50 + (int32_t)k));
+        for (k = 0; k < 16u; ++k) up_set_value(&expanded, 103u + k, (int16_t)(60 + (int32_t)k));
+        for (k = 0; k < 8u; ++k) up_set_value(&expanded, 119u + k, (int16_t)(100 + (int32_t)k));
+        ok = up_valid(&expanded);
+        up_params(&expanded, old_values, def);
+        for (k = 0; k < 103u; ++k)
+            ok &= old_values[k] == (int16_t)(-50 + (int32_t)k);
+        for (k = 0; k < 8u; ++k)
+            ok &= old_values[P_E0 + k] == (int16_t)(100 + (int32_t)k);
+        bad += check("expanded np=127 preset: old firmware ignores 16 P_MC values and preserves E0..E7", ok);
+    }
+
     /* a record saved before the SLICER (P_COUNT 53, P_E0 45): the four SLICER parameters (just
      * before P_E0) take their defaults, everything else keeps its id */
     r.ver = 2;
