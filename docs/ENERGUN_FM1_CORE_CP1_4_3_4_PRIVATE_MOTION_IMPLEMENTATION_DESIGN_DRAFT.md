@@ -126,7 +126,7 @@ The following is a symbolic candidate derived from the frozen 16-control P_MC pr
 | WAVEFOLDER MODULE VOLUME | 0..127 | Unipolar 7-bit code |
 | WEST COAST VOLUME | 0..127 | Unipolar 7-bit code |
 
-The Motion event should store the same decoded parameter code that `param_desc_of()` validates; physical display values are obtained through the single CP1.4.2 descriptor conversion. Do not introduce a second Motion-specific scale. The only bipolar exception in this candidate is FOLD SYMMETRY, whose legal signed descriptor range is -64..63.
+The Motion event should store the same stored parameter code that `param_desc_of()` validates; physical display values are obtained through the single CP1.4.2 descriptor conversion. Do not introduce a second Motion-specific scale. The only bipolar exception in this candidate is FOLD SYMMETRY, whose legal signed descriptor range is -64..63.
 
 ### 3.4 Capacity and behavior
 
