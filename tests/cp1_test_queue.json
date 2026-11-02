@@ -40,12 +40,13 @@
       "id": "base-generation-binding",
       "title": "Exact Base-generation binding",
       "kind": "executable-host-test",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
         "sidecar-format"
       ],
-      "command": null,
-      "blocker": "Production sequence/generation binding reader is not implemented. Tests must prove exact binding and reject mismatched generations."
+      "command": "sh tests/run_sidecar_base_binding_test.sh",
+      "blocker": "The internal st_current_meta() helper returns the exact selected, payload-CRC-validated Base copy, sequence, payload CRC and length. The host test compiles the real storage.c and Sidecar V1 source against simulated NOR and proves stale-generation rejection and fallback binding.",
+      "enable_when": "Real storage metadata helper and exact Base fingerprint acceptance test committed together."
     },
     {
       "id": "sidecar-ab-selection",
