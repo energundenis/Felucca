@@ -1,6 +1,9 @@
 # ENERGUN FM-1 CORE — Implementation Plan
 
 Status: planning baseline (2026-10-31)
+
+> **Current-status notice — 2026-11-02:** This file preserves the original phase/task breakdown and its historical audit notes. Its old checkbox states and dated HEAD references are not the current progress report. For authoritative CP0–CP7 and CP1.4.1–CP1.4.11 completion percentages, latest exact-HEAD CI evidence and execution order, use [ENERGUN_FM1_CORE_MASTER_STATUS_2026-11-02.md](ENERGUN_FM1_CORE_MASTER_STATUS_2026-11-02.md). Where this historical checklist conflicts with the Master Status or later accepted decision records, the newer records govern. Do not interpret the older unchecked boxes as evidence that later work did not happen.
+
 Repository: `energundenis/Felucca`
 Working branch: `energun-metal-core`
 Target hardware: M-VAVE FM-1
