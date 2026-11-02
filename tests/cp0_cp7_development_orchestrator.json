@@ -19,14 +19,6 @@
       [
         "python3",
         "tests/run_cp1_test_queue.py"
-      ],
-      [
-        "sh",
-        "tests/run_cp2_dsp_qualification.sh"
-      ],
-      [
-        "sh",
-        "tests/run_cp3_host_lifecycle.sh"
       ]
     ]
   },
@@ -90,16 +82,13 @@
       "id": "cp2-dsp-qualification",
       "checkpoint": "CP2",
       "title": "DSP primitives, numerical behavior and resource qualification",
-      "state": "ready",
+      "state": "checking",
       "depends_on": [
         "cp0-baseline"
       ],
       "parallel_group": "dsp-and-lifecycle",
-      "executor": "workstream-branch",
-      "command": [
-        "sh",
-        "tests/run_cp2_dsp_qualification.sh"
-      ],
+      "executor": "fast-regression-evidence-review",
+      "command": null,
       "acceptance": [
         "DSP primitives have reference-vector and stability coverage",
         "44.1 kHz and 96 kHz host behavior is covered where applicable",
@@ -108,7 +97,11 @@
         "Unqualified algorithms remain isolated from production registration"
       ],
       "evidence": {
-        "known_candidate": "Draft PR #1 contains an isolated Q2.30 DF2T biquad candidate; it is not production-qualified."
+        "known_candidate": "Draft PR #1 contains an isolated Q2.30 DF2T biquad candidate; it is not production-qualified.",
+        "host_test_source": "tests/run_metal_core_fast.sh",
+        "host_test_scope": "All eight listed CP2 host tests already run in the canonical fast regression.",
+        "qualification_gap": "Host regression alone does not satisfy sample-rate reference vectors, AC79 target compiler evidence, or cumulative resource budgets.",
+        "duplicate_worker_removed": true
       },
       "timeout_seconds": 900
     },
@@ -116,16 +109,13 @@
       "id": "cp3-host-lifecycle",
       "checkpoint": "CP3",
       "title": "Host callback, MIDI and voice lifecycle adapter",
-      "state": "ready",
+      "state": "checking",
       "depends_on": [
         "cp0-baseline"
       ],
       "parallel_group": "dsp-and-lifecycle",
-      "executor": "workstream-branch",
-      "command": [
-        "sh",
-        "tests/run_cp3_host_lifecycle.sh"
-      ],
+      "executor": "fast-regression-evidence-review",
+      "command": null,
       "acceptance": [
         "Fresh note, retrigger, released-slot reuse and mono legato are tested",
         "Voice stealing, MIDI Gate-off and sequencer Gate-off are tested",
@@ -133,7 +123,11 @@
         "No production engine registration is introduced by the host-only lane"
       ],
       "evidence": {
-        "known_candidate": "Draft PR #2 records the CP3 host lifecycle workstream."
+        "known_candidate": "Draft PR #2 records the CP3 host lifecycle workstream.",
+        "host_test_source": "tests/run_metal_core_fast.sh",
+        "host_test_scope": "All six listed CP3 lifecycle/dispatch host tests already run in the canonical fast regression.",
+        "qualification_gap": "Host regression alone does not establish full production audio-engine integration or target qualification.",
+        "duplicate_worker_removed": true
       },
       "timeout_seconds": 900
     },
