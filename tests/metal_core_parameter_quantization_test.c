@@ -14,41 +14,42 @@ typedef struct {
     double min_value;
     double max_value;
     double default_value;
+    double source_step;
     map_t map;
     int expected_default_code;
 } control_t;
 
 static const control_t controls[] = {
-    {"FREQ", 30, 500, 160, MAP_LOG, 76},
-    {"FM INDEX", 0, 1, 0, MAP_LINEAR, 0},
-    {"METAL RATIO", 0.5, 12, 4.2, MAP_LOG, 85},
-    {"WEST COAST DRIVE", 0, 1, 0, MAP_LINEAR, 0},
-    {"FOLD", 0, 1, 0.25, MAP_LINEAR, 32},
-    {"CUTOFF", 100, 8000, 1200, MAP_LOG, 72},
-    {"RESONANCE", 0.5, 20, 2, MAP_LOG, 48},
-    {"LPG DECAY", 0.02, 2, 0.25, MAP_LOG, 70},
-    {"OSC2 LEVEL", 0, 1, 0.5, MAP_LINEAR, 64},
-    {"OSC2 DETUNE", 0, 30, 7, MAP_LINEAR, 30},
-    {"TIMBRE", 0, 1, 0, MAP_LINEAR, 0},
-    {"MOD RATIO", 0.25, 16, 3.07, MAP_LOG, 77},
-    {"AM DEPTH", 0, 1, 0, MAP_LINEAR, 0},
-    {"FM FEEDBACK", 0, 0.8, 0, MAP_LINEAR, 0},
-    {"FM ENV AMT", 0, 1, 0.5, MAP_LINEAR, 64},
-    {"FM ENV ATTACK", 0.001, 1, 0.005, MAP_LOG, 30},
-    {"FM ENV DECAY", 0.01, 3, 0.25, MAP_LOG, 72},
-    {"METAL DECAY", 0.05, 3, 0.4, MAP_LOG, 65},
-    {"FOLD SYMMETRY", -1, 1, 0, MAP_BIPOLAR_LINEAR, 32},
-    {"WAVEFOLDER DRIVE", 0, 1, 0.2, MAP_LINEAR, 25},
-    {"LPG RESPONSE", 0, 1, 0.5, MAP_LINEAR, 64},
-    {"VOICE VCA LEVEL", 0, 1, 0.5, MAP_LINEAR, 64},
-    {"WAVEFOLDER MODULE VOLUME", 0, 1, 1, MAP_LINEAR, 127},
-    {"WEST COAST VOLUME", 0, 1, 1, MAP_LINEAR, 127},
-    {"COMPLEX MODULE VOLUME", 0, 1, 1, MAP_LINEAR, 127},
-    {"LPG MODULE VOLUME", 0, 1, 1, MAP_LINEAR, 127},
-    {"ATTACK", 0.001, 1, 0.01, MAP_LOG, 42},
-    {"DECAY", 0.05, 3, 0.3, MAP_LOG, 56},
-    {"SUSTAIN", 0, 1, 0, MAP_LINEAR, 0},
-    {"RELEASE", 0.01, 3, 0.2, MAP_LOG, 67}
+    {"FREQ", 30, 500, 160, 1, MAP_LOG, 76},
+    {"FM INDEX", 0, 1, 0, 0.01, MAP_LINEAR, 0},
+    {"METAL RATIO", 0.5, 12, 4.2, 0.01, MAP_LOG, 85},
+    {"WEST COAST DRIVE", 0, 1, 0, 0.01, MAP_LINEAR, 0},
+    {"FOLD", 0, 1, 0.25, 0.01, MAP_LINEAR, 32},
+    {"CUTOFF", 100, 8000, 1200, 10, MAP_LOG, 72},
+    {"RESONANCE", 0.5, 20, 2, 0.1, MAP_LOG, 48},
+    {"LPG DECAY", 0.02, 2, 0.25, 0.01, MAP_LOG, 70},
+    {"OSC2 LEVEL", 0, 1, 0.5, 0.01, MAP_LINEAR, 64},
+    {"OSC2 DETUNE", 0, 30, 7, 0.5, MAP_LINEAR, 30},
+    {"TIMBRE", 0, 1, 0, 0.01, MAP_LINEAR, 0},
+    {"MOD RATIO", 0.25, 16, 3.07, 0.01, MAP_LOG, 77},
+    {"AM DEPTH", 0, 1, 0, 0.01, MAP_LINEAR, 0},
+    {"FM FEEDBACK", 0, 0.8, 0, 0.01, MAP_LINEAR, 0},
+    {"FM ENV AMT", 0, 1, 0.5, 0.01, MAP_LINEAR, 64},
+    {"FM ENV ATTACK", 0.001, 1, 0.005, 0.001, MAP_LOG, 30},
+    {"FM ENV DECAY", 0.01, 3, 0.25, 0.01, MAP_LOG, 72},
+    {"METAL DECAY", 0.05, 3, 0.4, 0.01, MAP_LOG, 65},
+    {"FOLD SYMMETRY", -1, 1, 0, 0.01, MAP_BIPOLAR_LINEAR, 32},
+    {"WAVEFOLDER DRIVE", 0, 1, 0.2, 0.01, MAP_LINEAR, 25},
+    {"LPG RESPONSE", 0, 1, 0.5, 0.01, MAP_LINEAR, 64},
+    {"VOICE VCA LEVEL", 0, 1, 0.5, 0.01, MAP_LINEAR, 64},
+    {"WAVEFOLDER MODULE VOLUME", 0, 1, 1, 0.01, MAP_LINEAR, 127},
+    {"WEST COAST VOLUME", 0, 1, 1, 0.01, MAP_LINEAR, 127},
+    {"COMPLEX MODULE VOLUME", 0, 1, 1, 0.01, MAP_LINEAR, 127},
+    {"LPG MODULE VOLUME", 0, 1, 1, 0.01, MAP_LINEAR, 127},
+    {"ATTACK", 0.001, 1, 0.01, 0.001, MAP_LOG, 42},
+    {"DECAY", 0.05, 3, 0.3, 0.01, MAP_LOG, 56},
+    {"SUSTAIN", 0, 1, 0, 0.01, MAP_LINEAR, 0},
+    {"RELEASE", 0.01, 3, 0.2, 0.01, MAP_LOG, 67}
 };
 
 #define CONTROL_COUNT (sizeof(controls) / sizeof(controls[0]))
@@ -202,6 +203,48 @@ static void test_monotonicity_and_error(void) {
     }
 }
 
+
+static void test_source_step_boundaries(void) {
+    size_t i;
+    unsigned long total_boundaries = 0;
+    for (i = 0; i < CONTROL_COUNT; ++i) {
+        const control_t *c = &controls[i];
+        unsigned long n, count;
+        int previous_code = -999, ok = c->source_step > 0.0;
+        double max_error_steps = 0.0;
+        char label[160];
+        count = (unsigned long)floor((c->max_value - c->min_value) /
+                                     c->source_step + 1e-9);
+        for (n = 0; ok && n <= count; ++n) {
+            double source = c->min_value + (double)n * c->source_step;
+            double decoded = 0.0;
+            int code = 0;
+            double error_steps;
+            if (source > c->max_value + 1e-9 ||
+                !encode_value(c, source, &code) ||
+                !decode_code(c, code, &decoded) ||
+                decoded < c->min_value - 1e-12 ||
+                decoded > c->max_value + 1e-12 ||
+                code < previous_code) {
+                ok = 0;
+                break;
+            }
+            previous_code = code;
+            error_steps = fabs(decoded - source) / c->source_step;
+            if (error_steps > max_error_steps) max_error_steps = error_steps;
+        }
+        total_boundaries += count + 1;
+        (void)snprintf(label, sizeof(label),
+                       "%s all %lu declared source-step boundaries quantize monotonically",
+                       c->name, count + 1);
+        check(label, ok);
+        printf("CP1.4.2 STEP-METRIC %-25s boundaries=%lu max_error_steps=%0.4f\\n",
+               c->name, count + 1, max_error_steps);
+    }
+    printf("CP1.4.2 SOURCE-STEP TOTAL boundaries=%lu controls=%zu\\n",
+           total_boundaries, CONTROL_COUNT);
+}
+
 static void test_invalid_inputs_and_bipolar_center(void) {
     int code = 0;
     double value = 0.0;
@@ -226,6 +269,7 @@ int main(void) {
     test_table_and_defaults();
     test_endpoints_and_roundtrip();
     test_monotonicity_and_error();
+    test_source_step_boundaries();
     test_invalid_inputs_and_bipolar_center();
     printf("CP1.4.2 quantization reference: %s (%d failures; %zu controls)\n",
            failures ? "FAIL" : "PASS", failures, CONTROL_COUNT);
