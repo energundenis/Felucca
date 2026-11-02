@@ -23,10 +23,8 @@ env:
   AC79_SDK_COMMIT: d179b4484759423312073f5fbb232501aa491047
   AC79_SDK_URL: https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git
 
-# Repository-wide coarse CI gate: all ENERGUN workflows must use this exact group.
-# GitHub permits one running and one pending run per group; this is not a FIFO lock.
 concurrency:
-  group: energun-fm1-ci-global
+  group: energun-fm1-baseline-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
