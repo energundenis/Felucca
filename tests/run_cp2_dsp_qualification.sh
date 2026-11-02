@@ -6,8 +6,13 @@ cd "$(dirname "$0")/.."
 
 CC="${CC:-cc}"
 OUT="build/cp2-dsp-qualification"
-mkdir -p "$OUT" build/gen
-python3 -c 'import runpy; ns = runpy.run_path("tools/build.py"); ns["generate"]()'
+mkdir -p "$OUT"
+# The parent fast-regression step generates these headers once before dispatch.
+# Read-only sharing avoids concurrent writers in the CP1/CP2/CP3 worker pool.
+if [ ! -f build/gen/felucca_tables.h ]; then
+    echo "Missing generated build/gen/felucca_tables.h; run the parent fast-regression setup first." >&2
+    exit 2
+fi
 
 compile_run() {
     name="$1"; source="$2"; libs="${3:-}"
