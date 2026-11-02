@@ -28,31 +28,37 @@
       "id": "cp8-2-worker-registry",
       "checkpoint": "CP8.2",
       "title": "Coding worker registry and capability model",
-      "state": "planned",
-      "progress_percent": 0,
+      "state": "checking",
+      "progress_percent": 25,
       "depends_on": [
         "cp8-1-global-ci-coordination"
       ],
       "acceptance": [
         "Worker identity, capabilities, availability and version are recorded",
         "Workers have least-privilege repository permissions",
-        "No worker receives physical-device or main-branch write permissions"
-      ]
+        "No worker receives physical-device or main-branch write permissions",
+        "Registry schema and unsafe policy rejection are covered by automated tests"
+      ],
+      "implementation": "Created tests/cp8_worker_registry.json with an explicit capability catalog, safety policy, concurrency limits and an empty worker list; the CP8 dispatcher validates the registry schema and rejects unsafe permission settings. No external worker is connected or registered yet.",
+      "limitation": "Runtime worker enrollment, identity verification, external agent connectivity, permission provisioning and worker health/availability reporting remain unimplemented."
     },
     {
       "id": "cp8-3-task-dispatch",
       "checkpoint": "CP8.3",
       "title": "Automatic task routing and assignment",
-      "state": "planned",
-      "progress_percent": 0,
+      "state": "checking",
+      "progress_percent": 35,
       "depends_on": [
         "cp8-2-worker-registry"
       ],
       "acceptance": [
         "Task type and acceptance criteria select a qualified worker",
         "Dependencies, concurrency budget and worker availability are enforced",
-        "Assignments and outcomes are auditable"
-      ]
+        "Assignments and outcomes are auditable",
+        "Dry-run routing and safety constraints are covered by automated tests"
+      ],
+      "implementation": "Implemented tests/run_cp8_dispatch_planner.py as a deterministic dry-run router. It validates capabilities, task dependencies, path scopes, worker/global concurrency limits and safety policy; it emits proposed assignments without invoking workers or changing repository state.",
+      "limitation": "No live worker invocation, durable task queue, atomic claim/lease, retry handling or assignment persistence is implemented. The registry currently contains zero workers, so the live report must remain NO_WORKERS_REGISTERED."
     },
     {
       "id": "cp8-4-isolated-workspaces",
