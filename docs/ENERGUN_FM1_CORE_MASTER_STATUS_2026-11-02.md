@@ -2,8 +2,8 @@
 Date: 2026-11-02
 Canonical repository: `energundenis/Felucca`
 Canonical working branch: `energun-metal-core`
-Documentation synchronization base HEAD: `200b75e49006672ea7828c7bb9fff0d4134ae944`
-Latest code/test HEAD with confirmed fast-lane result: `7ec54a19bb1e18992c1dbc3603deba60015d411f`
+Documentation synchronization base HEAD: `069b43f1aac4a08aaf927fac92c2852526a03cf5`
+Latest code/test HEAD with confirmed fast-lane result: `8d19ad63e19443dbd38bb631b424945956f58a3a`
 
 ## Authority and percentage method
 This is the current status entry point. It supersedes stale checkbox/status wording in the original planning baseline and older checkpoint snapshots. The detailed source documents remain authoritative for technical scope and acceptance.
@@ -33,10 +33,10 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 | CP1.4.2 | 7-bit conversion and compatibility | **80%** | Standard Felucca 7-bit V1 encoding accepted. 30-control reference, 9,434 source-step boundaries, 100,001-point nearest-code sweeps, endpoint clamping and corrected bipolar mapping are documented/tested. Remaining: musical-resolution review, final per-control acceptance, base-compatible FUN10/preset strategy and exact-head compatibility evidence. |
 | CP1.4.3 | Private parameter access/runtime model | **45%** | Typed four-part cache, lifecycle and capability-probed editor protocol are designed. No production Private API/cache/editor implementation. |
 | CP1.4.4 | P_MC Motion Lock policy | **45%** | Explicit whitelist and shared 128-event-pool rules are designed. No production whitelist/merge/split implementation. |
-| CP1.4.5 | Sidecar schema and pair transaction | **40%** | Logical schema, identity binding, write-path audit and pair-coordinator design are documented. No frozen binary ABI, production coordinator or storage code. |
+| CP1.4.5 | Sidecar schema and pair transaction | **50%** | V1 binary envelope/payload frozen and implemented as a storage-independent C encoder/validator; strict host suite passes 35 checks. No storage reader, A/B selector or pair coordinator yet. |
 | CP1.4.6 | Sidecar logical capacity | **100%** | Capacity arithmetic verified: 501-byte project/live payload and 210-byte preset-bank payload before provisional envelope; no physical sector allocation. |
-| CP1.4.7 | CRC/integrity | **30%** | Existing CRC-32/header/payload validation, A/B fallback and generic fault tests audited; Sidecar-specific base-binding and semantic-validation contract drafted. No production Sidecar reader or Sidecar-specific acceptance tests yet. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
-| CP1.4.8 | Automated storage/fault regression | **35%** | Existing host regression infrastructure and focused tests are in place; pair-commit, power-loss, stale-generation and complete Sidecar round-trip matrix remains open. |
+| CP1.4.7 | CRC/integrity | **35%** | Existing outer CRC reuse policy is implemented in the format contract; standalone validator checks semantic schema and exact Base sequence + payload-CRC binding. No storage-integrated Sidecar reader, A/B fallback selection or pair fault suite yet. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
+| CP1.4.8 | Automated storage/fault regression | **40%** | New strict Sidecar V1 host suite passes 35 checks and is wired into the sequential CI queue. Pair-commit, storage-backed A/B, power-loss and complete round-trip matrix remains open. |
 | CP1.4.9 | Backup/Restore audit | **100% audit** | Source audit complete: archive V1 omits Sidecar; archive V2 needs pair-aware restore and destination-sequence rebinding. Implementation remains 0%. |
 | CP1.4.10 | Integration | **20%** | Integration dependencies and boundaries are documented; production Private/P_MC/Sidecar integration is not implemented. |
 | CP1.4.11 | Flash map, bootloader and recovery audit | **0%** | Physical allocation remains blocked pending a complete source/image map and recovery qualification. No sectors are selected or authorized. |
@@ -49,7 +49,7 @@ CP1.4 percentages distinguish completion of an audit/design deliverable from imp
 - PR #2 branch head `1090091999c87f94da7068b5879dec39bc235820`: focused fast regression [41426956119](https://github.com/energundenis/Felucca/actions/runs/41426956119) and baseline [41426956021](https://github.com/energundenis/Felucca/actions/runs/41426956021) both completed SUCCESS. The baseline includes the unmodified Felucca build, AC79 VCA compile-only probe and host/web regression.
 - Isolated DSP branch documentation-resync commit `7b47c18556e94b60d66c40f2676fac4d91c4d2af`: branch `metal-core-dsp-stage1-osc` is ahead 89 / behind 0 against `energun-metal-core`. Latest stage workflow [41430073973](https://github.com/energundenis/Felucca/actions/runs/41430073973) completed SUCCESS, including the real `engines.c` syntax-only check and OSC/FM/feedback host tests at 44.1 and 96 kHz. The branch remains isolated and unregistered.
 
-- Fast regression [41417141686](https://github.com/energundenis/Felucca/actions/runs/41417141686): **SUCCESS**, 18/18 focused host test programs, source code HEAD `7ec54a19bb1e18992c1dbc3603deba60015d411f`.
+- Fast regression [41458503150](https://github.com/energundenis/Felucca/actions/runs/41458503150): **SUCCESS**, 21/21 existing focused regression programs/suites plus the new Sidecar V1 strict C11 suite (**35 checks, 0 failures**); sequential CP1 queue passes stages 1–4 and stops at stage 5 (`base-generation-binding`) because the production sequence-aware storage reader is not implemented. Exact tested code HEAD `8d19ad63e19443dbd38bb631b424945956f58a3a`.
 - Full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732): **IN PROGRESS at last inspection** on the same code HEAD. Build and AC79 VCA compile-only probe had passed; Felucca host/web regression was still running. Do not report this run as successful until GitHub records completed SUCCESS.
 - Previous full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166): SUCCESS on older code HEAD `33327eb312a36b83b3751560d899c577147125e4`; useful historical evidence, not a replacement for exact-head CI.
 - CP3.1 VCA real-pool run [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181): SUCCESS, 17/17 on its exact older code HEAD. It remains a scoped historical result, not full engine qualification.
@@ -66,9 +66,9 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 ## Next execution order
 
 1. Finish CP1.4.2: review audible/musical 7-bit resolution, lock per-control mapping decisions, close remaining legacy project/preset compatibility evidence.
-2. Complete CP1.4.3 and CP1.4.4 implementation design review, then implement typed Private access and explicit P_MC Motion Lock policy behind tests.
-3. Freeze CP1.4.5 Sidecar binary schema and pair-aware A/B transaction contract.
-4. Implement CP1.4.7 CRC/integrity and CP1.4.8 fault/round-trip regression.
+2. Complete CP1.4.3 and CP1.4.4 implementation design review, then implement typed Private access and explicit P_MC Motion Lock numeric-ID whitelist behind tests.
+3. Continue CP1.4.5 with a sequence-and-payload-CRC-aware Base metadata reader, then Sidecar A/B matching-copy selection and pair coordinator; retain the protected-old-pair invariant.
+4. Extend CP1.4.7/4.8 with real storage-backed Sidecar reads, A/B fallback, power-loss injection and complete round-trip regression.
 5. Implement CP1.4.9 archive V2 only after pair semantics are stable; preserve archive V1.
 6. Complete CP1.4.10 integration and CP1.4.11 independent Flash/bootloader/recovery audit before any physical allocation.
 7. Continue CP3 production engine integration in parallel only where its dependencies are already fixed; keep production registration gated.
@@ -97,3 +97,14 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - Preserve the factory firmware and accepted exact factory image unchanged.
 - No physical device read/write, Flash allocation, bootloader operation, PR merge, stable ID assignment or production engine registration is authorized by this status update.
 - No flashing until package, exact write scope, recovery route and explicit user go/no-go approval are all verified.
+
+## CP1.4.5 Sidecar V1 format implementation — 2026-11-02
+
+- Added `firmware/src/energun_sidecar_v1.h` and `.c`: 20-byte little-endian `EGSC` envelope, separate format/schema versions, logical identity, exact Base sequence + Base payload CRC-32 binding, payload length and zeroed reserved field.
+- Project/live payload: 64 P_MC bytes + 52 Private bytes + one Motion count + up to 128 existing three-byte events (501-byte maximum). Preset-bank payload: 2-byte presence bitmap + 16 × 13 Private bytes (210 bytes). Maximum complete project record is 521 bytes; preset-bank record is 230 bytes.
+- Validator checks identity, exact Base fingerprint, lengths, P_MC domains (including signed FOLD SYMMETRY -64..63), Private Boolean/enum/7-bit domains, shared 128-event capacity, duplicate Motion keys and empty preset-slot zeroing. P_MC numeric-ID whitelist remains open until CP1.4.4 assigns IDs.
+- Reuses Felucca's existing outer storage CRC-32; no duplicate inner CRC. This module is not connected to storage.c and defines no object IDs or physical sectors.
+- Added `tests/energun_sidecar_v1_test.c` and `tests/run_sidecar_v1_test.sh`; the queue stage `sidecar-format` is now enabled and executes the strict C11 `-Wall -Wextra -Werror` suite.
+- CI [41458503150](https://github.com/energundenis/Felucca/actions/runs/41458503150): SUCCESS. Sidecar V1: **35 checks, 0 failures**. Queue: Storage A/B PASS, FM6 staging baseline PASS, Sidecar Format PASS; next stage BLOCKED at Base-generation binding because the production storage metadata reader is not implemented.
+- Exact tested code HEAD: `8d19ad63e19443dbd38bb631b424945956f58a3a`. Baseline firmware build on the same code HEAD was still running at the time of this update; do not claim its result until completed.
+- Updated CP1.4.5 to 50%, CP1.4.7 to 35%, CP1.4.8 to 40%. CP1 overall remains 70%; equal-weight CP0–CP7 overall remains 40%.
