@@ -39,3 +39,14 @@ The Sidecar pair coordinator is not implemented yet. Therefore the following rem
 - explicit FM6 voice-bank staging reservation/ownership coordination with Sidecar autosave writes.
 
 The FM6 bank test proves the existing FM6 staging behavior under its current host model; it does not prove the future Sidecar coordinator's arbitration contract.
+
+## Sidecar V1 format acceptance — 2026-11-02
+
+- Added standalone firmware-side energun_sidecar_v1.c/.h encoder and validator. The implementation is compiled directly by the host test; it is not connected to the storage driver or production save/load paths.
+- Frozen the 20-byte little-endian V1 envelope with identity, exact Base sequence and Base payload CRC-32 fingerprint, payload length and reserved-field validation.
+- Added project/live payload validation (P_MC + four Private banks + Motion extension) and preset-bank Private payload validation.
+- Added tests/energun_sidecar_v1_test.c and tests/run_sidecar_v1_test.sh.
+- CI: [fast regression and CP1 queue 41458503150](https://github.com/energundenis/Felucca/actions/runs/41458503150), exact code HEAD 8d19ad63e19443dbd38bb631b424945956f58a3a, SUCCESS.
+- Strict C11 compile with -Wall -Wextra -Werror: PASS. Sidecar V1 acceptance: **35 checks, 0 failures**.
+- Sequential queue: Storage A/B PASS; FM6 staging/recovery PASS; Sidecar Format PASS; Base-generation binding BLOCKED pending the production storage metadata reader.
+- This is format/validator host evidence only. No physical device, storage object ID, OBJ_COUNT, Flash sector, archive V1, bootloader, OTA or recovery path was changed.
