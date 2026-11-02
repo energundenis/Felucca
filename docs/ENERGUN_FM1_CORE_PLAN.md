@@ -858,3 +858,9 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - The isolated host VCA dispatch test now uses Felucca's real `ENG_MEM(p)` pool. Five additional assertions verify distinct part regions, first-claim zeroing, same-owner retention and exact declared-range clearing on engine-owner change.
 - Fast CI [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) passed all 17 focused test programs on code HEAD `33327eb312a36b83b3751560d899c577147125e4`.
 - This is host evidence for the VCA-only 288-byte state, not full engine memory or AC79 runtime qualification. Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) remains in progress.
+
+
+## Current exact-head verification — 2026-11-02
+- Code HEAD: `33327eb312a36b83b3751560d899c577147125e4` (later branch commits are documentation-only).
+- Fast regression [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181): SUCCESS, 17/17 focused test programs. Includes real `ENG_MEM(p)` VCA state and five memory-ownership assertions.
+- Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166): firmware build and AC79 VCA compile probe passed; full host/web regression stage still in progress. Do not mark CP1.4.2 full compatibility fixture lane closed until this run finishes.
