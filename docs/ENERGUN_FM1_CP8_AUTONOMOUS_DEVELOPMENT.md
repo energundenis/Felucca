@@ -47,6 +47,10 @@ A correct implementation must provide:
 
 Do not mark CP8.1 complete until these behaviors are implemented and verified.
 
+## CP8.1 — durable global CI queue design
+
+A proposed architecture is recorded in `docs/ADR_CP8_1_DURABLE_GLOBAL_CI_QUEUE.md`. It uses durable queue records as the source of truth and a single serialized coordinator as the consumer; GitHub Actions concurrency is only the consumer guard, not the queue. The design includes idempotency keys, exact-SHA evidence, lease expiry/recovery, periodic reconciliation and explicit supersession rules. This is a design proposal only: no queue consumer or cross-workflow lock is active, so CP8.1 remains 0%.
+
 ## CP8.2 — worker registry schema (25%)
 
 Implemented `tests/cp8_worker_registry.json` with a capability catalog, explicit least-privilege policy, concurrency budget and an empty worker list. The dispatcher validates the schema and rejects unsafe permission settings.
