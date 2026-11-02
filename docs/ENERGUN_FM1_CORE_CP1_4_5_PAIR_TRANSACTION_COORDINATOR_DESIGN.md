@@ -121,7 +121,25 @@ Current source uses one global static `st_buf` and direct storage calls from pro
 
 A simple guard is not a substitute for a real scheduler mutex if future firmware adds concurrent storage tasks. Under the current single-main-loop execution model, it is intended to reject re-entrancy and document exclusive ownership, not to claim multicore/thread safety.
 
-## 9. Operation-specific semantics
+## 9. Shared autosave-sector ownership — FM6 voice-bank staging
+
+The autosave A/B sectors are temporarily reused by `firmware/src/fm6_vbank.c` as staging space for incoming FM6 voice-bank transfers. This is a real storage ownership dependency, not just an autosave timer detail.
+
+- `fvb_begin()` erases the autosave copy that an ordinary autosave write would use next.
+- FM6B_WRITE fills that sector with a staged bank; FM6B_END commits it and copies it to the separate `0xE7000` home sector.
+- `fvb_boot()` recovers a committed staged bank before autosave restoration.
+- `autosave_hold()` is called on FM6B_BEGIN/WRITE/END, but it is a delay policy, not a hard lock. If the transfer remains open beyond the quiet interval, the current firmware allows autosave to take the staging sector and the transfer is detected as aborted.
+
+Therefore:
+1. A live-autosave pair transaction must defer while FM6 staging owns either autosave sector.
+2. The coordinator must use an explicit staging-active/reservation contract; elapsed time or `autosave_hold()` alone is not sufficient to prove the sector is free.
+3. Preserve the current transfer-abort semantics only if deliberately retained as a product decision; do not silently alter them while adding Sidecar.
+4. FM6B_BEGIN/WRITE/END and live-autosave pair commit must share the same main-context Flash ownership contract.
+5. Tests must cover active staging, autosave deferral, timeout/abort policy, boot-time staged-bank recovery and proof that Sidecar writes never target either staging sector.
+
+The Sidecar allocator must keep its eventual storage separate from these reused autosave sectors unless CP1.4.11 explicitly audits and approves another layout.
+
+## 10. Operation-specific semantics
 
 - **Project Save/Save As:** capture live extension with the same musical snapshot boundary as `project_capture()`; commit pair before showing SAVED.
 - **Project Rename:** preserve the full extension but rebind it to the new base sequence because rename rewrites the base object.
@@ -133,7 +151,7 @@ A simple guard is not a substitute for a real scheduler mutex if future firmware
 - **Archive V2:** validate the complete incoming base+Sidecar pair before destination erase; commit through this same coordinator and rebind to the destination's next base sequence.
 - **FM6 patch object:** remains a separate persistence object/transaction. No cross-object atomicity is claimed.
 
-## 10. Host acceptance matrix — use real storage implementation
+## 11. Host acceptance matrix — use real storage implementation
 
 Extend `tests/storage_test.c` or a narrowly scoped companion that includes the real `firmware/src/storage.c` and reuses its simulated NOR hooks. Do not test a copied coordinator model as if it were production storage.
 
@@ -158,10 +176,12 @@ Minimum cases:
 18. Archive V1 restore: base restored with extension defaults.
 19. Archive V2 destination restore: extension rebound to destination next base sequence.
 20. Re-entrant transaction attempt: second writer rejected without any Flash operation.
+21. FM6 voice-bank staging active: live-autosave pair writer defers without touching either staging sector.
+22. FM6 staged-bank commit and boot recovery remain valid when Sidecar/autosave integration is enabled.
 
 Fault injection must test erase failure, every programmed payload/header byte boundary and read-back corruption. The assertions must inspect selected base and Sidecar identities/sequences after each simulated reboot (reset in-memory state, preserve NOR bytes).
 
-## 11. Integration gate and no-go conditions
+## 12. Integration gate and no-go conditions
 
 Do not implement this coordinator until:
 - Sidecar envelope ABI and identity/generation fields are frozen;
