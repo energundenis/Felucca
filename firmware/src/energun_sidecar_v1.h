@@ -40,7 +40,8 @@ typedef enum {
     ENERGUN_SC_ERR_PRIVATE_VALUE,
     ENERGUN_SC_ERR_MOTION_COUNT,
     ENERGUN_SC_ERR_MOTION_EVENT,
-    ENERGUN_SC_ERR_SLOT_BITMAP
+    ENERGUN_SC_ERR_SLOT_BITMAP,
+    ENERGUN_SC_ERR_NO_MATCH
 } energun_sc_status_t;
 
 typedef struct {
@@ -71,6 +72,12 @@ typedef struct {
     uint32_t next_storage_sequence;
 } energun_sc_ab_selection_t;
 
+typedef struct {
+    int8_t selected_copy;       /* newest exact Base match, or -1 */
+    uint32_t storage_sequence; /* enclosing A/B sequence */
+    energun_sc_view_t view;     /* validated logical payload view */
+} energun_sc_read_result_t;
+
 /* Inspect a record against its own embedded Base fingerprint. This validates
  * envelope, identity and payload semantics, but does not assert that the
  * embedded Base is the currently selected Base.
@@ -79,6 +86,16 @@ energun_sc_status_t energun_sc_v1_inspect(
     const uint8_t *record, size_t record_length,
     energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
     uint16_t base_motion_count, energun_sc_view_t *view);
+
+/* Read the newest fully validated Sidecar bound to the exact selected Base.
+ * storage_valid must mean the enclosing Felucca header and payload CRC passed.
+ * Stale/orphan generations are never returned as the active logical payload.
+ */
+energun_sc_status_t energun_sc_v1_read_matching(
+    const energun_sc_candidate_t candidates[2],
+    energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
+    uint32_t current_base_sequence, uint32_t current_base_crc32,
+    uint16_t base_motion_count, energun_sc_read_result_t *result);
 
 /* Select the protected matching copy and the safe write target.
  * Newest matching Base binding determines the protected copy. The next
