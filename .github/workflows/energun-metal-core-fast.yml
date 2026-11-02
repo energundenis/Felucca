@@ -61,6 +61,12 @@ jobs:
         id: cp1-queue
         run: python3 tests/run_cp1_test_queue.py
 
+      - name: Test CP0-CP7 development orchestrator planner
+        run: python3 tests/test_development_orchestrator.py
+
+      - name: Generate CP0-CP7 development dispatch plan
+        run: python3 tests/run_development_orchestrator.py
+
       - name: Upload focused test evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -69,5 +75,6 @@ jobs:
           path: |
             build/metal-core-fast/
             build/cp1-test-queue/
+            build/development-orchestrator/
           if-no-files-found: ignore
           retention-days: 14
