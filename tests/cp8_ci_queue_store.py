@@ -149,7 +149,11 @@ class GitRefCASQueueStore:
         for attempt in range(self.max_retries):
             head = self.client.read_ref(self.branch)
             ledger = self.client.read_ledger_at(head)
+            before = json.dumps(ledger, sort_keys=True, separators=(",", ":"))
             result = mutate(ledger)
+            after = json.dumps(ledger, sort_keys=True, separators=(",", ":"))
+            if after == before:
+                return result
             try:
                 self.client.commit_ledger(head, ledger, self.branch)
                 return result
@@ -255,7 +259,8 @@ class GitRefCASQueueStore:
 
         def mutate(ledger: dict[str, Any]) -> dict[str, Any]:
             item = _find_record(ledger, request_id)
-            if item["state"] != "claimed" or item["claim"]["owner_run_id"] != owner_run_id:
+            _require_live_claim(item, owner_run_id, _parse_iso(timestamp))
+            if item["state"] != "claimed":
                 raise QueueStoreError("claim ownership mismatch or invalid state")
             item["state"] = "running"
             item["updated_at"] = timestamp
@@ -272,8 +277,7 @@ class GitRefCASQueueStore:
 
         def mutate(ledger: dict[str, Any]) -> dict[str, Any]:
             item = _find_record(ledger, request_id)
-            if item["state"] not in {"claimed", "running"} or item["claim"]["owner_run_id"] != owner_run_id:
-                raise QueueStoreError("claim ownership mismatch or invalid state")
+            _require_live_claim(item, owner_run_id, _parse_iso(timestamp))
             item["state"] = outcome
             item["updated_at"] = timestamp
             item["claim"] = None
@@ -285,6 +289,14 @@ class GitRefCASQueueStore:
             validate_queue_record(item)
             return item
         return self._transact(mutate)
+
+
+def _require_live_claim(item: dict[str, Any], owner_run_id: int, current: datetime) -> None:
+    claim = item.get("claim") or {}
+    if item.get("state") not in {"claimed", "running"} or claim.get("owner_run_id") != owner_run_id:
+        raise QueueStoreError("claim ownership mismatch or invalid state")
+    if _parse_iso(claim["lease_expires_at"]) <= current:
+        raise QueueStoreError("claim lease has expired")
 
 
 def _find_record(ledger: dict[str, Any], request_id: str) -> dict[str, Any]:
