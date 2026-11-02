@@ -52,6 +52,45 @@ typedef struct {
     uint16_t payload_length;
 } energun_sc_view_t;
 
+/* One storage-validated A/B candidate. storage_valid must be true only
+ * after the enclosing Felucca object header and payload CRC have passed.
+ * storage_sequence is the enclosing storage object's local A/B sequence;
+ * it is distinct from the Base generation stored inside the Sidecar envelope.
+ */
+typedef struct {
+    const uint8_t *record;
+    size_t record_length;
+    uint32_t storage_sequence;
+    uint8_t storage_valid;
+} energun_sc_candidate_t;
+
+typedef struct {
+    int8_t matching_copy;       /* newest candidate bound to current Base, or -1 */
+    int8_t write_copy;           /* safe opposite copy to overwrite next */
+    int8_t newest_valid_copy;    /* newest structurally/semantically valid record */
+    uint32_t next_storage_sequence;
+} energun_sc_ab_selection_t;
+
+/* Inspect a record against its own embedded Base fingerprint. This validates
+ * envelope, identity and payload semantics, but does not assert that the
+ * embedded Base is the currently selected Base.
+ */
+energun_sc_status_t energun_sc_v1_inspect(
+    const uint8_t *record, size_t record_length,
+    energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
+    uint16_t base_motion_count, energun_sc_view_t *view);
+
+/* Select the protected matching copy and the safe write target.
+ * Newest matching Base binding determines the protected copy. The next
+ * storage sequence is based on the newest fully valid Sidecar record even
+ * when that record is an orphan for a different Base generation.
+ */
+energun_sc_status_t energun_sc_v1_select_ab(
+    const energun_sc_candidate_t candidates[2],
+    energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
+    uint32_t current_base_sequence, uint32_t current_base_crc32,
+    uint16_t base_motion_count, energun_sc_ab_selection_t *selection);
+
 /* Validate a complete record against the selected base object's identity,
  * exact committed sequence and exact base payload CRC. base_motion_count is the number of legacy FUN10
  * events already occupying the shared 128-event pool (0..128).
