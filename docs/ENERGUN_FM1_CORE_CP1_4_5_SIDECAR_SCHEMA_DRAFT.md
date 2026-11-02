@@ -2,7 +2,9 @@
 
 Date: 2026-11-02  
 Branch: `energun-metal-core`  
-Status: **LOGICAL SCHEMA DRAFT — no binary ABI or Flash allocation approved**
+Status: **LOGICAL DRAFT SUPERSEDED BY CP1.4.5 SIDECAR V1 FORMAT SPEC — no storage integration or Flash allocation**
+
+> **Status note (2026-11-02):** The logical model below is retained as design history. The byte-level V1 envelope and payload are now specified in `ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_V1_FORMAT_SPEC.md` and implemented by `firmware/src/energun_sidecar_v1.c`. The V1 host acceptance stage does not implement storage registration, A/B selection or pair transactions. No Flash sectors are allocated.
 
 ## 1. Purpose and dependencies
 
