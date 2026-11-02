@@ -78,32 +78,34 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
 
 
 
-    def test_manifest_registers_cp2_cp3_worker_commands_and_sources(self):
+    def test_cp2_cp3_reuse_fast_regression_without_duplicate_workers(self):
         root = Path(__file__).resolve().parents[1]
         config = json.loads((root / "tests/cp0_cp7_development_orchestrator.json").read_text(encoding="utf-8"))
-        policy = config["execution_policy"]
-        allowed = {tuple(command) for command in policy["allowed_commands"]}
-        expected = {
-            "cp2-dsp-qualification": ("sh", "tests/run_cp2_dsp_qualification.sh"),
-            "cp3-host-lifecycle": ("sh", "tests/run_cp3_host_lifecycle.sh"),
-        }
-        for task_id, command in expected.items():
-            task_data = next(item for item in config["workstreams"] if item["id"] == task_id)
-            self.assertEqual(tuple(task_data["command"]), command)
-            self.assertIn(command, allowed)
-            self.assertTrue((root / command[1]).is_file())
-            self.assertEqual(task_data["depends_on"], ["cp0-baseline"])
+        allowed = {tuple(command) for command in config["execution_policy"]["allowed_commands"]}
+        tasks = {item["id"]: item for item in config["workstreams"]}
+        for task_id in ("cp2-dsp-qualification", "cp3-host-lifecycle"):
+            task_data = tasks[task_id]
+            self.assertIsNone(task_data["command"])
+            self.assertEqual(task_data["state"], "checking")
+            self.assertEqual(task_data["executor"], "fast-regression-evidence-review")
+            self.assertTrue(task_data["evidence"]["duplicate_worker_removed"])
+            self.assertEqual(task_data["evidence"]["host_test_source"], "tests/run_metal_core_fast.sh")
+        self.assertNotIn(("sh", "tests/run_cp2_dsp_qualification.sh"), allowed)
+        self.assertNotIn(("sh", "tests/run_cp3_host_lifecycle.sh"), allowed)
+        self.assertTrue((root / "tests/run_metal_core_fast.sh").is_file())
 
-    def test_cp2_cp3_dispatch_in_parallel_after_cp0_passes(self):
+    def test_cp2_cp3_are_not_dispatched_even_after_cp0_passes(self):
         data = manifest([
             task("cp0", "passed"),
             task("cp1", deps=["cp0"], command=["python3", "cp1.py"]),
-            task("cp2", deps=["cp0"], command=["sh", "cp2.sh"]),
-            task("cp3", deps=["cp0"], command=["sh", "cp3.sh"]),
+            task("cp2", "checking", deps=["cp0"], command=None),
+            task("cp3", "checking", deps=["cp0"], command=None),
         ], max_parallel=3)
         plan = build_plan(data, ["cp0", "cp1", "cp2", "cp3"])
-        self.assertEqual(plan["dispatch_candidates"], ["cp1", "cp2", "cp3"])
-        self.assertEqual(plan["max_parallel"], 3)
+        self.assertEqual(plan["dispatch_candidates"], ["cp1"])
+        states = {row["id"]: row["state"] for row in plan["workstreams"]}
+        self.assertEqual(states["cp2"], "CHECKING")
+        self.assertEqual(states["cp3"], "CHECKING")
 
     def test_cp1_pass_evidence_does_not_bypass_cp0_dependency(self):
         data = manifest([
