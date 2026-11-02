@@ -1,6 +1,6 @@
 # ADR — CP8.1 durable global CI coordination
 
-Status: **Proposed design; not implemented**  
+Status: **Phase 1 implemented (record validation); durable storage and coordinator not implemented**  
 Date: 2026-11-03  
 Scope: ENERGUN FM-1 CORE repository CI only
 
@@ -44,7 +44,7 @@ Every request must record:
 - Repeated requests for the same idempotency key must not start duplicate builds.
 - Newer commits may supersede older unstarted requests for the same ref/lane, but this policy must be explicit and recorded; different PRs must not silently supersede one another.
 
-## Required implementation phases
+## Phase 1 implementation note (2026-11-03)\n\nAdded `tests/cp8_ci_queue.py` and `tests/test_cp8_ci_queue.py`. The validator enforces a fixed lane allow-list, deterministic idempotency identity over repository + sorted lane set + ref + exact 40-character commit SHA, explicit queue states, claim ownership and lease timestamp ordering, exact-SHA PASS evidence, and legal state transitions. It is intentionally storage-agnostic and has no GitHub write permissions or execution side effects. The fast-regression workflow now runs these unit tests. This does **not** implement durable persistence, atomic claims, a coordinator, or a global lock.\n\n## Required implementation phases
 
 1. Add a queue-record schema and validation tests.
 2. Implement durable request creation and idempotency.
