@@ -308,3 +308,10 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) SUCCESS on code HEAD `33327eb312a36b83b3751560d899c577147125e4`; logs confirm `project_test` rejects valid-checksum FUN10 `np=127` on the legacy reader and `upreset_test` preserves E0–E7 while skipping 16 inserted common values in an expanded `np=127` preset.
 - Firmware backup, browser backup, project format and user preset suites also passed in the same baseline run.
 - This closes only those named host compatibility fixtures; it does not approve a new writer, stable IDs, Sidecar/archive V2 or power-loss transaction behavior.
+
+### CP1.4.6 Sidecar logical capacity — 2026-11-02
+
+- Added `ENERGUN_FM1_CORE_CP1_4_6_SIDECAR_CAPACITY_AUDIT.md`.
+- Project/live Sidecar logical maximum: 501 bytes. User-preset bank: 208 Private bytes + 2-byte slot bitmap = 210 bytes. A provisional 64-byte envelope budget gives 565 / 274 bytes respectively, below the existing 3840-byte object payload ceiling.
+- The 64-byte envelope is not a frozen field layout. Four project slots + live autosave + two preset banks, each A/B, remain 14 logical copies; 56 KiB is only an arithmetic estimate, not a Flash map.
+- Logical payload arithmetic verified; exact envelope ABI, AC79 RAM/stack, archive V2 pair restore and physical Flash/recovery remain open.
