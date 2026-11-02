@@ -37,4 +37,5 @@ The cross-branch register is a status/decision index, not permission to merge so
 
 - **CP1.4.9 backup/restore audit:** `ENERGUN_FM1_CORE_CP1_4_9_BACKUP_RESTORE_AUDIT.md` — current archive V1 omits Sidecar; V2 requires pair-aware restore and destination base-sequence rebinding. Source audit complete; no implementation or Flash changes.
 
+- **CP1.4.1 E0–E7/P_MC reconciliation:** `ENERGUN_FM1_CORE_CP1_4_1_E0_E7_RECONCILIATION.md` preserves the user-approved 2026-10-30 E0–E7 order and derives 16 unique P_MC controls without duplicates.
 - **CP1.4.2 legacy compatibility fixtures:** exact-head full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) passed the valid-checksum FUN10 `np=127` rejection fixture and the expanded 127-value user-preset map-by-count fixture (preserves E0–E7 while skipping 16 inserted common values). New-writer, Sidecar and archive V2 behavior remain open.
