@@ -93,6 +93,11 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
         self.assertNotIn(("sh", "tests/run_cp2_dsp_qualification.sh"), allowed)
         self.assertNotIn(("sh", "tests/run_cp3_host_lifecycle.sh"), allowed)
         self.assertTrue((root / "tests/run_metal_core_fast.sh").is_file())
+        cp1 = tasks["cp1-persistence"]
+        self.assertIsNone(cp1["command"])
+        self.assertEqual(cp1["executor"], "existing-cp1-queue-evidence")
+        self.assertTrue(cp1["evidence"]["duplicate_execution_removed"])
+        self.assertNotIn(("python3", "tests/run_cp1_test_queue.py"), allowed)
 
     def test_cp2_cp3_are_not_dispatched_even_after_cp0_passes(self):
         data = manifest([
