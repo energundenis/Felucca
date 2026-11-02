@@ -128,7 +128,8 @@ def build_plan(manifest: dict, order: list[str], cp1_status: str | None = None, 
     dispatch = candidates[:max_parallel]
     return {
         "orchestrator_id": manifest.get("orchestrator_id"),
-        "status": "BLOCKED" if any(row["state"] == "BLOCKED" for row in rows)
+        "status": "FAILED" if any(row["state"] == "FAILED" for row in rows)
+                  else "BLOCKED" if any(row["state"] == "BLOCKED" for row in rows)
                   else "READY" if dispatch else "WAITING",
         "mode": "plan-only",
         "max_parallel": max_parallel,
