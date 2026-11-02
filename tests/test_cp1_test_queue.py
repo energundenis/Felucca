@@ -71,20 +71,20 @@ class CP1QueueTests(unittest.TestCase):
 
     def test_parallel_independent_stages_join_before_dependent(self):
         wait_a = (
-            "import pathlib,time; pathlib.Path('a.started').write_text('1'); "
-            "d=time.time()+3; "
-            "exec(\"while not pathlib.Path('b.started').exists() and time.time()<d: time.sleep(.01)\"); "
-            "assert pathlib.Path('b.started').exists(); pathlib.Path('a.done').write_text('1')"
+            "import pathlib,time; a=pathlib.Path(\"a.started\"); b=pathlib.Path(\"b.started\"); "
+            "a.write_text(\"1\"); d=time.time()+3; "
+            "exec(\"while not b.exists() and time.time()<d: time.sleep(.01)\"); "
+            "assert b.exists(); pathlib.Path(\"a.done\").write_text(\"1\")"
         )
         wait_b = (
-            "import pathlib,time; pathlib.Path('b.started').write_text('1'); "
-            "d=time.time()+3; "
-            "exec(\"while not pathlib.Path('a.started').exists() and time.time()<d: time.sleep(.01)\"); "
-            "assert pathlib.Path('a.started').exists(); pathlib.Path('b.done').write_text('1')"
+            "import pathlib,time; a=pathlib.Path(\"a.started\"); b=pathlib.Path(\"b.started\"); "
+            "b.write_text(\"1\"); d=time.time()+3; "
+            "exec(\"while not a.exists() and time.time()<d: time.sleep(.01)\"); "
+            "assert a.exists(); pathlib.Path(\"b.done\").write_text(\"1\")"
         )
         join = (
-            "import pathlib; assert pathlib.Path('a.done').exists(); "
-            "assert pathlib.Path('b.done').exists(); pathlib.Path('joined').write_text('1')"
+            "import pathlib; assert pathlib.Path(\"a.done\").exists(); "
+            "assert pathlib.Path(\"b.done\").exists(); pathlib.Path(\"joined\").write_text(\"1\")"
         )
         stages = [
             {"id": "lane-a", "title": "Lane A", "state": "ready",
