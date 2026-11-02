@@ -17,12 +17,6 @@
 #define CP3_TEST_ACCENT NOTE_META_ACCENT
 #define CP3_TEST_SAMPLE 12000
 
-typedef union {
-    uint64_t align;
-    uint8_t bytes[13344u];
-} cp3_test_mem_t;
-
-static cp3_test_mem_t cp3_test_mem[NPART];
 static int cp3_vca_failures;
 
 static void cp3_vca_check(const char *name, int ok)
@@ -63,7 +57,7 @@ static eng_metal_vca_part_state_t *cp3_part_state(track_t *t)
     uint32_t p = cp3_part_index(t);
     if (p >= NPART)
         return 0;
-    return (eng_metal_vca_part_state_t *)(void *)cp3_test_mem[p].bytes;
+    return (eng_metal_vca_part_state_t *)ENG_MEM(p);
 }
 
 static eng_metal_vca_t *cp3_voice_vca(track_t *t, voice_t *v)
@@ -135,7 +129,8 @@ static void cp3_vca_init(void)
     uint32_t p, i;
     memset(trk, 0, sizeof(trk));
     memset(&song, 0, sizeof(song));
-    memset(cp3_test_mem, 0, sizeof(cp3_test_mem));
+    memset(eng_mem, 0, sizeof(eng_mem));
+    memset(eng_mem_owner, 0, sizeof(eng_mem_owner));
     host_tracks_init();
     ENGINES[0] = &ENG_METAL_CORE_CP3_TEST;
     for (p = 0; p < NPART; ++p) {
@@ -162,6 +157,56 @@ static void cp3_render_blocks(track_t *t, uint32_t blocks)
     uint32_t i;
     for (i = 0; i < blocks; ++i)
         (void)track_render(t, out, CTL);
+}
+
+static void test_real_engine_memory_pool_contract(void)
+{
+    uint8_t *part0, *part1;
+    uint32_t i;
+    cp3_vca_init();
+    part0 = (uint8_t *)ENG_MEM(0u);
+    part1 = (uint8_t *)ENG_MEM(1u);
+    cp3_vca_check("VCA state accessor points into Felucca ENG_MEM pool",
+                  cp3_part_state(&trk[0]) == (eng_metal_vca_part_state_t *)part0 &&
+                  part0 != part1);
+    cp3_vca_check("each part has an independently allocated engine-memory region",
+                  part0 != part1 && sizeof(eng_mem[0].b) == ENG_MEM_PART);
+
+    /* Re-exercise the production allocator's first-claim zeroing contract. */
+    memset(part0, 0xA5, ENG_METAL_VCA_PART_BYTES);
+    eng_mem_owner[0] = 0u;
+    eng_mem_claim(&trk[0]);
+    {
+        int zero = 1;
+        for (i = 0; i < ENG_METAL_VCA_PART_BYTES; ++i)
+            zero &= part0[i] == 0u;
+        cp3_vca_check("first engine claim zeroes the declared VCA state bytes", zero);
+    }
+
+    /* Same owner must retain its state instead of clearing it on every claim. */
+    memset(part0, 0x5Au, ENG_METAL_VCA_PART_BYTES);
+    eng_mem_claim(&trk[0]);
+    {
+        int retained = 1;
+        for (i = 0; i < ENG_METAL_VCA_PART_BYTES; ++i)
+            retained &= part0[i] == 0x5Au;
+        cp3_vca_check("reclaim by the same engine preserves its state", retained);
+    }
+
+    /* Claim by a different descriptor clears exactly its declared state range. */
+    memset(part0, 0xA5, sizeof(eng_mem[0].b));
+    ENGINES[1] = &ENG_METAL_CORE_CP3_TEST;
+    trk[0].engine = 1u;
+    eng_mem_claim(&trk[0]);
+    {
+        int cleared = 1, tail_kept = 1;
+        for (i = 0; i < ENG_METAL_VCA_PART_BYTES; ++i)
+            cleared &= part0[i] == 0u;
+        for (i = ENG_METAL_VCA_PART_BYTES; i < sizeof(eng_mem[0].b); ++i)
+            tail_kept &= part0[i] == 0xA5u;
+        cp3_vca_check("different engine claim clears only its declared mem bytes",
+                      cleared && tail_kept);
+    }
 }
 
 static void test_real_dispatch_uses_engine_owned_vca(void)
@@ -345,6 +390,7 @@ static void test_retrigger_from_release_level(void)
 
 int main(void)
 {
+    test_real_engine_memory_pool_contract();
     test_real_dispatch_uses_engine_owned_vca();
     test_gate_release_and_done_lifecycle();
     test_retrigger_from_release_level();
