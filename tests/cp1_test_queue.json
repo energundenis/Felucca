@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "queue_id": "ENERGUN-FM1-CP1",
+  "description": "Sequential CP1 persistence verification. Existing Felucca host tests are consumed from the fast-regression evidence; Sidecar stages remain blocked until production code and executable tests are added.",
+  "stop_on_first_failure": true,
+  "stop_on_first_blocked": true,
+  "stages": [
+    {
+      "id": "storage-foundation",
+      "title": "Felucca Storage A/B foundation",
+      "kind": "existing-ci-evidence",
+      "evidence_file": "build/metal-core-fast/results.txt",
+      "evidence_contains": "PASS: storage",
+      "state": "evidence"
+    },
+    {
+      "id": "fm6-staging-baseline",
+      "title": "Existing FM6 Voice Bank staging/recovery",
+      "kind": "existing-ci-evidence",
+      "evidence_file": "build/metal-core-fast/results.txt",
+      "evidence_contains": "PASS: fm6bank",
+      "state": "evidence",
+      "depends_on": [
+        "storage-foundation"
+      ]
+    },
+    {
+      "id": "sidecar-format",
+      "title": "Sidecar schema, envelope and semantic validation",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "fm6-staging-baseline"
+      ],
+      "command": null,
+      "blocker": "Frozen Sidecar binary ABI and production parser/validator are not implemented. Add the real implementation and an executable test before enabling this stage."
+    },
+    {
+      "id": "base-generation-binding",
+      "title": "Exact Base-generation binding",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "sidecar-format"
+      ],
+      "command": null,
+      "blocker": "Production sequence/generation binding reader is not implemented. Tests must prove exact binding and reject mismatched generations."
+    },
+    {
+      "id": "sidecar-ab-selection",
+      "title": "Sidecar A/B matching-copy selection",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "base-generation-binding"
+      ],
+      "command": null,
+      "blocker": "Production dual-copy inspection and matching-copy selection are not implemented. Include orphan/future/stale candidates and sequence wrap/tie cases."
+    },
+    {
+      "id": "pair-commit-order",
+      "title": "Base + Sidecar pair transaction ordering",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "sidecar-ab-selection"
+      ],
+      "command": null,
+      "blocker": "Production pair transaction coordinator is not implemented. Test preservation of the old matching pair when staging or Base commit fails."
+    },
+    {
+      "id": "pair-power-loss",
+      "title": "Power-loss injection across every pair-commit phase",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "pair-commit-order"
+      ],
+      "command": null,
+      "blocker": "Requires the real pair coordinator and deterministic simulated-NOR fault injection at Sidecar payload/header and Base erase/payload/header boundaries."
+    },
+    {
+      "id": "sidecar-integrity",
+      "title": "Sidecar CRC, schema and semantic integrity",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "pair-power-loss"
+      ],
+      "command": null,
+      "blocker": "Production Sidecar reader/validator and frozen envelope are not implemented. Do not treat outer storage CRC alone as semantic validation."
+    },
+    {
+      "id": "pair-recovery-roundtrip",
+      "title": "Pair recovery and full Sidecar roundtrip",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "sidecar-integrity"
+      ],
+      "command": null,
+      "blocker": "Production pair load/recovery and roundtrip paths are not implemented."
+    },
+    {
+      "id": "archive-v2-restore",
+      "title": "Archive V2 pair-aware restore and destination rebinding",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "pair-recovery-roundtrip"
+      ],
+      "command": null,
+      "blocker": "Archive V2 pair-aware restore is not implemented. Archive V1 must remain legacy-only and must not inherit unrelated Sidecar data."
+    },
+    {
+      "id": "fm6-staging-coordination",
+      "title": "Sidecar autosave coordination with FM6 staging ownership",
+      "kind": "executable-host-test",
+      "state": "blocked",
+      "depends_on": [
+        "archive-v2-restore"
+      ],
+      "command": null,
+      "blocker": "An explicit FM6 staging reservation/ownership contract and Sidecar autosave deferral implementation are not present."
+    },
+    {
+      "id": "cp1-full-host-regression",
+      "title": "Full focused host regression after all CP1 stages",
+      "kind": "final-regression",
+      "state": "blocked",
+      "depends_on": [
+        "fm6-staging-coordination"
+      ],
+      "command": "sh tests/run_metal_core_fast.sh",
+      "blocker": "Automatically enabled only after every preceding CP1 stage has an executable passing test.",
+      "enable_when": "All preceding stages are ready and pass."
+    }
+  ]
+}
