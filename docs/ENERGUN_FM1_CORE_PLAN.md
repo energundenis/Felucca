@@ -825,3 +825,12 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - CP1.4.3 now has a proposed typed per-part runtime cache/access contract, lifecycle, generation-aware persistence handoff and capability-probed editor/UI model.
 - CP1.4.4 now has a proposed explicit P_MC whitelist, common value conversion, global 128-record merged motion capacity and regression matrix.
 - Design remains symbolic: no numeric IDs, editor command numbers, UI page IDs, Sidecar fields, Flash sectors or production code were assigned/changed. CP1.4.3/4.4 remain OPEN pending map, encoding and Sidecar dependencies.
+
+
+## CP1.4.5 Sidecar schema draft — 2026-11-02
+
+- Added `docs/ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_SCHEMA_DRAFT.md`.
+- Seven logical identities: four project slots, live autosave, two user-preset banks; each requires an A/B pair (14 logical copies).
+- Estimated maximum project payload: 501 bytes (116 parameter values + one count byte + up to 128 P_MC motion records at 3 bytes each). User-preset bank extension: 464 value bytes plus bitmap/envelope.
+- Identified base-object sequence binding as necessary because current storage A/B sequence is independent per object. Sidecar must be written/rebound to the next base sequence before every base rewrite; loader must search both Sidecar copies for an exact base-sequence match.
+- This is a logical design draft only. No storage source, object IDs, binary ABI, sector addresses or Flash allocations changed. CP1.4.5 not frozen; CP1.4.6–4.11 remain open.
