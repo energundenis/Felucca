@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "orchestrator_id": "ENERGUN-FM1-CP8",
+  "title": "ENERGUN FM-1 CORE autonomous development infrastructure",
+  "status": "foundation-in-progress",
+  "coordination_branch": "energun-development-orchestrator",
+  "safety": {
+    "main_branch_writes": false,
+    "automatic_merge": false,
+    "physical_device_access": false,
+    "physical_flash_write": false,
+    "factory_firmware_changes": false,
+    "coding_workers_require_isolated_branches": true,
+    "every_generated_change_requires_tests_and_review": true
+  },
+  "workstreams": [
+    {
+      "id": "cp8-1-global-ci-coordination",
+      "checkpoint": "CP8.1",
+      "title": "Repository-wide CI concurrency coordination",
+      "state": "checking",
+      "progress_percent": 50,
+      "depends_on": [],
+      "implementation": "GitHub Actions concurrency group energun-fm1-ci-global adopted by the fast-regression and baseline workflows.",
+      "limitation": "GitHub concurrency provides one running and one pending run per group; pending runs may be replaced. This is a coarse serialization guard, not a durable FIFO lock or crash-recoverable lease. Every future ENERGUN workflow must adopt the same group."
+    },
+    {
+      "id": "cp8-2-worker-registry",
+      "checkpoint": "CP8.2",
+      "title": "Coding worker registry and capability model",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-1-global-ci-coordination"
+      ],
+      "acceptance": [
+        "Worker identity, capabilities, availability and version are recorded",
+        "Workers have least-privilege repository permissions",
+        "No worker receives physical-device or main-branch write permissions"
+      ]
+    },
+    {
+      "id": "cp8-3-task-dispatch",
+      "checkpoint": "CP8.3",
+      "title": "Automatic task routing and assignment",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-2-worker-registry"
+      ],
+      "acceptance": [
+        "Task type and acceptance criteria select a qualified worker",
+        "Dependencies, concurrency budget and worker availability are enforced",
+        "Assignments and outcomes are auditable"
+      ]
+    },
+    {
+      "id": "cp8-4-isolated-workspaces",
+      "checkpoint": "CP8.4",
+      "title": "Isolated feature branches and workspaces",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-3-task-dispatch"
+      ],
+      "acceptance": [
+        "Each coding task uses a dedicated branch/worktree",
+        "Branch base SHA and allowed paths are recorded",
+        "Concurrent workers cannot overwrite each other's changes"
+      ]
+    },
+    {
+      "id": "cp8-5-agent-code-changes",
+      "checkpoint": "CP8.5",
+      "title": "Bounded autonomous source-code changes",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-4-isolated-workspaces"
+      ],
+      "acceptance": [
+        "Worker receives a bounded task specification and file scope",
+        "Changes are diff-reviewed and do not touch protected paths",
+        "Worker cannot merge or access physical hardware"
+      ]
+    },
+    {
+      "id": "cp8-6-automated-validation",
+      "checkpoint": "CP8.6",
+      "title": "Automated validation and evidence collection",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-5-agent-code-changes"
+      ],
+      "acceptance": [
+        "Relevant tests and target builds run on the exact task commit",
+        "Logs, artifacts, timing and exit status are retained",
+        "BLOCKED and FAIL are never converted into PASS"
+      ]
+    },
+    {
+      "id": "cp8-7-automatic-pr",
+      "checkpoint": "CP8.7",
+      "title": "Automatic reviewable pull request creation",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-6-automated-validation"
+      ],
+      "acceptance": [
+        "PR includes scope, diff summary, tests and evidence",
+        "PR targets an approved integration branch, never main by default",
+        "PR remains open for human review and is never auto-merged"
+      ]
+    },
+    {
+      "id": "cp8-8-independent-review",
+      "checkpoint": "CP8.8",
+      "title": "Independent review and quality gate",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-7-automatic-pr"
+      ],
+      "acceptance": [
+        "Review is performed independently of the authoring worker",
+        "Required checks and evidence are verified",
+        "Unresolved review findings block promotion"
+      ]
+    },
+    {
+      "id": "cp8-9-conflict-and-replay-safety",
+      "checkpoint": "CP8.9",
+      "title": "Conflict prevention, idempotency and recovery",
+      "state": "planned",
+      "progress_percent": 0,
+      "depends_on": [
+        "cp8-1-global-ci-coordination",
+        "cp8-4-isolated-workspaces"
+      ],
+      "acceptance": [
+        "Task IDs and idempotency keys prevent duplicate execution",
+        "Stale leases and abandoned workspaces can be recovered safely",
+        "Conflicting PRs are detected before integration"
+      ]
+    }
+  ]
+}
