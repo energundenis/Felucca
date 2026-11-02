@@ -10,6 +10,9 @@ import argparse
 import json
 from pathlib import Path
 from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import subprocess
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "tests" / "cp0_cp7_development_orchestrator.json"
@@ -140,6 +143,52 @@ def build_plan(manifest: dict, order: list[str], cp1_status: str | None = None, 
     }
 
 
+
+def execute_ready_workstreams(manifest: dict, plan: dict) -> dict:
+    """Execute exact allow-listed argv commands; never invoke a shell."""
+    allowed = {tuple(item) for item in manifest.get("execution_policy", {}).get("allowed_commands", []) if isinstance(item, list) and item}
+    by_id = {task["id"]: task for task in manifest["workstreams"]}
+    selected = list(plan.get("dispatch_candidates", []))[:plan["max_parallel"]]
+    if not selected:
+        plan["execution"] = {"mode": "execute", "started": 0, "results": []}
+        return plan
+
+    def run_one(task_id: str) -> dict:
+        task = by_id[task_id]
+        command = task.get("command")
+        if not isinstance(command, list) or not command or tuple(command) not in allowed:
+            return {"id": task_id, "state": "BLOCKED", "detail": "Command is not an exact allow-list entry.", "duration_seconds": 0.0}
+        if any(not isinstance(part, str) or not part for part in command):
+            return {"id": task_id, "state": "BLOCKED", "detail": "Command argv contains invalid arguments.", "duration_seconds": 0.0}
+        start = time.monotonic()
+        try:
+            proc = subprocess.run(command, cwd=ROOT, shell=False, check=False, capture_output=True, text=True, timeout=int(task.get("timeout_seconds", 1800)))
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return {"id": task_id, "state": "FAILED", "detail": "Executor error: " + str(exc), "duration_seconds": round(time.monotonic() - start, 4)}
+        detail = ((proc.stdout or "")[-3000:] + (proc.stderr or "")[-3000:]).strip()
+        state = "PASSED" if proc.returncode == 0 else "FAILED"
+        if task_id == "cp1-persistence" and proc.returncode == 0:
+            cp1_status, cp1_detail = read_cp1_status(OUT.parent / "cp1-test-queue" / "report.json")
+            state = {"PASS": "PASSED", "BLOCKED": "BLOCKED", "FAIL": "FAILED"}.get(cp1_status, "FAILED")
+            detail = cp1_detail or detail
+        return {"id": task_id, "state": state, "detail": detail or ("Exit code: " + str(proc.returncode)), "duration_seconds": round(time.monotonic() - start, 4)}
+
+    start = time.monotonic()
+    results = []
+    with ThreadPoolExecutor(max_workers=plan["max_parallel"]) as pool:
+        futures = {pool.submit(run_one, task_id): task_id for task_id in selected}
+        for future in as_completed(futures):
+            results.append(future.result())
+    by_result = {row["id"]: row for row in results}
+    for row in plan["workstreams"]:
+        if row["id"] in by_result:
+            result = by_result[row["id"]]
+            row["state"], row["detail"] = result["state"], result["detail"]
+    plan["execution"] = {"mode": "execute", "started": len(selected), "duration_seconds": round(time.monotonic() - start, 4), "results": sorted(results, key=lambda item: item["id"])}
+    plan["status"] = "FAILED" if any(row["state"] == "FAILED" for row in plan["workstreams"]) else ("BLOCKED" if any(row["state"] == "BLOCKED" for row in plan["workstreams"]) else "EXECUTED")
+    return plan
+
+
 def write_report(plan: dict) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "report.json").write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
@@ -161,7 +210,7 @@ def write_report(plan: dict) -> None:
         "",
         "## Execution boundary",
         "",
-        "Plan-only mode. No task command was launched, no branch was merged, and no physical FM-1 or Flash was accessed.",
+        "Execution mode: " + plan.get("execution", {}).get("mode", "plan-only") + ". No branch merge or physical FM-1/Flash access is performed.",
         "",
     ]
     report = "\n".join(lines)
@@ -176,11 +225,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=MANIFEST)
     parser.add_argument("--cp1-report", type=Path, default=OUT.parent / "cp1-test-queue" / "report.json")
+    parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     try:
         manifest, order = load_and_validate(args.manifest)
         cp1_status, cp1_detail = read_cp1_status(args.cp1_report)
         plan = build_plan(manifest, order, cp1_status, cp1_detail)
+        if args.execute:
+            plan = execute_ready_workstreams(manifest, plan)
         write_report(plan)
     except Exception as exc:
         print(f"::error::Development orchestrator validation failed: {exc}")
