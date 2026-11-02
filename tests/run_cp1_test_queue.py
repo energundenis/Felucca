@@ -22,6 +22,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 
 def write_report(status: str, rows: list[dict], blocked_at: str | None = None) -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
     report = {
         "queue_id": "ENERGUN-FM1-CP1",
         "status": status,
