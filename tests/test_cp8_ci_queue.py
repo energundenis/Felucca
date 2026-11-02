@@ -49,7 +49,7 @@ def record(state="queued"):
             "summary": "Validation did not pass.",
         }
     if state == "superseded":
-        value["result"] = {"outcome": "superseded", "summary": "A newer request replaced this unstarted request."}
+        value["result"] = {"outcome": "superseded", "finished_at": "2026-11-03T10:05:00Z", "summary": "A newer request replaced this unstarted request."}
     return value
 
 
