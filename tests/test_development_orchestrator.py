@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from unittest.mock import patch, Mock
 from pathlib import Path
+from threading import Barrier
 
 from run_development_orchestrator import build_plan, load_and_validate, read_cp1_status, execute_ready_workstreams
 
@@ -112,6 +113,23 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
         self.assertEqual(result["workstreams"][0]["state"], "PASSED")
         self.assertFalse(run.call_args.kwargs["shell"])
         self.assertEqual(run.call_args.args[0], ["python3", "safe_task.py"])
+
+
+    def test_executor_overlaps_independent_workers(self):
+        data = manifest([task("a"), task("b")], max_parallel=2)
+        data["execution_policy"]["allowed_commands"] = [["python3", "worker.py"]]
+        for item in data["workstreams"]:
+            item["command"] = ["python3", "worker.py"]
+        plan = build_plan(data, ["a", "b"])
+        barrier = Barrier(2)
+        def overlap(*args, **kwargs):
+            barrier.wait(timeout=3)
+            return Mock(returncode=0, stdout="parallel", stderr="")
+        with patch("run_development_orchestrator.subprocess.run", side_effect=overlap) as run:
+            result = execute_ready_workstreams(data, plan)
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(result["execution"]["started"], 2)
+        self.assertTrue(all(row["state"] == "PASSED" for row in result["workstreams"]))
 
     def test_executor_refuses_unregistered_command(self):
         data = manifest([task("a")])
