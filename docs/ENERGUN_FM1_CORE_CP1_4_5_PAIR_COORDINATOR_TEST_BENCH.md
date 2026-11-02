@@ -2,7 +2,7 @@
 
 Date: 2026-11-02  
 Branch: `energun/cp1-4-5-pair-coordinator`  
-Status: implementation candidate; exact-head CI pending.
+Status: implementation candidate; exact-head host CI PASS (run 41511905591, tested HEAD `a82512e02c782145cdef43572ed1aaa5118b86ba`).
 
 ## Purpose
 
@@ -88,3 +88,8 @@ This work provides host C execution and byte-level simulated-NOR power-loss evid
 - access, erase, write or flash the physical FM-1.
 
 The backend-neutral coordinator is an integration candidate. Its current test adapter proves transaction ordering against the existing Felucca A/B driver, not final hardware storage integration.
+
+
+## Exact-head CI result (2 Nov 2026)
+
+Run [41511905591](https://github.com/energundenis/Felucca/actions/runs/41511905591) completed successfully against `a82512e02c782145cdef43572ed1aaa5118b86ba`. Focused Metal Core regression and dependency-aware CP1 queue both passed. Pair ordering: 6/6; power-loss matrix: 19/19 (18 injected cuts plus aggregate); full CP1 queue intentionally remains BLOCKED at the production Sidecar integrity gate. This CI is host/simulated-NOR evidence only.
