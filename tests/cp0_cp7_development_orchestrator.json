@@ -15,12 +15,7 @@
     "physical_device_access": false,
     "physical_flash_write": false,
     "factory_firmware_changes": false,
-    "allowed_commands": [
-      [
-        "python3",
-        "tests/run_cp1_test_queue.py"
-      ]
-    ]
+    "allowed_commands": []
   },
   "states": [
     "planned",
@@ -56,16 +51,13 @@
       "id": "cp1-persistence",
       "checkpoint": "CP1",
       "title": "Parameter model, Sidecar persistence and recovery",
-      "state": "ready",
+      "state": "checking",
       "depends_on": [
         "cp0-baseline"
       ],
       "parallel_group": "core-foundations",
-      "executor": "existing-cp1-dag",
-      "command": [
-        "python3",
-        "tests/run_cp1_test_queue.py"
-      ],
+      "executor": "existing-cp1-queue-evidence",
+      "command": null,
       "acceptance": [
         "The existing CP1 queue report is parsed by its explicit PASS/BLOCKED/FAIL status",
         "Pair Commit Ordering is implemented and fault-injection tests pass",
@@ -74,7 +66,11 @@
       ],
       "evidence": {
         "existing_queue": "tests/cp1_test_queue.json",
-        "known_gate": "Pair Commit Ordering was the last verified blocker"
+        "known_gate": "Pair Commit Ordering was the last verified blocker",
+        "report_source": "build/cp1-test-queue/report.json",
+        "execution_owner": "dedicated CI step: Run dependency-aware parallel CP1 persistence test queue",
+        "duplicate_execution_removed": true,
+        "note": "The dedicated CP1 queue runs once in the fast workflow; the global orchestrator imports its explicit PASS/BLOCKED/FAIL report and must not execute the queue again."
       },
       "timeout_seconds": 1800
     },
