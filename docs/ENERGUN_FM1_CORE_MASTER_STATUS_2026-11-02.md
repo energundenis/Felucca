@@ -2,7 +2,7 @@
 Date: 2026-11-02
 Canonical repository: `energundenis/Felucca`
 Canonical working branch: `energun-metal-core`
-Latest documented branch HEAD: `200b75e49006672ea7828c7bb9fff0d4134ae944`
+Documentation synchronization base HEAD: `200b75e49006672ea7828c7bb9fff0d4134ae944`
 Latest code/test HEAD with confirmed fast-lane result: `7ec54a19bb1e18992c1dbc3603deba60015d411f`
 
 ## Authority and percentage method
