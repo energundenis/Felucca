@@ -1,9 +1,10 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch, Mock
 from pathlib import Path
 
-from run_development_orchestrator import build_plan, load_and_validate, read_cp1_status
+from run_development_orchestrator import build_plan, load_and_validate, read_cp1_status, execute_ready_workstreams
 
 
 def manifest(tasks, max_parallel=3):
@@ -98,6 +99,37 @@ class DevelopmentOrchestratorTests(unittest.TestCase):
         data = manifest([task("cp1-persistence")])
         plan = build_plan(data, ["cp1-persistence"], "FAIL", "CP1 command failed.")
         self.assertEqual(plan["status"], "FAILED")
+
+
+    def test_executor_runs_only_exact_allowlisted_argv_without_shell(self):
+        data = manifest([task("a")], max_parallel=1)
+        data["execution_policy"]["allowed_commands"] = [["python3", "safe_task.py"]]
+        data["workstreams"][0]["command"] = ["python3", "safe_task.py"]
+        plan = build_plan(data, ["a"])
+        fake = Mock(returncode=0, stdout="ok", stderr="")
+        with patch("run_development_orchestrator.subprocess.run", return_value=fake) as run:
+            result = execute_ready_workstreams(data, plan)
+        self.assertEqual(result["workstreams"][0]["state"], "PASSED")
+        self.assertFalse(run.call_args.kwargs["shell"])
+        self.assertEqual(run.call_args.args[0], ["python3", "safe_task.py"])
+
+    def test_executor_refuses_unregistered_command(self):
+        data = manifest([task("a")])
+        data["workstreams"][0]["command"] = ["python3", "-c", "print('unsafe')"]
+        plan = build_plan(data, ["a"])
+        with patch("run_development_orchestrator.subprocess.run") as run:
+            result = execute_ready_workstreams(data, plan)
+        self.assertEqual(result["workstreams"][0]["state"], "BLOCKED")
+        run.assert_not_called()
+
+    def test_executor_does_not_run_workstream_while_dependency_waits(self):
+        data = manifest([task("parent", "checking"), task("child", deps=["parent"])])
+        data["execution_policy"]["allowed_commands"] = [["echo", "test"]]
+        plan = build_plan(data, ["parent", "child"])
+        with patch("run_development_orchestrator.subprocess.run") as run:
+            result = execute_ready_workstreams(data, plan)
+        self.assertEqual(result["execution"]["started"], 0)
+        run.assert_not_called()
 
     def test_cp1_report_status_is_read_from_evidence_file(self):
         with tempfile.TemporaryDirectory() as tmp:
