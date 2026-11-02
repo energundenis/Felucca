@@ -110,7 +110,25 @@ Power-cut behavior:
 
 For an extension-only edit with no base-object change, write the new Sidecar copy tagged with the current base sequence; no unnecessary base rewrite is required. Conversely, every base-object rewrite must rebind the complete current Sidecar snapshot to the next base sequence, or the loader will correctly treat the old extension as stale.
 
-### 5.3 Required storage-layer additions
+### 5.3 Save-path integration inventory
+
+A source audit identified every current base-object write path that must be routed through the pair-aware transaction coordinator:
+
+| Base identity | Current source entry points | Required Sidecar behavior |
+|---|---|---|
+| Project slot | `project_save_as()` / `project_save()` | Snapshot and rebind full project extension to next slot sequence |
+| Project slot rename | `project_rename()` | Rebind unchanged extension while name/base record receives new sequence |
+| Project slot erase | `project_erase()` | Commit an empty/tombstone Sidecar bound to the new empty base sequence, or an equivalent explicit invalidation protocol |
+| Live autosave | `autosave_poll()` | Independently rebind the live-autosave extension to the autosave object's next sequence |
+| User preset bank | `up_put()`, called by `up_store_cat()` | Rebind the complete bank Private extension, not only the edited slot |
+| User preset bank rename | `up_rename_cat()` via `up_put()` | Preserve all other slot extensions and rebind to new bank sequence |
+| User preset bank erase | `up_put(k, NULL)` | Clear the erased slot extension, preserve remaining slots and rebind; deleting the final slot may use a zero-presence tombstone |
+
+Do not wrap only the UI entry points: the coordinator must own the lowest common persistence boundary so editor commands, backup/restore and future callers cannot bypass pairing. It must also serialize autosave against slot saves and preset-bank writes.
+
+Existing user-preset FM6 patch data is stored separately: `up_store_cat()` commits the preset bank through `up_put()`, then calls `upf_store()` for the FM6 patch. The Private Sidecar pair transaction covers the preset bank and its Private extension only; it does not make the separate FM6 patch object atomic with them. Preserve and explicitly test that existing ordering, and do not claim a whole-preset atomic transaction across the FM6 patch object without a separate design.
+
+### 5.4 Required storage-layer additions
 
 Before implementation, audit and design:
 - a safe way to read the current base object's committed sequence;
@@ -153,6 +171,7 @@ If each copy eventually uses one 4 KiB sector, the logical reservation would be 
 7. User preset bank overwrite/delete/rename and all-32-slot pairing tests.
 8. Archive backup/restore inclusion and interrupted restore behavior.
 9. CP1.4.11 physical Flash map and restore qualification before assigning sectors.
+10. Pair-aware integration coverage for every write path in Section 5.3, including erase tombstones and the separate user-preset FM6 patch save ordering.
 
 ## 9. Acceptance boundary
 
