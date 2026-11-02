@@ -238,10 +238,10 @@ static void test_source_step_boundaries(void) {
                        "%s all %lu declared source-step boundaries quantize monotonically",
                        c->name, count + 1);
         check(label, ok);
-        printf("CP1.4.2 STEP-METRIC %-25s boundaries=%lu max_error_steps=%0.4f\\n",
+        printf("CP1.4.2 STEP-METRIC %-25s boundaries=%lu max_error_steps=%0.4f\n",
                c->name, count + 1, max_error_steps);
     }
-    printf("CP1.4.2 SOURCE-STEP TOTAL boundaries=%lu controls=%zu\\n",
+    printf("CP1.4.2 SOURCE-STEP TOTAL boundaries=%lu controls=%zu\n",
            total_boundaries, CONTROL_COUNT);
 }
 
@@ -259,7 +259,7 @@ static void test_invalid_inputs_and_bipolar_center(void) {
          decode_code(bipolar, code, &value) && fabs(value) < 1e-12;
     check("FOLD SYMMETRY zero maps exactly to signed code 0",
           ok);
-    printf("CP1.4.2 NOTE bipolar zero decoded at code 0 = %.12f; signed range = -64..63 (128 codes)\\n", value);
+    printf("CP1.4.2 NOTE bipolar zero decoded at code 0 = %.12f; signed range = -64..63 (128 codes)\n", value);
 }
 
 int main(void) {
