@@ -41,7 +41,7 @@ static size_t encode_project(uint8_t *record, const uint8_t *payload,
     size_t written = 0u;
     energun_sc_status_t status = energun_sc_v1_encode(
         record, ENERGUN_SC_V1_MAX_RECORD, &written,
-        ENERGUN_SC_ID_PROJECT, 2u, 0xFFFFFFFFu,
+        ENERGUN_SC_ID_PROJECT, 2u, 0xFFFFFFFFu, 0x12345678u,
         payload, payload_length, base_motion_count);
     return status == ENERGUN_SC_OK ? written : 0u;
 }
@@ -57,14 +57,14 @@ static void test_project_roundtrip_and_binding(void)
     check("project identity encodes and validates at sequence wrap boundary",
           n == ENERGUN_SC_V1_HEADER_SIZE + PROJECT_BASE + 1u &&
           energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PROJECT, 2u,
-              0xFFFFFFFFu, 0u, &view) == ENERGUN_SC_OK);
+              0xFFFFFFFFu, 0x12345678u, 0u, &view) == ENERGUN_SC_OK);
     check("decoded view exposes exact payload and generation",
           view.base_sequence == 0xFFFFFFFFu &&
           view.payload_length == PROJECT_BASE + 1u &&
           view.payload == record + ENERGUN_SC_V1_HEADER_SIZE);
     check("wrong base generation is rejected",
           energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PROJECT, 2u,
-              0u, 0u, &view) == ENERGUN_SC_ERR_BASE_GENERATION);
+              0u, 0x12345678u, 0u, &view) == ENERGUN_SC_ERR_BASE_GENERATION);
     check("wrong project slot is rejected",
           energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PROJECT, 1u,
               0xFFFFFFFFu, 0u, &view) == ENERGUN_SC_ERR_IDENTITY);
@@ -137,7 +137,7 @@ static void test_motion_payload(void)
           n == ENERGUN_SC_V1_MAX_RECORD);
     check("shared pool rejects 128 Sidecar events plus one base event",
           energun_sc_v1_encode(record, sizeof record, &n,
-              ENERGUN_SC_ID_PROJECT, 2u, 9u, payload,
+              ENERGUN_SC_ID_PROJECT, 2u, 9u, 0x12345678u, payload,
               ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD, 1u) == ENERGUN_SC_ERR_MOTION_COUNT);
     payload[MOTION_COUNT_OFF] = 129u;
     check("event count above global 128 is rejected",
@@ -180,10 +180,10 @@ static void test_preset_bank(void)
     payload[2u + 5u] = 2u;
     check("preset bank with one present slot validates",
           energun_sc_v1_encode(record, sizeof record, &n,
-              ENERGUN_SC_ID_PRESET_BANK, 1u, 77u, payload,
+              ENERGUN_SC_ID_PRESET_BANK, 1u, 77u, 0x87654321u, 0x12345678u, payload,
               sizeof payload, 0u) == ENERGUN_SC_OK &&
           energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PRESET_BANK, 1u,
-              77u, 0u, &(energun_sc_view_t){0}) == ENERGUN_SC_OK);
+              77u, 0x87654321u, 0u, &(energun_sc_view_t){0}) == ENERGUN_SC_OK);
     payload[2u + 13u] = 1u; /* slot 1 absent but stale data remains */
     check("absent preset slot cannot retain stale Private values",
           energun_sc_v1_encode(record, sizeof record, &n,
@@ -211,7 +211,7 @@ static void test_envelope_rejection_and_atomic_encode(void)
               PROJECT_BASE + 1u, 0u) == ENERGUN_SC_ERR_IDENTITY);
     check("live autosave accepts only logical index zero",
           energun_sc_v1_encode(record, sizeof record, &n,
-              ENERGUN_SC_ID_LIVE_AUTOSAVE, 1u, 1u, payload,
+              ENERGUN_SC_ID_LIVE_AUTOSAVE, 1u, 0x12345678u, payload,
               PROJECT_BASE + 1u, 0u) == ENERGUN_SC_ERR_IDENTITY);
     check("project payload with trailing byte is rejected",
           energun_sc_v1_encode(record, sizeof record, &n,
@@ -246,7 +246,7 @@ static void test_envelope_rejection_and_atomic_encode(void)
           energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PROJECT, 2u,
               0xFFFFFFFFu, 0u, &view) == ENERGUN_SC_ERR_SCHEMA_VERSION);
     n = encode_project(record, payload, PROJECT_BASE + 1u, 0u);
-    record[14] = 1u;
+    record[18] = 1u;
     check("nonzero reserved envelope field rejected",
           energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PROJECT, 2u,
               0xFFFFFFFFu, 0u, &view) == ENERGUN_SC_ERR_RESERVED);
