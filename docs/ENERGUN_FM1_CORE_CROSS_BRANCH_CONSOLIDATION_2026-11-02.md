@@ -42,7 +42,7 @@ The branch-local source documents remain intact. This canonical register records
 - FOLLOW and METAL are independent persistent booleans.
 - MCX0–MCX6 remain a separate extension namespace, outside the 37-control count.
 - E0–E7, P_MC and Private membership are logically documented; **stable numeric IDs, binary encodings, page IDs, Sidecar offsets and Flash addresses are not assigned**.
-- Important unresolved conflict: the earlier 2026-10-30 E0–E7 freeze differs from the later CP1.4 candidate ordering. CP1.4.2 must not assign stable IDs until this is reconciled.
+- The earlier user-approved 2026-10-30 E0–E7 freeze remains authoritative. CP1.4.1 reconciles the later 8/16/13 allocation by removing duplicate OSC2 LEVEL/TIMBRE from P_MC and including FM INDEX/LPG DECAY; see `ENERGUN_FM1_CORE_CP1_4_1_E0_E7_RECONCILIATION.md`. Stable numeric IDs remain unassigned.
 
 ### Resolved reference behavior / V1 decisions
 | Topic | Canonical decision | Evidence / boundary |
@@ -57,7 +57,7 @@ The branch-local source documents remain intact. This canonical register records
 | Host gate timing | First integration sees Gate-off at render-block boundary; sample-accurate intra-block release requires a separate host API/event change. | CP3.0 source audit. |
 
 ### Still open before stable parameter ABI
-- Reconciliation of the older frozen E0–E7 order with CP1.4 candidate ordering (still open; earlier frozen order remains authoritative until explicit supersession).
+- **Resolved 2026-11-02:** earlier frozen E0–E7 order retained; P_MC membership corrected to avoid duplicate OSC2 LEVEL/TIMBRE and include FM INDEX/LPG DECAY. Final map sign-off and stable IDs remain open.
 - **V1 stored-value precision — DECIDED 2026-11-02:** standard 7-bit Felucca parameter encoding. Use nonlinear mappings for frequency, ratio and time controls where needed; linear mappings for levels/depths. High-resolution sidecar-backed parameter values are not selected for V1. Exact per-control curves, rounding/display rules and quantization tests remain open.
 - Final sign-off of the complete map against the protected source artifact.
 - Stable ID namespace and 7-bit parameter-ID capacity constraints.
@@ -142,7 +142,7 @@ Additional repositories referenced by the sequencer bridge:
 
 ## 8. Canonical work plan from this consolidated state
 
-1. **CP1.4.1 correction review** — parameter semantics corrected in the canonical branch; remaining open items are FREQ units/steps and E0–E7 reconciliation.
+1. **CP1.4.1 correction review** — FREQ units/steps verified and E0–E7/P_MC membership reconciled; final source-map sign-off remains open.
 2. **CP1.4.2** — ID namespace, 7-bit capacity, project/preset serialization and backward-compatibility audit. Do not allocate IDs until step 1 is closed.
 3. **Parallel CP3 evidence closure** — exact-head lifecycle CI, target compiler disassembly review, filter candidate numerical qualification, complete memory accounting.
 4. **CP1.4.3–4.4** — Private API/UI per-part read/write/display and P_MC Motion Lock whitelist/regression.
@@ -157,7 +157,7 @@ Additional repositories referenced by the sequencer bridge:
 ### CP1.4.1 source parameter verification
 - The protected v98 source object confirms FREQ = 160, min 30, max 500, step 1; the engine assigns it directly to Web Audio OscillatorNode.frequency, so the unit is Hz.
 - All previously unspecified source steps in the logical map were recovered from the protected v98 parameter object and added to CP1.4.1.
-- CP1.4.1 remains open only for the older frozen E0–E7 allocation conflict and final map sign-off. No final E descriptors or stable IDs may be assigned until the conflict is resolved.
+- CP1.4.1 E0–E7 ordering and 8/16/13 logical membership are reconciled. Final source-map sign-off remains open; stable numeric IDs remain blocked on CP1.4.2/CP1.4.5.
 - Updated map: `docs/ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`.
 
 ### CP1.4.2 compatibility audit
@@ -248,7 +248,7 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 ### CP1.4.5 user-preset capacity correction — 2026-11-02
 - Rechecked `upreset.c` and the 144-byte packed parameter capacity: P_COUNT=127 fits in the ordinary user-preset base record. P_MC therefore remains in the base user-preset record; only the 13 Private values per slot require Sidecar extension storage.
 - Corrected user-preset bank Sidecar estimate from 464 to **208 value bytes** (16 slots × 13 Private values), plus slot bitmap/envelope. Project Sidecar estimate remains 501 bytes including up to 128 P_MC motion records.
-- Existing count-based preset migration uses the final eight stored values as E0–E7, so older firmware can map those final eight back to its current E positions and ignore the inserted P_MC common values. This expected 127-count cross-version path still requires an exact fixture; no production code changed.
+- Existing count-based preset migration uses the final eight stored values as E0–E7, so older firmware can map those final eight back to its current E positions and ignore the inserted P_MC common values. The expanded 127-count cross-version user-preset path is covered by the passing `upreset_test.c` fixture on exact-head full baseline CI; no production code changed.
 
 
 ### CP3.2 real OSC phase lifecycle through host dispatcher — 2026-11-02
@@ -307,4 +307,4 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 
 - Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) SUCCESS on code HEAD `33327eb312a36b83b3751560d899c577147125e4`; logs confirm `project_test` rejects valid-checksum FUN10 `np=127` on the legacy reader and `upreset_test` preserves E0–E7 while skipping 16 inserted common values in an expanded `np=127` preset.
 - Firmware backup, browser backup, project format and user preset suites also passed in the same baseline run.
-- This closes only those named host compatibility fixtures; it does not approve a new writer, stable IDs, E0–E7 order, Sidecar/archive V2 or power-loss transaction behavior.
+- This closes only those named host compatibility fixtures; it does not approve a new writer, stable IDs, Sidecar/archive V2 or power-loss transaction behavior.
