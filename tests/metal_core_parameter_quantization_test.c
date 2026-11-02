@@ -83,14 +83,14 @@ static int encode_value(const control_t *c, double value, int *out) {
         rounded = lround(127.0 * normalized);
     }
     if (rounded < code_min(c)) rounded = code_min(c);
-    if (rounded > code_max(c)) rounded = code_max();
+    if (rounded > code_max(c)) rounded = code_max(c);
     *out = (int)rounded;
     return 1;
 }
 
 static int decode_code(const control_t *c, int code, double *out) {
     double normalized;
-    if (!c || !out || code < code_min(c) || code > code_max() ||
+    if (!c || !out || code < code_min(c) || code > code_max(c) ||
         !isfinite(c->min_value) || !isfinite(c->max_value) ||
         c->min_value >= c->max_value)
         return 0;
@@ -141,11 +141,11 @@ static void test_endpoints_and_roundtrip(void) {
         char label[160];
         int ok = encode_value(c, c->min_value, &lo) &&
                  encode_value(c, c->max_value, &hi) &&
-                 lo == code_min(c) && hi == code_max();
+                 lo == code_min(c) && hi == code_max(c);
         (void)snprintf(label, sizeof(label), "%s endpoints map exactly", c->name);
         check(label, ok);
         ok = 1;
-        for (code = code_min(c); code <= code_max(); ++code) {
+        for (code = code_min(c); code <= code_max(c); ++code) {
             int roundtrip = 999;
             if (!decode_code(c, code, &decoded) ||
                 decoded < c->min_value - 1e-12 ||
