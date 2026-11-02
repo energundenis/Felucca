@@ -879,3 +879,13 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Fast regression [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) also completed **SUCCESS**, 17/17 focused test programs, including real `ENG_MEM(p)` VCA backing and five ownership assertions.
 - This closes the previously pending exact-head baseline CI check only. It does not close CP1.4.2 legacy compatibility fixtures, does not register/build METAL CORE as a production engine, and does not establish full-engine AC79 CPU/RAM or physical-device qualification.
 - The code tested by both workflows is `33327eb312a36b83b3751560d899c577147125e4`; subsequent branch changes recorded here are documentation-only.
+
+### CP1.4.9 backup/restore source audit — 2026-11-02
+
+- Added `docs/ENERGUN_FM1_CORE_CP1_4_9_BACKUP_RESTORE_AUDIT.md`.
+- Existing archive V1 contains 13 logical objects (11/12-object legacy variants are supported); no Sidecar identities are included. Firmware PUT currently rejects ordinary archive object IDs above 9; browser manifest and JSON validation accept only the known V1 object-count/order variants.
+- The browser validates the complete archive before the first destructive request, then restores objects individually; firmware uses per-object A/B commits. This is not a global archive transaction.
+- Critical finding: Sidecar binds to a base storage sequence, but restore writes a destination base with a newly assigned sequence. An opaque Sidecar byte restore would therefore be stale. Archive V2 requires a pair-aware restore coordinator that rebinds the extension to the destination base sequence.
+- Archive ID 0 restores live runtime through `project_restore_runtime()`, not directly to the persistent autosave object; live-runtime Sidecar/autosave semantics require a separate decision.
+- Existing FM6 user-preset patch data remains a separate object (archive ID 9 / `upf_store()`); Sidecar must not claim atomicity across it without separate design.
+- CP1.4.9 source audit is complete; archive V2 design, implementation and regression remain open. No firmware, archive protocol, storage IDs, Flash sectors or device state changed.
