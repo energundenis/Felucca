@@ -56,12 +56,12 @@ static void check(const char *name, int ok)
 
 int main(void)
 {
-    uint8_t base_a[64], base_b[64], base_out[64];
+    uint8_t base_a[64], base_b[64], base_out[64], base_copy[64];
     uint8_t sidecar_payload[ENERGUN_SC_V1_PROJECT_VALUES + 1u];
     uint8_t sidecar_a[ENERGUN_SC_V1_MAX_RECORD];
     uint8_t sidecar_b[ENERGUN_SC_V1_MAX_RECORD];
     size_t sidecar_a_len = 0u, sidecar_b_len = 0u;
-    st_meta_t meta_a, meta_b, meta_fallback;
+    st_meta_t meta_a, meta_b, meta_fallback, copy_meta;
     energun_sc_view_t view;
     uint32_t calls_before;
 
@@ -80,6 +80,12 @@ int main(void)
           meta_a.copy == 0u && meta_a.sequence == 1u &&
           meta_a.payload_length == sizeof base_a &&
           meta_a.payload_crc == st_crc32(base_a, sizeof base_a));
+    check("explicit A/B copy reader returns the exact CRC-validated payload",
+          st_read_copy_meta(OBJ_PROJECT0, 0u, base_copy, sizeof base_copy,
+                            &copy_meta) == 0 &&
+          copy_meta.copy == 0u && copy_meta.sequence == meta_a.sequence &&
+          copy_meta.payload_crc == meta_a.payload_crc &&
+          memcmp(base_copy, base_a, sizeof base_a) == 0);
     check("Sidecar encodes against the exact selected Base fingerprint",
           energun_sc_v1_encode(sidecar_a, sizeof sidecar_a, &sidecar_a_len,
               ENERGUN_SC_ID_PROJECT, 0u, meta_a.sequence, meta_a.payload_crc,
