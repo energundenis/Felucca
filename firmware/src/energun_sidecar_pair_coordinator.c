@@ -182,7 +182,9 @@ energun_sc_pair_status_t energun_sc_pair_commit(
         verified_base.sequence, verified_base.payload_crc32,
         request->base_motion_count, &selection);
     if (rc != ENERGUN_SC_OK || selection.matching_copy != sidecar_write_copy ||
-        candidates[sidecar_write_copy].storage_sequence == 0u)
+        !candidates[sidecar_write_copy].storage_valid ||
+        candidates[sidecar_write_copy].storage_sequence !=
+            sidecar_meta.sequence)
         return sc_pair_finish(coordinator, ENERGUN_SC_PAIR_ERR_PAIR_VERIFY);
 
     if (backend->clear_dirty_if_generation != 0)
