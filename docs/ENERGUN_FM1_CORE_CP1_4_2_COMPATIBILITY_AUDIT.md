@@ -125,3 +125,13 @@ Required consequence:
 ## 9. Safety
 
 This audit changes documentation only. No firmware source, parameter ID, project/preset binary format, Sidecar, archive protocol, Flash map, factory image or physical device was changed. No PR was merged and no device write was performed.
+
+## 8. Exact legacy 127-count compatibility fixtures — PASS (2026-11-02)
+
+The exact-head full baseline run [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) completed SUCCESS on code HEAD `33327eb312a36b83b3751560d899c577147125e4`. Its logs confirm the following existing host fixtures executed and passed:
+
+- `tests/project_test.c`: a FUN10 object with `np=127` and a recomputed valid checksum is rejected by the legacy reader whose `P_COUNT=111`. This proves the old project reader does not accidentally accept the expanded count.
+- `tests/upreset_test.c`: an expanded `np=127` user-preset record is mapped by count on the old 111-parameter reader; the 16 inserted common P_MC values are skipped and the final eight E0–E7 values are preserved.
+- The full run also reports `project format test passed`, `user preset test passed`, `backup test passed`, `backup web tests passed` and `ALL HOST TESTS PASSED`.
+
+This closes the two named 127-count legacy compatibility fixtures at host-test level. It does **not** prove a new firmware writer can safely emit the proposed 127-count preset record, approve stable IDs, resolve the E0–E7 conflict, approve the FUN10 + Sidecar project architecture, or qualify archive V2/power-loss behavior. Those remain separate gates.
