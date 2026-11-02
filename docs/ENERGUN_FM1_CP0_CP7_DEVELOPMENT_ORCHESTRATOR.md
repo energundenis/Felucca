@@ -116,7 +116,7 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 
 - Added `tests/run_development_orchestrator.py` to validate the registry and produce JSON/Markdown reports.
 - Added `--execute` with a bounded worker pool. It runs only exact argv entries in `execution_policy.allowed_commands`, uses `shell=False`, applies per-task timeouts and records results.
-- CP1 is the first registered executor. A zero process exit is not enough: the runner imports CP1's explicit JSON `PASS` / `BLOCKED` / `FAIL` result.
+- CP1 remains the specialized executor/queue owner, but its dedicated fast-workflow step runs it exactly once. The global orchestrator imports the existing JSON `PASS` / `BLOCKED` / `FAIL` report and does not invoke the CP1 runner a second time.
 - Added unit coverage for dependency waits, blocked descendants, max parallel, allow-list enforcement, shell-free invocation, refusal to execute tasks whose prerequisites have not passed, and a barrier-based proof that independent executor workers overlap.
 - The fast regression workflow invokes the executor and uploads its report.
 - CP0 remains `checking` until baseline evidence is tied to the exact candidate commit. Therefore CP1 is correctly held at the dependency gate; no CP1 command is dispatched by the global executor yet.
@@ -140,7 +140,7 @@ CP7 physical-device validation remains a manual approval gate requiring a separa
 
 ## 9. Current implementation status
 
-Implemented: CP0–CP7 registry, DAG validation/planning, bounded shell-free allow-listed command execution, CP1 report handoff, duplicate CP2/CP3 host-worker removal, unit tests and fast-workflow integration.
+Implemented: CP0–CP7 registry, DAG validation/planning, bounded shell-free allow-listed command execution, CP1 report handoff without a second queue execution, duplicate CP2/CP3 host-worker removal, unit tests and fast-workflow integration.
 
 Not implemented: automatic CP0 evidence handoff from the separate baseline workflow, automatic promotion of implementation tasks, a global concurrency lock across separate GitHub workflows, autonomous coding agents, persistent background workers, automatic branch/PR creation or automatic merges.
 
