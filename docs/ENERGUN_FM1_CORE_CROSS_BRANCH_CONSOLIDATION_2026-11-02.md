@@ -294,3 +294,11 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - The run confirms unmodified Felucca firmware build, AC79 VCA compile-only target probe, complete host/web regression, output-size recording and artifact upload.
 - Fast lane [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) completed **SUCCESS**, 17/17 focused programs, including the real `ENG_MEM(p)` VCA backing-store test.
 - This supersedes earlier statements in this register and the plan that run 41410200166 was still in progress. It closes baseline CI evidence only; it does not qualify the complete METAL CORE engine, target runtime CPU/RAM, hardware audio, or physical FM-1.
+
+### CP1.4.9 archive / backup / restore audit — 2026-11-02
+
+- Added `ENERGUN_FM1_CORE_CP1_4_9_BACKUP_RESTORE_AUDIT.md` after source review of `editor_backup.c`, `storage.c`, `backup_test.c`, `fm1backup.js` and `test_backup.mjs`.
+- Current archive V1 includes 13 logical objects (legacy 11/12-object variants remain supported) and no Sidecar identities. Firmware PUT rejects ordinary archive IDs above 9; browser manifest/JSON validation are strict to the known V1 object counts and order.
+- Restore validates the complete file before writing but commits each object independently. The Sidecar's base-sequence binding means a byte-for-byte restore is incorrect: destination base commits receive new local sequences, so archive V2 needs pair-aware sequence rebinding.
+- Archive ID 0 is a live runtime snapshot restored via `project_restore_runtime()`, not a direct persistent autosave object; this needs explicit Sidecar semantics. The FM6 patch object remains separate from preset-bank + Private Sidecar atomicity.
+- CP1.4.9 source audit complete; archive V2 design and implementation open. No protocol/source/storage/Flash/device changes.
