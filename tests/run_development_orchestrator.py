@@ -55,7 +55,22 @@ def load_and_validate(path: Path = MANIFEST) -> tuple[dict, list[str]]:
     return manifest, order
 
 
-def build_plan(manifest: dict, order: list[str]) -> dict:
+def read_cp1_status(report_path: Path | None) -> tuple[str | None, str | None]:
+    if report_path is None or not report_path.is_file():
+        return None, "CP1 queue report is not available in this run."
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return "FAIL", f"CP1 queue report could not be read: {exc}"
+    if report.get("queue_id") != "ENERGUN-FM1-CP1":
+        return "FAIL", "CP1 queue report has an unexpected queue_id."
+    status = report.get("status")
+    if status not in {"PASS", "BLOCKED", "FAIL"}:
+        return "FAIL", f"CP1 queue report has an invalid status: {status!r}"
+    return status, f"Imported explicit CP1 queue result: {status}."
+
+
+def build_plan(manifest: dict, order: list[str], cp1_status: str | None = None, cp1_detail: str | None = None) -> dict:
     by_id = {task["id"]: task for task in manifest["workstreams"]}
     results: dict[str, str] = {}
     rows: list[dict] = []
@@ -65,16 +80,18 @@ def build_plan(manifest: dict, order: list[str]) -> dict:
         task = by_id[task_id]
         state = task["state"]
         deps = task.get("depends_on", [])
+        if task_id == "cp1-persistence" and cp1_status:
+            state = {"PASS": "passed", "BLOCKED": "blocked", "FAIL": "failed"}[cp1_status]
         failed_dep = next((dep for dep in deps if results.get(dep) in {"FAILED", "BLOCKED"}), None)
         waiting_deps = [dep for dep in deps if results.get(dep) != "PASSED"]
 
         if state == "passed":
-            status, detail = "PASSED", "Registry marks this gate passed; evidence must still be tied to the reported commit."
+            status, detail = "PASSED", (cp1_detail if task_id == "cp1-persistence" and cp1_status == "PASS" else "Registry marks this gate passed; evidence must still be tied to the reported commit.")
         elif state == "failed":
-            status, detail = "FAILED", task.get("blocker", "Workstream is marked failed.")
+            status, detail = "FAILED", (cp1_detail if task_id == "cp1-persistence" and cp1_status == "FAIL" else task.get("blocker", "Workstream is marked failed."))
         elif state == "blocked" or failed_dep:
             status = "BLOCKED"
-            detail = task.get("blocker") or f"Dependency {failed_dep} is not passed."
+            detail = (cp1_detail if task_id == "cp1-persistence" and cp1_status == "BLOCKED" else task.get("blocker") or f"Dependency {failed_dep} is not passed.")
         elif waiting_deps:
             status = "WAITING"
             detail = "Waiting for: " + ", ".join(waiting_deps)
@@ -155,10 +172,12 @@ def write_report(plan: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=MANIFEST)
+    parser.add_argument("--cp1-report", type=Path, default=OUT.parent / "cp1-test-queue" / "report.json")
     args = parser.parse_args()
     try:
         manifest, order = load_and_validate(args.manifest)
-        plan = build_plan(manifest, order)
+        cp1_status, cp1_detail = read_cp1_status(args.cp1_report)
+        plan = build_plan(manifest, order, cp1_status, cp1_detail)
         write_report(plan)
     except Exception as exc:
         print(f"::error::Development orchestrator validation failed: {exc}")
@@ -166,7 +185,8 @@ def main() -> int:
     print(f"DEVELOPMENT_ORCHESTRATOR_STATUS={plan['status']}")
     print(f"DEVELOPMENT_ORCHESTRATOR_DISPATCH_CANDIDATES={len(plan['dispatch_candidates'])}")
     print(f"DEVELOPMENT_ORCHESTRATOR_MAX_PARALLEL={plan['max_parallel']}")
-    return 0
+    print(f"DEVELOPMENT_ORCHESTRATOR_CP1_STATUS={cp1_status or 'NOT_AVAILABLE'}")
+    return 1 if any(row['state'] == 'FAILED' for row in plan['workstreams']) else 0
 
 
 if __name__ == "__main__":
