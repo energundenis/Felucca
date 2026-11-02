@@ -281,3 +281,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Added five assertions for pool identity, per-part separation, first-claim zeroing, same-owner retention and exact-range clearing on owner change.
 - Fast CI [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181) PASS on code HEAD `33327eb`; all 17 focused test programs passed, including all five new assertions.
 - This closes only host evidence for VCA's 288-byte per-part backing. The full METAL CORE state layout, target linker map, AC79 CPU/memory qualification and hardware remain open. Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) is still in progress.
+
+
+### CP1.4.5 save-path audit — 2026-11-02
+- Identified pair-aware transaction integration points: `project_save_as/project_save`, `project_rename`, `project_erase`, `autosave_poll`, and user-preset `up_put` (used by save/rename/erase). Rename requires rebinding unchanged extension data; erase requires an empty/tombstone extension; autosave remains an independent identity.
+- User preset FM6 patch data is a separate object written after `up_put` by `upf_store()`. Sidecar pairing covers the base preset bank + Private extension only and cannot claim atomicity across the FM6 patch object without a separate transaction design.
+- These are source-audit findings recorded in `ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_SCHEMA_DRAFT.md`; no production code or Flash map changed.
