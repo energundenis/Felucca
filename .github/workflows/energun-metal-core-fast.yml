@@ -68,6 +68,11 @@ jobs:
       - name: Generate CP0-CP7 development dispatch plan
         run: python3 tests/run_development_orchestrator.py --cp1-report build/cp1-test-queue/report.json --execute
 
+      - name: Validate CP2 and CP3 worker script syntax
+        run: |
+          sh -n tests/run_cp2_dsp_qualification.sh
+          sh -n tests/run_cp3_host_lifecycle.sh
+
       - name: Upload focused test evidence
         if: always()
         uses: actions/upload-artifact@v4
