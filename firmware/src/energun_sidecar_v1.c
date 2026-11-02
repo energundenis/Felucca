@@ -99,7 +99,7 @@ static int sc_private_value_valid(unsigned int key, uint8_t value)
 static energun_sc_status_t sc_validate_project(
     const uint8_t *payload, uint16_t length, uint16_t base_motion_count)
 {
-    unsigned int i, j;
+    unsigned int part, i, j;
     uint8_t motion_count;
 
     if (length < SC_PROJECT_MOTION_OFF)
@@ -107,17 +107,19 @@ static energun_sc_status_t sc_validate_project(
     if (length > ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD)
         return ENERGUN_SC_ERR_LENGTH;
 
-    /* P_MC order is the reconciled 16-key logical order. Fifteen values are
-     * unsigned 7-bit; FOLD SYMMETRY (index 9) is signed -64..63.
+    /* P_MC order is repeated independently for all four parts. Fifteen
+     * values per part are unsigned 7-bit; FOLD SYMMETRY (index 9) is signed.
      */
-    for (i = 0; i < 16u; ++i) {
-        uint8_t raw = payload[SC_PROJECT_PMC_OFF + i];
-        if (i == 9u) {
-            int value = sc_i8_value(raw);
-            if (value < -64 || value > 63)
+    for (part = 0; part < 4u; ++part) {
+        for (i = 0; i < 16u; ++i) {
+            uint8_t raw = payload[SC_PROJECT_PMC_OFF + part * 16u + i];
+            if (i == 9u) {
+                int value = sc_i8_value(raw);
+                if (value < -64 || value > 63)
+                    return ENERGUN_SC_ERR_PARAMETER_VALUE;
+            } else if (raw > 127u) {
                 return ENERGUN_SC_ERR_PARAMETER_VALUE;
-        } else if (raw > 127u) {
-            return ENERGUN_SC_ERR_PARAMETER_VALUE;
+            }
         }
     }
 
