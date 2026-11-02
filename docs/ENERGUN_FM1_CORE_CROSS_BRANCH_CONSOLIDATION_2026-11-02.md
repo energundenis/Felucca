@@ -255,3 +255,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Added `tests/metal_core_osc_real_dispatch_test.c` and registered it in the focused fast suite (17 programs).
 - This executes production `voice.c` / `track_render()` through `hostsim.c`, with a private descriptor calling the production OSC phase adapter. It verifies fresh reset, per-sample advancement using the actual host `vmod_t.inc`, real `voice_start()` retrigger phase preservation, Note Off retirement and stale-phase reset on the next fresh note.
 - This replaces the prior mirrored retrigger-contract-only evidence with an actual production host path for this adapter. It remains host-only and does not imply production engine registration, full DSP graph completion, AC79 cycle timing or hardware validation.
+
+
+### Fast regression expansion — 2026-11-02
+- Focused suite now runs 17 tests, adding the real OSC voice lifecycle/dispatch test. Run [41408456648](https://github.com/energundenis/Felucca/actions/runs/41408456648) SUCCESS on code HEAD `992e4591629277d9952fc76610928972e515a6f0`.
+- CP1.4.2 quantization reference remains green (30 controls, 9,434 source-step boundaries, 100,001-point bound sweeps, endpoint clamping).
+- The exact-head full baseline run is [41408456680](https://github.com/energundenis/Felucca/actions/runs/41408456680), still in progress at this update.
