@@ -60,3 +60,14 @@ The FM6 bank test proves the existing FM6 staging behavior under its current hos
 - Verified stale Sidecar rejection after Base rewrite and acceptance against the old Base generation after a corrupted newer Base payload falls back to A.
 - Next stage: Sidecar A/B matching-copy inspection and selection. It remains blocked until production dual-copy reader and tests are implemented.
 - No physical Flash, object IDs, OBJ_COUNT, archive V1, bootloader, OTA or physical device changed.
+
+## Sidecar A/B selection acceptance — 2026-11-02
+
+- Added storage primitive `st_read_copy_meta()` for an explicit A/B copy read with header and outer payload CRC validation; it returns local storage sequence, length and CRC and copies bytes into caller-owned memory.
+- Added Sidecar record inspection and A/B selector. Exact Base sequence + payload CRC determines pair membership; the newest fully valid local Sidecar sequence determines the next storage sequence even if it belongs to an orphan. The newest matching copy is protected from overwrite.
+- Added `tests/sidecar_ab_selection_test.c` and strict runner `tests/run_sidecar_ab_selection_test.sh`.
+- CI [41478848470](https://github.com/energundenis/Felucca/actions/runs/41478848470), exact code HEAD `277313eeda4bd3805ea0c910e3298633c041d03b`, **SUCCESS**.
+- Results: Sidecar V1 **38 checks, 0 failures**; Base-generation binding **16 checks, 0 failures**; Sidecar A/B selection **17 checks, 0 failures**; existing focused regression **21/21**.
+- Queue passes through Sidecar A/B selection and blocks at Pair Commit Ordering. Production pair transaction coordinator and fault injection remain unimplemented.
+- Latest baseline workflow [41478848463](https://github.com/energundenis/Felucca/actions/runs/41478848463) was still running host/web regression at the time of this update; no final baseline result claimed.
+- Simulated NOR only. No physical Flash, object IDs, `OBJ_COUNT`, archive V1, bootloader, OTA or device write.
