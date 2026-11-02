@@ -123,7 +123,24 @@ class CP8CIQueueTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must not precede"):
             validate_queue_record(item)
 
-    def test_malformed_event_and_state_types_are_rejected_cleanly(self):\n        item = record()\n        item["source"]["event"] = []\n        with self.assertRaisesRegex(ValueError, "source.event"):\n            validate_queue_record(item)\n        item = record()\n        item["state"] = []\n        with self.assertRaisesRegex(ValueError, "state is unsupported"):\n            validate_queue_record(item)\n\n    def test_superseded_record_has_a_terminal_timestamp(self):\n        item = record("superseded")\n        self.assertEqual(validate_queue_record(item)["state"], "superseded")\n        item["result"].pop("finished_at")\n        with self.assertRaisesRegex(ValueError, "finished_at"):\n            validate_queue_record(item)\n\n    def test_state_transition_allowlist(self):
+    def test_malformed_event_and_state_types_are_rejected_cleanly(self):
+        item = record()
+        item["source"]["event"] = []
+        with self.assertRaisesRegex(ValueError, "source.event"):
+            validate_queue_record(item)
+        item = record()
+        item["state"] = []
+        with self.assertRaisesRegex(ValueError, "state is unsupported"):
+            validate_queue_record(item)
+
+    def test_superseded_record_has_a_terminal_timestamp(self):
+        item = record("superseded")
+        self.assertEqual(validate_queue_record(item)["state"], "superseded")
+        item["result"].pop("finished_at")
+        with self.assertRaisesRegex(ValueError, "finished_at"):
+            validate_queue_record(item)
+
+    def test_state_transition_allowlist(self):
         validate_transition("queued", "claimed")
         validate_transition("claimed", "running")
         validate_transition("running", "passed")
