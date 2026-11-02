@@ -218,3 +218,10 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Proposed quantization acceptance limits are documented but await review: <=3% relative error for logarithmic controls, <=half an LSB for linear controls, and <=0.5/63 physical units for bipolar FOLD SYMMETRY.
 - Full baseline run [41404580506](https://github.com/energundenis/Felucca/actions/runs/41404580506) on the same code HEAD was still running at the time of this update. No exact-HEAD full baseline conclusion yet.
 - E0–E7 conflict review identified an additional logical overlap: the older frozen E1/E2 entries OSC2 LEVEL and TIMBRE also occur in the current P_MC list. The map now explicitly blocks both silent duplication and implicit aliasing until the original allocation is reconciled.
+
+
+### CP1.4.2 quantization-bound regression — 2026-11-02
+- Extended the host-only reference with 100,001-point-per-control nearest-code error-bound sweeps and finite out-of-range clamping checks.
+- Fast CI [41406252578](https://github.com/energundenis/Felucca/actions/runs/41406252578) SUCCESS on code HEAD `89528e4948b58b98232543014d805ec3bd306616`; all 16 focused tests passed with zero failures.
+- 30 continuous controls, 9,434 v98 source-step boundaries. Maximum log relative error 2.7569%; linear and signed bipolar mappings meet their exact half-code bounds. These mathematical bounds do not constitute musical-resolution approval.
+- Full baseline run [41406252564](https://github.com/energundenis/Felucca/actions/runs/41406252564) is still in progress; no conclusion claimed yet.
