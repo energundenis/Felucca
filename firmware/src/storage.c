@@ -152,6 +152,29 @@ static int st_current_meta(uint32_t obj, st_meta_t *meta)
     return 0;
 }
 
+/* Read one explicitly requested A/B copy, including its payload CRC, without
+ * changing current-copy selection. This is a generic storage primitive: it
+ * assigns no object ID and makes no assumptions about a Sidecar sector map.
+ * The caller owns dst; st_buf remains the driver's shared scratch buffer.
+ */
+static int st_read_copy_meta(uint32_t obj, uint32_t copy, void *dst,
+                             uint32_t max, st_meta_t *meta)
+{
+    st_hdr_t h;
+    uint32_t i;
+    if (obj >= OBJ_COUNT || copy > 1u || dst == 0 || meta == 0)
+        return -1;
+    if (st_head(obj, copy, &h) < 0 || h.len > max || st_body(obj, copy, &h) < 0)
+        return -1;
+    for (i = 0; i < h.len; ++i)
+        ((uint8_t *)dst)[i] = st_buf[i];
+    meta->copy = (uint8_t)copy;
+    meta->sequence = h.seq;
+    meta->payload_length = h.len;
+    meta->payload_crc = h.crc;
+    return 0;
+}
+
 /* load the whole object into dst; returns its length, or -1 if it does not fit */
 static int st_load(uint32_t obj, void *dst, uint32_t max)
 {
