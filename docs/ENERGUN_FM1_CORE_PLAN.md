@@ -702,7 +702,7 @@ Status: **logical architecture adopted as the working V1 baseline; CP1.4 remains
 
 ### Implementation/verification work added to the plan
 
-- [x] Freeze the 8/16/13 logical control table against the CP1.3 37-control inventory. FREQ is now source-verified as Hz, 30–500 Hz, 160 Hz default, 1 Hz step; all previously unspecified v98 source steps have been recovered. The E0–E7 legacy freeze conflict and final map sign-off remain open.
+- [x] Freeze the 8/16/13 logical control table against the CP1.3 37-control inventory. FREQ is now source-verified as Hz, 30–500 Hz, 160 Hz default, 1 Hz step; all previously unspecified v98 source steps have been recovered. The E0–E7/P_MC membership conflict is reconciled in the CP1.4.1 decision record; final map sign-off and CP1.4.2 curve review remain open.
 - [ ] Implement/verify private per-track value access and UI edit/write callbacks without using volatile DSP memory.
 - [ ] Implement explicit P_MC motion whitelist handling and tests; keep discrete/private values excluded.
 - [ ] Specify a versioned Sidecar record schema: magic, schema version, project identity/generation, payload length, per-track values, CRC and A/B commit state. Exact byte packing remains subject to size/compatibility review.
@@ -772,7 +772,7 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 ### CP1.4.1 source verification
 - FREQ is confirmed as oscillator frequency in Hz: source range 30–500 Hz, default 160 Hz, source step 1 Hz.
 - All source steps previously marked unspecified in the CP1.4.1 map were recovered from the protected v98 parameter object and recorded.
-- The older frozen E0–E7 order still conflicts with the later CP1.4 candidate ordering. The earlier accepted freeze remains authoritative until a superseding user decision is explicit. No final E descriptors or stable IDs are assigned.
+- The earlier user-approved 2026-10-30 E0–E7 order remains authoritative. CP1.4.1 now reconciles the 8/16/13 allocation by removing duplicate OSC2 LEVEL/TIMBRE from P_MC and adding FM INDEX/LPG DECAY. No stable numeric IDs are assigned.
 
 ### CP1.4.3 / CP1.4.4 source audit
 - Added `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md`.
@@ -797,7 +797,7 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - The ordinary project/preset/motion parameter value representation is one byte with legal values -64..127 (192 codes). Several v98 controls have more source values than that; source UI step declarations do not guarantee the same target resolution. This is now an explicit decision gate: standard monotonic 7-bit quantization versus high-resolution sidecar-backed values and editor/motion extensions.
 - The naive option of serializing all 127 runtime parameters into FUN10 is invalid: the main object is fixed at 3840 bytes and older firmware rejects `np > P_COUNT`. A base-compatible FUN10 (`np=111`) plus matching extension sidecar is recommended for review, not yet approved or implemented.
 - User presets are stored in two banks of 16 slots. The 13 Private values must be persisted for all 32 presets, not just four stored projects plus live autosave. If separate preset-bank sidecars are used, logical sidecar scope grows to seven identities × A/B = 14 sectors. This is capacity planning only; no Flash sectors are selected.
-- CP1.4.2 remains OPEN. No stable IDs or binary encoding are assigned pending the resolution policy, E0–E7 conflict, user-preset extension and regression design.
+- CP1.4.2 remains OPEN. No stable IDs or binary encoding are assigned pending final per-control curve review, new-writer compatibility, user-preset extension and persistence regression design.
 
 
 ## CP1.4.2 execution update — host quantization reference (2026-11-02)
@@ -895,4 +895,4 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Exact-head full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) passed on code HEAD `33327eb312a36b83b3751560d899c577147125e4`.
 - Its logs confirm `project_test` rejects a FUN10 `np=127` object even with a valid checksum on the legacy `P_COUNT=111` reader, and `upreset_test` maps a 127-value preset by count, skipping 16 inserted common values while preserving the final eight E0–E7 values.
 - The run also confirms project format, user preset, firmware backup, browser backup and complete host/web regression tests passed.
-- These two named legacy fixtures are now verified. CP1.4.2 remains OPEN for per-control musical-resolution sign-off, final map/E0–E7 reconciliation, new-writer behavior, complete project/preset Sidecar pairing, archive V2 and transaction/migration failure tests.
+- These two named legacy fixtures are now verified. CP1.4.2 remains OPEN for per-control musical-resolution sign-off, new-writer behavior, complete project/preset Sidecar pairing, archive V2 and transaction/migration failure tests.
