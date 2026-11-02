@@ -217,7 +217,7 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Source recheck: `project.c` serializes project parameter values as value+64; `params.c`'s existing F_BIPCT descriptor semantics are -64..63 with negative/positive halves scaled separately; `motion.c` stores int8 values and enforces descriptor bounds. The host oracle follows that signed convention. No production firmware or storage code changed.
 - Proposed quantization acceptance limits are documented but await review: <=3% relative error for logarithmic controls, <=half an LSB for linear controls, and <=0.5/63 physical units for bipolar FOLD SYMMETRY.
 - Full baseline run [41404580506](https://github.com/energundenis/Felucca/actions/runs/41404580506) on the same code HEAD was still running at the time of this update. No exact-HEAD full baseline conclusion yet.
-- E0–E7 conflict review identified an additional logical overlap: the older frozen E1/E2 entries OSC2 LEVEL and TIMBRE also occur in the current P_MC list. The map now explicitly blocks both silent duplication and implicit aliasing until the original allocation is reconciled.
+- Historical note (superseded 2026-11-02): the CP1.4 candidate P_MC list duplicated the earlier frozen E1/E2 controls OSC2 LEVEL and TIMBRE. The accepted E0–E7 order was retained; the reconciled P_MC set now excludes those two controls and includes FM INDEX and LPG DECAY.
 
 
 ### CP1.4.2 quantization-bound regression — 2026-11-02
