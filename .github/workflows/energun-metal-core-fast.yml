@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: energun-metal-core-fast-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   metal-core-host:
@@ -57,11 +57,17 @@ jobs:
       - name: Run focused ENERGUN METAL CORE regression
         run: sh tests/run_metal_core_fast.sh
 
+      - name: Run sequential CP1 persistence test queue
+        id: cp1-queue
+        run: python3 tests/run_cp1_test_queue.py
+
       - name: Upload focused test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: energun-metal-core-fast-${{ github.sha }}
-          path: build/metal-core-fast/
+          path: |
+            build/metal-core-fast/
+            build/cp1-test-queue/
           if-no-files-found: ignore
           retention-days: 14
