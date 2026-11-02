@@ -39,7 +39,7 @@ The negative branch shifts only a positive magnitude, avoiding implementation-de
 
 A new deterministic equivalence regression was added in commit `25b287b3ceb42735f953d0b86e5b83be93ada432`, comparing the shift implementation with the original division oracle across edge pairs and 20,000 deterministic vectors.
 
-**This optimized change has not yet received a fresh GitHub Actions run or a new AC79 artifact.** Do not mark the optimization as verified until both strict host regression and target code-generation inspection pass on the exact updated head.
+**Superseded by the exact-head verification recorded below.**
 
 ## 4. Next acceptance gates
 
@@ -52,3 +52,20 @@ A new deterministic equivalence regression was added in commit `25b287b3ceb42735
 7. Keep coefficient generation, cutoff/resonance smoothing, full render callback and worst-case eight-voice timing as separate gates.
 
 No production firmware source, engine registration, parameter IDs, persistence, host ABI, factory firmware, physical device or flashing was changed.
+
+
+## 5. Exact-head optimization verification — 2026-11-02
+
+- Exact candidate source HEAD: `328273d5169b5798afc48b4b73fd2a8e238b56d3`.
+- Focused fast regression: GitHub Actions run [41430887251](https://github.com/energundenis/Felucca/actions/runs/41430887251) — SUCCESS. The run executed 19 focused programs/suites; the biquad suite reported **11 checks, 0 failures**. The rounded-shift multiply matched the original signed-division oracle for edge pairs and 20,000 deterministic vectors. The 28 denominator sets passed Jury stability; 28 impulse responses and 84 sine sweeps stayed bounded without saturation; MAIN/LPG histories remained independent; DC converged to unity.
+- AC79 pi32v2 compile/disassembly: run [41430887227](https://github.com/energundenis/Felucca/actions/runs/41430887227) — SUCCESS. Pinned target compiler built the sample and block-32 probes with `-Wall -Wextra -Werror`; object, disassembly and symbol table were archived in artifact [13133997822](https://github.com/energundenis/Felucca/actions/runs/41430887227/artifacts/13133997822).
+- Independent inspection of the downloaded target artifact found **zero** signed/unsigned divide instructions in the optimized probe. The prior baseline artifact from run [41255766916](https://github.com/energundenis/Felucca/actions/runs/41255766916) contained five signed 64-bit divide instructions in the sample path. The target probe therefore removes all five divisions from this isolated sample implementation.
+- Static trade-off: baseline probe object was 1,300 bytes; optimized probe object is 1,436 bytes (+136 bytes, approximately +10.5%). Disassembled instruction-line count across the probe object rose from 144 to 186 (+42, approximately +29.2%). These are object/disassembly size counts, not runtime cycles or a prediction of the linked engine's final size.
+- The optimized implementation preserves the exact tested signed round-to-nearest behavior and avoids implementation-defined negative right shifts by shifting positive magnitudes only.
+- Evidence level: strict host tests + AC79 target compile + object/disassembly inspection. **No AC79 cycle timing, production render integration, full-engine CPU/RAM qualification or physical-device audio test is claimed.**
+
+## 6. Automated code-generation regression guard
+
+- Updated `.github/workflows/energun-metal-core-biquad-target.yml` to fail if the target probe disassembly contains a signed or unsigned divide instruction (`= ... / ... (s|u)`).
+- This converts the observed optimization into a repeatable acceptance gate for future changes. The guard itself is committed after the successful run above and therefore still requires its own exact-HEAD workflow run before it is considered CI-validated.
+- The candidate remains host-only and unregistered. Coefficient generation, cutoff/resonance smoothing, per-voice render integration, worst-case eight-voice timing and full state accounting remain separate gates.
