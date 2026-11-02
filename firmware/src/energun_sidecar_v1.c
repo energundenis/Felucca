@@ -196,7 +196,8 @@ static energun_sc_status_t sc_validate_payload(
 energun_sc_status_t energun_sc_v1_validate(
     const uint8_t *record, size_t record_length,
     energun_sc_identity_kind_t expected_kind, uint8_t expected_index,
-    uint32_t expected_base_sequence, uint32_t expected_base_crc32,\n    uint16_t base_motion_count,
+    uint32_t expected_base_sequence, uint32_t expected_base_crc32,
+    uint16_t base_motion_count,
     energun_sc_view_t *view)
 {
     uint16_t payload_length;
@@ -247,7 +248,8 @@ energun_sc_status_t energun_sc_v1_validate(
 energun_sc_status_t energun_sc_v1_encode(
     uint8_t *output, size_t output_capacity, size_t *output_length,
     energun_sc_identity_kind_t identity_kind, uint8_t identity_index,
-    uint32_t base_sequence, uint32_t base_payload_crc32,\n    const uint8_t *payload, uint16_t payload_length,
+    uint32_t base_sequence, uint32_t base_payload_crc32,
+    const uint8_t *payload, uint16_t payload_length,
     uint16_t base_motion_count)
 {
     energun_sc_status_t status;
