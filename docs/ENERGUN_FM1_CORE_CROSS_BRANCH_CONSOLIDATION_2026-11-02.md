@@ -58,6 +58,7 @@ The branch-local source documents remain intact. This canonical register records
 
 ### Still open before stable parameter ABI
 - Reconciliation of the older frozen E0–E7 order with CP1.4 candidate ordering (still open; earlier frozen order remains authoritative until explicit supersession).
+- Target stored-value precision: the host project/preset/motion representation is limited to -64..127; several v98 source steps exceed 192 codes. Choose standard quantization or high-resolution sidecar-backed values.
 - Final sign-off of the complete map against the protected source artifact.
 - Stable ID namespace and 7-bit parameter-ID capacity constraints.
 - Serialization and migration behavior for old projects/presets.
@@ -159,12 +160,20 @@ Additional repositories referenced by the sequencer bridge:
 - CP1.4.1 remains open only for the older frozen E0–E7 allocation conflict and final map sign-off. No final E descriptors or stable IDs may be assigned until the conflict is resolved.
 - Updated map: `docs/ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`.
 
+### CP1.4.2 compatibility audit
+- Added `docs/ENERGUN_FM1_CORE_CP1_4_2_COMPATIBILITY_AUDIT.md`.
+- Confirmed `P_COUNT=111`, `P_E0=103`; 16 common IDs would yield `P_COUNT=127`, `P_E0=119`, within the 7-bit ID ceiling but consuming all common-ID headroom.
+- Count-based migration preserves the final eight E values and corresponding motion IDs. FUN10 rejects `np > P_COUNT`; naive 127-value project writes would be unreadable by the factory firmware and exceed the fixed 3840-byte project object.
+- Recommended compatibility strategy for review: keep base FUN10 at legacy `np=111` and pair P_MC/private values in a sidecar. This is a proposal, not approved implementation.
+- User presets have 144 parameter bytes and two persisted banks of 16 slots. Private data must be represented for all 32 presets, not only five project identities; this expands logical sidecar scope to seven identities × A/B = 14 sectors if separate bank sidecars are used.
+- Critical new finding: project/preset/motion parameter values are stored in -64..127, one byte after offset. Several v98 source ranges/steps require more than 192 codes. Target quantization versus high-resolution sidecar-backed values remains undecided.
+
 ### CP1.4.3 / CP1.4.4 host source audit
 - Added `docs/ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md`.
 - Private access gap confirmed: current engine API exposes eight EDIT descriptors only; no generic persistent per-part private bank/UI API exists. `engine_t.mem` is volatile and cannot hold patch values.
 - Motion Lock gap confirmed: `motion_param()` admits E0+ but does not admit common IDs inserted before E0. P_MC needs an explicit whitelist. `MOTION_MAX=128` is a shared four-track event pool, not 128 events per track.
 - Current `P_COUNT=111`, `P_E0=103`; adding 16 common IDs before E0 would produce `P_COUNT=127`, `P_E0=119`, within the 7-bit ID ceiling but consuming all common-ID headroom. FUN10's main project object has only three spare bytes; P_MC/private persistence therefore remains a sidecar concern.
-- CP1.4.3 and CP1.4.4 are source-audited, not implemented or closed.
+- CP1.4.3 and CP1.4.4 are source-audited, not implemented or closed. CP1.4.2 compatibility constraints are source-audited, but quantization and base-project compatibility decisions remain open.
 
 ### CP1.20 CI completion
 - Exact source HEAD `42e79344b561df8b106d4183c593b010ae8b88c9`: full baseline run `41356473081` SUCCESS; focused Metal Core run `41356472886` SUCCESS, 15 tests passed.
