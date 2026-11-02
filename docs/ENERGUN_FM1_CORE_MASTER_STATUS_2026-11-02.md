@@ -36,7 +36,7 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 | CP1.4.5 | Sidecar schema and pair transaction | **50%** | V1 binary envelope/payload frozen and implemented as a storage-independent C encoder/validator; strict host suite passes 35 checks. No storage reader, A/B selector or pair coordinator yet. |
 | CP1.4.6 | Sidecar logical capacity | **100%** | Capacity arithmetic verified: 501-byte project/live payload and 210-byte preset-bank payload before provisional envelope; no physical sector allocation. |
 | CP1.4.7 | CRC/integrity | **35%** | Existing outer CRC reuse policy is implemented in the format contract; standalone validator checks semantic schema and exact Base sequence + payload-CRC binding. No storage-integrated Sidecar reader, A/B fallback selection or pair fault suite yet. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
-| CP1.4.8 | Automated storage/fault regression | **40%** | New strict Sidecar V1 host suite passes 35 checks and is wired into the sequential CI queue. Pair-commit, storage-backed A/B, power-loss and complete round-trip matrix remains open. |
+| CP1.4.8 | Automated storage/fault regression | **40%** | New strict Sidecar V1 host suite passes 38 checks and is wired into the sequential CI queue. Pair-commit, storage-backed A/B, power-loss and complete round-trip matrix remains open. |
 | CP1.4.9 | Backup/Restore audit | **100% audit** | Source audit complete: archive V1 omits Sidecar; archive V2 needs pair-aware restore and destination-sequence rebinding. Implementation remains 0%. |
 | CP1.4.10 | Integration | **20%** | Integration dependencies and boundaries are documented; production Private/P_MC/Sidecar integration is not implemented. |
 | CP1.4.11 | Flash map, bootloader and recovery audit | **0%** | Physical allocation remains blocked pending a complete source/image map and recovery qualification. No sectors are selected or authorized. |
@@ -82,14 +82,14 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - The design explicitly uses the real `storage.c` behavior and extends the existing NOR simulation in `tests/storage_test.c`; it does not propose a copied test model.
 - A follow-up source audit identified that `fm6_vbank.c` temporarily stages FM6 voice-bank transfers in the autosave A/B sectors. The coordinator design now requires an explicit staging reservation and live-autosave deferral; the existing `autosave_hold()` timer alone is not a hard lock.
 - This is a logical design deliverable only. No firmware source, object IDs, `OBJ_COUNT`, Sidecar ABI, Flash sectors, archive V1/V2 behavior, factory image or physical device changed.
-- CP1.4.5 remains **40%**; no implementation progress is claimed.
+- At the time of the coordinator design commit, CP1.4.5 remained **40%** with no implementation. This historical status is superseded by the Sidecar V1 implementation and CI evidence recorded below.
 
 ## CP1.4.7 integrity audit update — 2026-11-02
 
 - Added [CP1.4.7 Sidecar CRC and integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md).
 - Confirmed the existing storage layer already provides zlib-compatible CRC-32 over the complete object payload, a separate CRC-32 over the 32-byte commit header (excluding its own CRC field), header-last A/B commits, read-back verification and fallback to an older valid copy.
 - Recommended reusing the outer storage CRC without duplicating an inner Sidecar CRC by default. Sidecar must add semantic validation and a reader that evaluates both copies against the exact base-object sequence; `st_current()` alone cannot safely select a base-bound Sidecar.
-- CP1.4.7 is now **30%** for source audit and policy draft only. No production Sidecar reader, transaction code, Sidecar-specific acceptance tests, binary ABI or Flash allocation exists. CP1.4.7 remains OPEN.
+- At the time of the integrity-audit commit, CP1.4.7 was **30%** for source audit and policy draft only. This historical status is superseded by the Sidecar V1 semantic validator and host tests recorded below; storage integration and A/B reader remain open.
 
 ## Safety invariants
 
