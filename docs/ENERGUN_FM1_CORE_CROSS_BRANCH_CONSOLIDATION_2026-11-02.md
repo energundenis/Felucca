@@ -57,9 +57,8 @@ The branch-local source documents remain intact. This canonical register records
 | Host gate timing | First integration sees Gate-off at render-block boundary; sample-accurate intra-block release requires a separate host API/event change. | CP3.0 source audit. |
 
 ### Still open before stable parameter ABI
-- FREQ unit and quantization for raw range 30–500/default 160.
-- All source steps marked unspecified.
-- Reconciliation of the older frozen E0–E7 order with CP1.4 candidate ordering.
+- Reconciliation of the older frozen E0–E7 order with CP1.4 candidate ordering (still open; earlier frozen order remains authoritative until explicit supersession).
+- Final sign-off of the complete map against the protected source artifact.
 - Stable ID namespace and 7-bit parameter-ID capacity constraints.
 - Serialization and migration behavior for old projects/presets.
 - P_MC Motion Lock whitelist/ranges and 128-record pool audit.
@@ -151,6 +150,27 @@ Additional repositories referenced by the sequencer bridge:
 7. **CP1.4.11** — physical Flash audit against the accepted exact factory image and known platform constraints; no new device dump is required under the user-confirmed premise. Resolve any device-specific non-firmware data/sector questions before write scope is approved.
 8. **Engine integration gate** — only after parameter ABI, lifecycle, DSP/filter, memory and target CPU gates pass; separate reviewable change and explicit approval before registration/merge.
 9. **Sequencer live integration** — only after read-only compatibility and device-specific recovery gates; resolve accent and Gate mapping separately.
+
+## 11. Latest audit and CI updates — 2026-11-02
+
+### CP1.4.1 source parameter verification
+- The protected v98 source object confirms FREQ = 160, min 30, max 500, step 1; the engine assigns it directly to Web Audio OscillatorNode.frequency, so the unit is Hz.
+- All previously unspecified source steps in the logical map were recovered from the protected v98 parameter object and added to CP1.4.1.
+- CP1.4.1 remains open only for the older frozen E0–E7 allocation conflict and final map sign-off. No final E descriptors or stable IDs may be assigned until the conflict is resolved.
+- Updated map: `docs/ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`.
+
+### CP1.4.3 / CP1.4.4 host source audit
+- Added `docs/ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md`.
+- Private access gap confirmed: current engine API exposes eight EDIT descriptors only; no generic persistent per-part private bank/UI API exists. `engine_t.mem` is volatile and cannot hold patch values.
+- Motion Lock gap confirmed: `motion_param()` admits E0+ but does not admit common IDs inserted before E0. P_MC needs an explicit whitelist. `MOTION_MAX=128` is a shared four-track event pool, not 128 events per track.
+- Current `P_COUNT=111`, `P_E0=103`; adding 16 common IDs before E0 would produce `P_COUNT=127`, `P_E0=119`, within the 7-bit ID ceiling but consuming all common-ID headroom. FUN10's main project object has only three spare bytes; P_MC/private persistence therefore remains a sidecar concern.
+- CP1.4.3 and CP1.4.4 are source-audited, not implemented or closed.
+
+### CP1.20 CI completion
+- Exact source HEAD `42e79344b561df8b106d4183c593b010ae8b88c9`: full baseline run `41356473081` SUCCESS; focused Metal Core run `41356472886` SUCCESS, 15 tests passed.
+- Full baseline confirms pinned AC79 SDK, unmodified Felucca firmware build, AC79 VCA compile-only probe and complete host/web regression. It does not establish a production METAL CORE target build or hardware validation.
+- Both uploaded artifacts were present and unexpired at audit time. Subsequent commits through the documentation audit head changed documentation only; no firmware, tests, workflow, submodule or build scripts changed.
+- CP1.20 was updated with these final CI results.
 
 ## 9. Explicit non-actions
 
