@@ -284,7 +284,7 @@ int main(void)
         expanded.used = UP_USED;
         expanded.ver = UP_VER;
         expanded.np = 127u;
-        expanded.engine = ENGI_FM6;
+        expanded.engine = ENGI_SAMPLE; /* existing engine; this case tests count mapping, not engine allocation */
         memcpy(expanded.name, "EXPANDED", 8);
         for (k = 0; k < 103u; ++k) up_set_value(&expanded, k, (int16_t)(-50 + (int32_t)k));
         for (k = 0; k < 16u; ++k) up_set_value(&expanded, 103u + k, (int16_t)(60 + (int32_t)k));
