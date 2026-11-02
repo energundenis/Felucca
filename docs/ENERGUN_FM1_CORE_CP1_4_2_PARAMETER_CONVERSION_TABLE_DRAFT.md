@@ -193,3 +193,9 @@ This comparison is a resolution aid for review. “Linear step” is the constan
 | RELEASE (s) | 0.023543 | 0.009187 | 0.390× |
 
 Interpretation: log is strongly advantageous around short attack times, resonance, and lower cutoff values. Near the METAL RATIO default, log is slightly coarser than linear; this is the clearest control-specific trade-off in the current curve family. FREQ near its default has similar absolute resolution under either curve, while log reallocates codes toward its lower range. If later listening tests show the METAL RATIO operating region needs finer increments around 4.2, a segmented/piecewise nonlinear curve may be evaluated, but it would require a new documented curve, recomputed defaults, and a fresh exhaustive regression before acceptance.
+
+
+## 4G. Exact-head full baseline regression result
+
+- Full baseline CI [41406252564](https://github.com/energundenis/Felucca/actions/runs/41406252564) also completed SUCCESS on the same code HEAD `89528e4948b58b98232543014d805ec3bd306616`: unmodified Felucca firmware build, AC79 target-compiler VCA probe, all host/web regressions and artifact upload completed. Artifact [energum-fm1-baseline-89528e4948b58b98232543014d805ec3bd306616.zip](https://github.com/energundenis/Felucca/actions/runs/41406252564/artifacts/13124032492), SHA-256 `209f57ff896b4dff66c5be24b9f7c570c2ddc7b371b935192247229199660ef1`.
+- This is baseline/toolchain/regression evidence only. It does not register/build METAL CORE as a production engine, qualify its complete DSP graph on AC79, or validate hardware behavior.
