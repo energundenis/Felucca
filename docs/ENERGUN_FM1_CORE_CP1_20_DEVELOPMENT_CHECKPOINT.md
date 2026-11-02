@@ -131,3 +131,11 @@ The automation is not evidence of continuous background development. No complete
 - Fast regression run `41340134547`: SUCCESS; all 13 tests passed.
 - Full baseline run `41340134381` on this exact HEAD was pending at checkpoint time.
 - Remaining: production callback implementation, real sequencer ratchet/rest/slide/tie coverage, full DSP graph, production RAM/CPU accounting, and exact-HEAD full baseline CI. Production engine registration remains gated.
+
+
+## Final CI result — source HEAD 42e79344b561df8b106d4183c593b010ae8b88c9
+
+- Full baseline run 41356473081: SUCCESS. Pinned submodules and AC79 SDK verified; unmodified Felucca firmware built; AC79 VCA compile-only probe passed; host and web regression passed; build artifact uploaded.
+- Focused Metal Core run 41356472886: SUCCESS. The log reports 15 focused tests passed; artifact uploaded.
+- Scope: these results do not register or build METAL CORE as a production engine, do not qualify the complete DSP graph on AC79 and do not establish an installable package or hardware validation.
+- The current branch advanced after this source HEAD through documentation-only commits. Comparison confirmed no firmware, test, workflow, submodule or build-script changes; the successful CI still covers the current code tree, but the current documentation HEAD has not been rerun.
