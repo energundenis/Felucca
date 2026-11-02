@@ -789,3 +789,12 @@ This records accepted scheduling/dependencies, not evidence that tasks are curre
 - Full baseline covered the unmodified Felucca firmware build, AC79 VCA compile-only probe, and host/web regression. It did not build/register the production METAL CORE engine or validate hardware.
 - Subsequent commits through this documentation update changed documentation only; successful CI still covers the current code tree.
 
+
+
+### CP1.4.2 compatibility findings — 2026-11-02
+
+- Added `ENERGUN_FM1_CORE_CP1_4_2_COMPATIBILITY_AUDIT.md`.
+- The ordinary project/preset/motion parameter value representation is one byte with legal values -64..127 (192 codes). Several v98 controls have more source values than that; source UI step declarations do not guarantee the same target resolution. This is now an explicit decision gate: standard monotonic 7-bit quantization versus high-resolution sidecar-backed values and editor/motion extensions.
+- The naive option of serializing all 127 runtime parameters into FUN10 is invalid: the main object is fixed at 3840 bytes and older firmware rejects `np > P_COUNT`. A base-compatible FUN10 (`np=111`) plus matching extension sidecar is recommended for review, not yet approved or implemented.
+- User presets are stored in two banks of 16 slots. The 13 Private values must be persisted for all 32 presets, not just four stored projects plus live autosave. If separate preset-bank sidecars are used, logical sidecar scope grows to seven identities × A/B = 14 sectors. This is capacity planning only; no Flash sectors are selected.
+- CP1.4.2 remains OPEN. No stable IDs or binary encoding are assigned pending the resolution policy, E0–E7 conflict, user-preset extension and regression design.
