@@ -103,7 +103,33 @@ Source-specific protocol constraint:
 - The final conversion must be shared by capture, editor SET, project import/export, playback and lock restore. No path may use a different scaling.
 - Validate the decoded motion value against the target descriptor before inserting or applying an event.
 
-### 3.3 Capacity and behavior
+### 3.3 Candidate symbolic whitelist and raw value domains
+
+The following is a symbolic candidate derived from the frozen 16-control P_MC proposal. It is not a final approved list because OSC2 LEVEL and TIMBRE overlap the earlier frozen E1/E2 assignment.
+
+| Logical control | Candidate Motion value domain | Notes |
+|---|---:|---|
+| OSC2 LEVEL | 0..127 | Unipolar 7-bit code |
+| OSC2 DETUNE | 0..127 | Unipolar 7-bit code; decode through the same nonlinear/linear descriptor curve used by the parameter |
+| TIMBRE | 0..127 | Unipolar 7-bit code; E2 overlap unresolved |
+| MOD RATIO | 0..127 | Unipolar 7-bit code |
+| AM DEPTH | 0..127 | Unipolar 7-bit code |
+| FM FEEDBACK | 0..127 | Unipolar 7-bit code |
+| FM ENV AMT | 0..127 | Unipolar 7-bit code |
+| FM ENV ATTACK | 0..127 | Unipolar 7-bit code |
+| FM ENV DECAY | 0..127 | Unipolar 7-bit code |
+| METAL DECAY | 0..127 | Unipolar 7-bit code |
+| FOLD SYMMETRY | -64..63 | Centered signed 7-bit code; physical zero is raw 0 |
+| WAVEFOLDER DRIVE | 0..127 | Unipolar 7-bit code |
+| LPG RESPONSE | 0..127 | Unipolar 7-bit code |
+| VOICE VCA LEVEL | 0..127 | Unipolar 7-bit code |
+| WAVEFOLDER MODULE VOLUME | 0..127 | Unipolar 7-bit code |
+| WEST COAST VOLUME | 0..127 | Unipolar 7-bit code |
+
+The Motion event should store the same decoded parameter code that `param_desc_of()` validates; physical display values are obtained through the single CP1.4.2 descriptor conversion. Do not introduce a second Motion-specific scale. The only bipolar exception in this candidate is FOLD SYMMETRY, whose legal signed descriptor range is -64..63.
+
+### 3.4 Capacity and behavior
+
 
 - Automation and Parameter Lock continue sharing one global pool of 128 records across all four tracks.
 - Sidecar-stored P_MC motion records are not a second event pool. At runtime, the merged event count must never exceed 128.
