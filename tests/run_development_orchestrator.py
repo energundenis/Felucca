@@ -184,6 +184,7 @@ def execute_ready_workstreams(manifest: dict, plan: dict) -> dict:
         if row["id"] in by_result:
             result = by_result[row["id"]]
             row["state"], row["detail"] = result["state"], result["detail"]
+    plan["mode"] = "dependency-aware-execution"
     plan["execution"] = {"mode": "execute", "started": len(selected), "duration_seconds": round(time.monotonic() - start, 4), "results": sorted(results, key=lambda item: item["id"])}
     plan["status"] = "FAILED" if any(row["state"] == "FAILED" for row in plan["workstreams"]) else ("BLOCKED" if any(row["state"] == "BLOCKED" for row in plan["workstreams"]) else "EXECUTED")
     return plan
