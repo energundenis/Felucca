@@ -18,10 +18,8 @@ on:
 permissions:
   contents: read
 
-# Repository-wide coarse CI gate: all ENERGUN workflows must use this exact group.
-# GitHub permits one running and one pending run per group; this is not a FIFO lock.
 concurrency:
-  group: energun-fm1-ci-global
+  group: energun-metal-core-fast-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
