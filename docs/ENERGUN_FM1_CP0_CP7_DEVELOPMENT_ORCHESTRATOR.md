@@ -1,7 +1,7 @@
 # ENERGUN FM-1 CORE — CP0–CP7 Development Orchestrator
 
 Date: 2026-11-03  
-Status: **Phase 1 — central workstream registry and orchestration contract**  
+Status: **Phase 1 complete; Phase 2 plan-only DAG planner added**  
 Coordination repository: `energundenis/Felucca`  
 Coordination branch: `energun-metal-core`  
 Implementation branch: `energun-development-orchestrator`
@@ -10,7 +10,7 @@ Implementation branch: `energun-development-orchestrator`
 
 Create one dependency-aware control plane for the complete CP0–CP7 development plan. The orchestrator must schedule independent work, preserve prerequisite gates, collect evidence, expose blockers and prevent unqualified work from being promoted into the integrated firmware.
 
-This is not a claim that an autonomous coding agent is already running. The first increment establishes the authoritative workstream registry and execution contract. A later increment will add the global scheduler/runner and connect real executable jobs.
+This is not a claim that an autonomous coding agent is already running. The registry and execution contract are in place, and a plan-only DAG planner now validates dependencies, identifies ready workstreams and emits CI reports. It does not launch task commands or coding agents.
 
 ## 2. Existing capability reused
 
