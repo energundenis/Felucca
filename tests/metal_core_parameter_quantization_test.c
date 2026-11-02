@@ -74,9 +74,7 @@ static int encode_value(const control_t *c, double value, int *out) {
                     log(c->max_value / c->min_value);
         rounded = lround(127.0 * normalized);
     } else if (c->map == MAP_BIPOLAR_LINEAR) {
-        normalized = (value - c->min_value) /
-                     (c->max_value - c->min_value);
-        rounded = lround(-64.0 + normalized * 127.0);
+        rounded = value < 0.0 ? lround(value * 64.0) : lround(value * 63.0);
     } else {
         normalized = (value - c->min_value) /
                      (c->max_value - c->min_value);
@@ -100,9 +98,7 @@ static int decode_code(const control_t *c, int code, double *out) {
         *out = c->min_value *
                pow(c->max_value / c->min_value, normalized);
     } else if (c->map == MAP_BIPOLAR_LINEAR) {
-        normalized = (double)(code + 64) / 127.0;
-        *out = c->min_value +
-               normalized * (c->max_value - c->min_value);
+        *out = code < 0 ? (double)code / 64.0 : (double)code / 63.0;
     } else {
         normalized = (double)code / 127.0;
         *out = c->min_value +
