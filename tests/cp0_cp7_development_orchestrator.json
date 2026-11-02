@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "orchestrator_id": "ENERGUN-FM1-CP0-CP7",
+  "title": "ENERGUN FM-1 CORE development orchestration",
+  "branch": "energun-development-orchestrator",
+  "coordination_branch": "energun-metal-core",
+  "execution_policy": {
+    "mode": "registry-first",
+    "max_parallel": 3,
+    "max_parallel_scope": "future unified orchestrator runner only; existing independent GitHub workflows are not globally throttled yet",
+    "stop_scheduling_after_failure": true,
+    "collect_running_peers": true,
+    "merge_automatically": false,
+    "main_branch_writes": false,
+    "physical_device_access": false,
+    "physical_flash_write": false,
+    "factory_firmware_changes": false
+  },
+  "states": [
+    "planned",
+    "ready",
+    "running",
+    "checking",
+    "passed",
+    "blocked",
+    "failed"
+  ],
+  "workstreams": [
+    {
+      "id": "cp0-baseline",
+      "checkpoint": "CP0",
+      "title": "Source, SDK and reproducible build baseline",
+      "state": "checking",
+      "depends_on": [],
+      "parallel_group": "foundation",
+      "executor": "github-actions",
+      "command": null,
+      "acceptance": [
+        "Pinned Felucca source and SDK revisions are recorded",
+        "Unmodified firmware baseline build succeeds",
+        "Host and web regression evidence is attached to the exact tested commit",
+        "No factory firmware or physical device is modified"
+      ],
+      "evidence": {
+        "last_known_code_head": "ae7d01399396c4e40b3eae24d2e0ebb9aebbcd9a",
+        "note": "The coordination branch currently has a later documentation-only HEAD; refresh exact-HEAD evidence before treating CP0 as passed."
+      }
+    },
+    {
+      "id": "cp1-persistence",
+      "checkpoint": "CP1",
+      "title": "Parameter model, Sidecar persistence and recovery",
+      "state": "ready",
+      "depends_on": ["cp0-baseline"],
+      "parallel_group": "core-foundations",
+      "executor": "existing-cp1-dag",
+      "command": "python3 tests/run_cp1_test_queue.py",
+      "acceptance": [
+        "The existing CP1 queue report is parsed by its explicit PASS/BLOCKED/FAIL status",
+        "Pair Commit Ordering is implemented and fault-injection tests pass",
+        "Integrity, recovery, Archive V2 and FM6 staging ownership gates pass",
+        "Storage changes remain host/simulated-NOR qualified until separately approved"
+      ],
+      "evidence": {
+        "existing_queue": "tests/cp1_test_queue.json",
+        "known_gate": "Pair Commit Ordering was the last verified blocker"
+      }
+    },
+    {
+      "id": "cp2-dsp-qualification",
+      "checkpoint": "CP2",
+      "title": "DSP primitives, numerical behavior and resource qualification",
+      "state": "ready",
+      "depends_on": ["cp0-baseline"],
+      "parallel_group": "dsp-and-lifecycle",
+      "executor": "workstream-branch",
+      "command": null,
+      "acceptance": [
+        "DSP primitives have reference-vector and stability coverage",
+        "44.1 kHz and 96 kHz host behavior is covered where applicable",
+        "AC79 target compiler evidence is recorded",
+        "Cumulative per-part CPU, RAM, scratch and state budgets are measured",
+        "Unqualified algorithms remain isolated from production registration"
+      ],
+      "evidence": {
+        "known_candidate": "Draft PR #1 contains an isolated Q2.30 DF2T biquad candidate; it is not production-qualified."
+      }
+    },
+    {
+      "id": "cp3-host-lifecycle",
+      "checkpoint": "CP3",
+      "title": "Host callback, MIDI and voice lifecycle adapter",
+      "state": "ready",
+      "depends_on": ["cp0-baseline"],
+      "parallel_group": "dsp-and-lifecycle",
+      "executor": "workstream-branch",
+      "command": null,
+      "acceptance": [
+        "Fresh note, retrigger, released-slot reuse and mono legato are tested",
+        "Voice stealing, MIDI Gate-off and sequencer Gate-off are tested",
+        "Engine completion and voice retirement semantics are verified",
+        "No production engine registration is introduced by the host-only lane"
+      ],
+      "evidence": {
+        "known_candidate": "Draft PR #2 records the CP3 host lifecycle workstream."
+      }
+    },
+    {
+      "id": "cp3-production-integration",
+      "checkpoint": "CP3",
+      "title": "Production METAL CORE audio-engine integration",
+      "state": "blocked",
+      "depends_on": ["cp2-dsp-qualification", "cp3-host-lifecycle"],
+      "parallel_group": "integration",
+      "executor": "workstream-branch",
+      "command": null,
+      "acceptance": [
+        "Full DSP chain uses qualified components only",
+        "Production render callback and engine registration are implemented",
+        "Four-part memory ownership and resource limits are verified",
+        "Host regression and pinned AC79 target build pass"
+      ],
+      "blocker": "Requires CP2 qualification and CP3 lifecycle acceptance."
+    },
+    {
+      "id": "cp4-ui-control",
+      "checkpoint": "CP4",
+      "title": "User interface, parameter control and display",
+      "state": "planned",
+      "depends_on": ["cp3-production-integration"],
+      "parallel_group": "post-engine",
+      "executor": "workstream-branch",
+      "command": null,
+      "acceptance": [
+        "Control-to-parameter mapping is specified and tested",
+        "Display states and error handling are defined",
+        "UI changes do not alter factory firmware behavior",
+        "Host and target integration checks pass"
+      ]
+    },
+    {
+      "id": "cp5-sequencer",
+      "checkpoint": "CP5",
+      "title": "Sequencer behavior and engine event integration",
+      "state": "planned",
+      "depends_on": ["cp3-production-integration"],
+      "parallel_group": "post-engine",
+      "executor": "workstream-branch",
+      "command": null,
+      "acceptance": [
+        "Step, gate, accent, retrigger and timing behavior are specified",
+        "Sequencer lifecycle integrates with the production engine",
+        "Timing and regression tests pass"
+      ]
+    },
+    {
+      "id": "cp6-system-qualification",
+      "checkpoint": "CP6",
+      "title": "Integrated performance, stability and regression qualification",
+      "state": "blocked",
+      "depends_on": [
+        "cp1-persistence",
+        "cp2-dsp-qualification",
+        "cp3-production-integration",
+        "cp4-ui-control",
+        "cp5-sequencer"
+      ],
+      "parallel_group": "system-qualification",
+      "executor": "github-actions",
+      "command": null,
+      "acceptance": [
+        "Full host regression passes on the integrated coordination commit",
+        "AC79 target build and resource reports pass",
+        "Long-run, state-transition and persistence fault tests pass",
+        "All artifacts are tied to the exact candidate commit"
+      ],
+      "blocker": "Requires all integrated CP1-CP5 gates."
+    },
+    {
+      "id": "cp7-package-and-device-validation",
+      "checkpoint": "CP7",
+      "title": "Firmware packaging, recovery audit and device validation",
+      "state": "blocked",
+      "depends_on": ["cp6-system-qualification"],
+      "parallel_group": "release",
+      "executor": "manual-approval-gate",
+      "command": null,
+      "acceptance": [
+        "Package format and boot/update path are source-verified",
+        "Backup and factory recovery procedure is documented and independently checked",
+        "Installable-candidate evidence is complete",
+        "Physical-device test requires a separate explicit user authorization"
+      ],
+      "blocker": "No physical FM-1 access, flash write, firmware installation or factory-firmware modification is authorized."
+    }
+  ]
+}
