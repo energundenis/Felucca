@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently after storage/FM6 foundations; Sidecar A/B selection joins both results before pair-commit stages.",
+  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently after storage/FM6 foundations; A/B selection joins both; pair ordering and power-loss matrix then run as dependent stages.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -64,23 +64,25 @@
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
         "sidecar-ab-selection"
       ],
-      "command": null,
-      "blocker": "Production pair transaction coordinator is not implemented. Test preservation of the old matching pair when staging or Base commit fails."
+      "command": "sh tests/run_sidecar_pair_coordinator_test.sh --ordering",
+      "blocker": "A backend-neutral transaction coordinator now captures the selected Base generation, protects the matching Sidecar copy, stages and verifies the future-bound Sidecar, commits Base, and verifies the resulting pair. Executable host test uses real storage.c with a test-only A/B Sidecar container.",
+      "enable_when": "Coordinator, backend contract, strict host test and old-pair preservation checks are committed together."
     },
     {
       "id": "pair-power-loss",
       "title": "Power-loss injection across every pair-commit phase",
       "kind": "executable-host-test",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
         "pair-commit-order"
       ],
-      "command": null,
-      "blocker": "Requires the real pair coordinator and deterministic simulated-NOR fault injection at Sidecar payload/header and Base erase/payload/header boundaries."
+      "command": "sh tests/run_sidecar_pair_coordinator_test.sh --power-loss",
+      "blocker": "Deterministic simulated-NOR cuts exercise partial program and post-operation power loss at all Sidecar and Base erase/page/header write boundaries; reboot checks require either the complete old pair or the complete new pair.",
+      "enable_when": "Pair transaction ordering stage passes and every injected power-loss case recovers a coherent pair."
     },
     {
       "id": "sidecar-integrity",
