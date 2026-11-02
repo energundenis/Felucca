@@ -58,7 +58,7 @@ The branch-local source documents remain intact. This canonical register records
 
 ### Still open before stable parameter ABI
 - Reconciliation of the older frozen E0–E7 order with CP1.4 candidate ordering (still open; earlier frozen order remains authoritative until explicit supersession).
-- Target stored-value precision: the host project/preset/motion representation is limited to -64..127; several v98 source steps exceed 192 codes. Choose standard quantization or high-resolution sidecar-backed values.
+- **V1 stored-value precision — DECIDED 2026-11-02:** standard 7-bit Felucca parameter encoding. Use nonlinear mappings for frequency, ratio and time controls where needed; linear mappings for levels/depths. High-resolution sidecar-backed parameter values are not selected for V1. Exact per-control curves, rounding/display rules and quantization tests remain open.
 - Final sign-off of the complete map against the protected source artifact.
 - Stable ID namespace and 7-bit parameter-ID capacity constraints.
 - Serialization and migration behavior for old projects/presets.
@@ -166,7 +166,7 @@ Additional repositories referenced by the sequencer bridge:
 - Count-based migration preserves the final eight E values and corresponding motion IDs. FUN10 rejects `np > P_COUNT`; naive 127-value project writes would be unreadable by the factory firmware and exceed the fixed 3840-byte project object.
 - Recommended compatibility strategy for review: keep base FUN10 at legacy `np=111` and pair P_MC/private values in a sidecar. This is a proposal, not approved implementation.
 - User presets have 144 parameter bytes and two persisted banks of 16 slots. Private data must be represented for all 32 presets, not only five project identities; this expands logical sidecar scope to seven identities × A/B = 14 sectors if separate bank sidecars are used.
-- Critical new finding: project/preset/motion parameter values are stored in -64..127, one byte after offset. Several v98 source ranges/steps require more than 192 codes. Target quantization versus high-resolution sidecar-backed values remains undecided.
+- Critical finding: project/preset/motion parameter values are stored in -64..127, one byte after offset. Several v98 source ranges/steps require more than 192 codes. **Decision accepted 2026-11-02:** standard 7-bit Felucca encoding for V1; nonlinear mappings for frequency/ratio/time and linear mappings for levels/depths. Specific curves and quantization tests remain open.
 
 ### CP1.4.3 / CP1.4.4 host source audit
 - Added `docs/ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md`.
