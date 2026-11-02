@@ -26,3 +26,5 @@ Start here:
 ## Governance
 
 The cross-branch register is a status/decision index, not permission to merge source branches. Keep source branches intact until a separate integration review. No physical device writes or factory firmware changes without verifying the accepted exact factory image, a practical restore path, an audited write scope and explicit authorization.
+
+- **Sidecar design:** `ENERGUN_FM1_CORE_CP1_4_5_SIDECAR_SCHEMA_DRAFT.md` (seven logical identities, project/preset payload capacity estimates, base-sequence binding and sidecar-first A/B pair-commit model; logical draft only, no binary ABI or Flash allocation).
