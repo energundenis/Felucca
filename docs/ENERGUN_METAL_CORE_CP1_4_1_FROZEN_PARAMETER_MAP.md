@@ -36,16 +36,16 @@ These are the eight existing engine edit slots. They remain the modulation-matri
 
 | Slot | Control | Type | Source range | Default | Source step / unit | Notes |
 |---|---|---|---:|---:|---|---|
-| E0 | FREQ | Continuous | 30–500 | 160 | Step not specified; source UI label is Freq | Base oscillator frequency relationship |
+| E0 | FREQ | Continuous | 30–500 Hz | 160 Hz | Step 1 Hz | Directly sets the main Web Audio oscillator frequency; the source uses `OscillatorNode.frequency` (Hz). |
 | E1 | FM INDEX | Continuous | 0–1 | 0 | Step 0.01 in source UI | Complex FM base depth |
 | E2 | METAL RATIO | Continuous | 0.5–12 | 4.20 | Step 0.01 in source UI | Separate METAL FM and ring ratio |
 | E3 | WEST COAST DRIVE | Continuous | 0–1 | 0 | Step 0.01 in source UI | FM/METAL depth scaling; not folder drive |
 | E4 | FOLD | Continuous | 0–1 | 0.25 | Step 0.01 in source UI | Second-stage fold blend |
 | E5 | CUTOFF | Continuous | 100–8000 Hz | 1200 Hz | Step 10 Hz in source UI | Main low-pass filter |
 | E6 | RESONANCE | Continuous | 0.5–20 | 2.0 | Step 0.1 in source UI | Main filter Q |
-| E7 | LPG DECAY | Continuous | 0.02–2 s | 0.25 s | Step not specified in source inventory | LPG triggered tail |
+| E7 | LPG DECAY | Continuous | 0.02–2 s | 0.25 s | Step 0.01 s | LPG triggered tail |
 
-The E0–E7 ordering above follows the accepted CP1.4 proposal. The eight controls are candidate modulation/motion destinations because the existing host exposes those eight edit slots. Actual engine descriptor encoding and quantization remain a CP1.4.2 implementation check.
+The E0–E7 ordering above is the CP1.4 proposal candidate, not the final slot allocation. A previously frozen 2026-10-30 E0–E7 order is recorded in the project decision history and differs from this candidate; the earlier accepted freeze remains authoritative until the conflict is explicitly resolved. The eight controls are candidate modulation/motion destinations because the existing host exposes those eight edit slots.
 
 ## 4. Common P_MC — sixteen continuous controls
 
@@ -56,19 +56,19 @@ These are common per-track controls. Their logical membership is frozen; stable 
 | 1 | OSC2 LEVEL | Continuous | 0–1 | 0.50 | Step 0.01 | Direct-audio OSC2 level |
 | 2 | OSC2 DETUNE | Continuous | 0–30 cents | 7 cents | Step 0.5 cents | Must not alias host P_DETUNE |
 | 3 | TIMBRE | Continuous | 0–1 | 0 | Step 0.01 | First fixed wavefolder-stage input gain |
-| 4 | MOD RATIO | Continuous | 0.25–16 | 3.07 | Step not specified | Complex modulator ratio; distinct from METAL RATIO |
+| 4 | MOD RATIO | Continuous | 0.25–16 | 3.07 | Step 0.01 | Complex modulator ratio; distinct from METAL RATIO |
 | 5 | AM DEPTH | Continuous | 0–1 | 0 | Step 0.01 | Complex AM depth |
 | 6 | FM FEEDBACK | Continuous | 0–0.8 | 0 | Step 0.01 | Dedicated delayed feedback |
 | 7 | FM ENV AMT | Continuous | 0–1 | 0.50 | Step 0.01 | Triggered increase over base FM index |
-| 8 | FM ENV ATTACK | Continuous | 0.001–1 s | 0.005 s | Step not specified | Complex FM-index envelope attack |
-| 9 | FM ENV DECAY | Continuous | 0.01–3 s | 0.25 s | Step not specified | Complex FM-index envelope decay |
-| 10 | METAL DECAY | Continuous | 0.05–3 s | 0.40 s | Step not specified | METAL trigger decay |
+| 8 | FM ENV ATTACK | Continuous | 0.001–1 s | 0.005 s | Step 0.001 s | Complex FM-index envelope attack |
+| 9 | FM ENV DECAY | Continuous | 0.01–3 s | 0.25 s | Step 0.01 s | Complex FM-index envelope decay |
+| 10 | METAL DECAY | Continuous | 0.05–3 s | 0.40 s | Step 0.01 s | METAL trigger decay |
 | 11 | FOLD SYMMETRY | Continuous | -1–1 | 0 | Step 0.01 | Second-stage transfer offset |
 | 12 | WAVEFOLDER DRIVE | Continuous | 0–1 | 0.20 | Step 0.01 | Second-stage pre-fold gain; not WEST COAST DRIVE |
 | 13 | LPG RESPONSE | Continuous | 0–1 | 0.50 | Step 0.01 | LPG transient response |
 | 14 | VOICE VCA LEVEL | Continuous | 0–1 | 0.50 | Step 0.01 | Triggered voice VCA peak; not host P_LEVEL |
-| 15 | WAVEFOLDER MODULE VOLUME | Continuous | 0–1 | 1 | Step not specified | Output level after second folder stage |
-| 16 | WEST COAST VOLUME | Continuous | 0–1 | 1 | Step not specified | Final engine output gain; effective steady-state v98 mapping is VOLUME × 5 |
+| 15 | WAVEFOLDER MODULE VOLUME | Continuous | 0–1 | 1 | Step 0.01 | Output level after second folder stage |
+| 16 | WEST COAST VOLUME | Continuous | 0–1 | 1 | Step 0.01 | Final engine output gain; effective steady-state v98 mapping is VOLUME × 5 |
 
 P_MC motion/parameter-lock support requires an explicit whitelist and tests. Continuous type alone does not imply that the current host automatically accepts these IDs. The current modulation-matrix destination list remains E0–E7 unless separately extended and approved.
 
@@ -84,13 +84,13 @@ Each of the four parts owns its own independent values for all rows below. These
 | 4 | MODULATION | Enum | FM / AM | FM | Discrete | Complex oscillator mode |
 | 5 | MOD OSC WAVE | Enum | SINE / TRIANGLE / SAW / SQUARE | SINE | Discrete | Complex modulator waveform |
 | 6 | FM CHARACTER | Enum | SMOOTH / CLASSIC / METALLIC | **METALLIC (2)** | Discrete | Canonical DSP default; UI is synchronized from this value during audio initialization |
-| 7 | COMPLEX MODULE VOLUME | Continuous | 0–1 | 1 | Step not specified | Complex oscillator output level |
+| 7 | COMPLEX MODULE VOLUME | Continuous | 0–1 | 1 | Step 0.01 | Complex oscillator output level |
 | 8 | FOLD MODE | Enum | SOFT / CLASSIC / HARD | CLASSIC | Discrete | Second-stage folder transfer curve |
-| 9 | LPG MODULE VOLUME | Continuous | 0–1 | 1 | Step not specified | V1-approved Option C: trigger peak = (0.25 + 0.75 × LPG RESPONSE) × MODULE VOLUME; one LPG gain stage |
-| 10 | ATTACK | Continuous | 0.001–1 s | 0.010 s | Step not specified | Normal voice amplitude envelope |
-| 11 | DECAY | Continuous | 0.05–3 s | 0.30 s | Step not specified | Normal voice amplitude envelope; distinct from FM and METAL decay |
-| 12 | SUSTAIN | Continuous | 0–1 | 0 | Step not specified | Normal voice amplitude envelope |
-| 13 | RELEASE | Continuous | 0.01–3 s | 0.20 s | Step not specified | Normal voice amplitude envelope |
+| 9 | LPG MODULE VOLUME | Continuous | 0–1 | 1 | Step 0.01 | V1-approved Option C: trigger peak = (0.25 + 0.75 × LPG RESPONSE) × MODULE VOLUME; one LPG gain stage |
+| 10 | ATTACK | Continuous | 0.001–1 s | 0.010 s | Step 0.001 s | Normal voice amplitude envelope |
+| 11 | DECAY | Continuous | 0.05–3 s | 0.30 s | Step 0.01 s | Normal voice amplitude envelope; distinct from FM and METAL decay |
+| 12 | SUSTAIN | Continuous | 0–1 | 0 | Step 0.01 | Normal voice amplitude envelope |
+| 13 | RELEASE | Continuous | 0.01–3 s | 0.20 s | Step 0.01 s | Normal voice amplitude envelope |
 
 ### 5.1 VCA ownership and host lifecycle
 
@@ -130,10 +130,8 @@ MCX0–MCX6 remain a separate extension namespace. No MCX motion support is impl
 ## 9. Known unresolved source facts
 
 These are explicit gates, not permission to guess:
-1. **FREQ physical unit and quantization:** source inventory records raw range 30–500 and default 160; definitive unit label and effective step must be checked against the protected source control before fixed-point encoding.
-2. **Unspecified source steps:** where the tables say “not specified”, derive implementation quantization from protected source behavior and document it before assigning storage encoding.
-3. **E0–E7 allocation conflict:** the 2026-10-30 Frozen Draft used E0 FREQ / E1 OSC2 LEVEL / E2 TIMBRE / E3 WEST COAST DRIVE / E4 METAL RATIO / E5 FOLD / E6 CUTOFF / E7 RESONANCE, while this CP1.4 proposal uses a different E0–E7 order. The logical map must not be treated as final ABI until this conflict is explicitly reconciled against the approved earlier freeze.
-4. **Stable IDs and encoding:** no numeric IDs, serialized field IDs, byte encodings or backward-compatibility rules are approved.
+1. **E0–E7 allocation conflict:** the 2026-10-30 Frozen Draft used E0 FREQ / E1 OSC2 LEVEL / E2 TIMBRE / E3 WEST COAST DRIVE / E4 METAL RATIO / E5 FOLD / E6 CUTOFF / E7 RESONANCE, while this CP1.4 proposal uses a different E0–E7 order. The earlier frozen order remains the governing baseline until the original approval record is recovered and any superseding user decision is explicit. Do not assign final E descriptors from the candidate table.
+2. **Stable IDs and encoding:** no numeric IDs, serialized field IDs, byte encodings or backward-compatibility rules are approved.
 
 ## 10. CP1.4.1 acceptance result
 
@@ -155,12 +153,16 @@ Acceptance checks:
 - [x] Internal VCA ownership approved: ownenv=1; no host ADSR cascade.
 - [x] FOLLOW / MOD RATIO Option A approved.
 - [x] Short-Gate VCA Option B approved.
-- [ ] Verify FREQ unit and quantization.
-- [ ] Reconcile the earlier E0–E7 freeze against the CP1.4 candidate order.
-- [ ] Derive all unspecified source steps.
+- [x] Verify FREQ unit and quantization: Hz, 1 Hz step, range 30–500 Hz, default 160 Hz.
+- [ ] Recover/reconcile the earlier E0–E7 freeze against the CP1.4 candidate order; earlier frozen order remains authoritative pending that reconciliation.
+- [x] Derive all previously unspecified source steps from the protected v98 parameter object.
 - [ ] Review and sign off the complete map against the protected source artifact.
 
-The decisions checked above supersede the older unresolved notes in this document. The unchecked items do not invalidate the 8/16/13 logical allocation, but they prevent claiming complete source-level encoding closure and must be resolved before CP1.4.2 assigns stable IDs or implementation encodings.
+The decisions checked above supersede the older unresolved notes in this document. Source step values were verified against the protected reference object's parameter declarations; FREQ's Hz unit is corroborated by its direct assignment to the Web Audio oscillator frequency. The unchecked E0–E7 allocation and final map sign-off prevent complete source-level encoding closure. CP1.4.2 may continue its compatibility audit, but must not assign stable IDs or final E descriptors until the slot conflict is resolved.
+
+### 10.1 Source-step evidence
+
+The protected `energun_metal_core_v98_reference.html` parameter object explicitly declares the following steps that were previously missing from this map: MOD RATIO 0.01; FM ENV ATTACK 0.001 s; FM ENV DECAY 0.01 s; METAL DECAY 0.01 s; LPG DECAY 0.01 s; COMPLEX MODULE VOLUME 0.01; WAVEFOLDER MODULE VOLUME 0.01; LPG MODULE VOLUME 0.01; WEST COAST VOLUME 0.01; normal ATTACK 0.001 s; DECAY 0.01 s; SUSTAIN 0.01; RELEASE 0.01. The source object's `wcFreq` declaration is `{v:160,min:30,max:500,s:1}`, and `wcInit()` assigns `P.wcFreq.v` to `wcOsc.frequency.value`, establishing Hz and a 1 Hz step. Source artifact Git blob: `4f5ff6c7cadf1f13ac08376a293a354519fcaf37`.
 
 ## 11. Safety and change control
 
