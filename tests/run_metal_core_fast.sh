@@ -34,6 +34,14 @@ run_test() {
 
 : > "$OUT/results.txt"
 
+# Persistence is a first-class fast lane: exercise the real storage.c against
+# simulated NOR, then the FM6 voice-bank staging path against the same host model.
+compile_test_strict storage tests/storage_test.c
+run_test storage
+
+compile_test fm6bank tests/fm6bank_test.c -lm
+run_test fm6bank
+
 compile_test metal_core_osc tests/metal_core_osc_test.c -lm
 run_test metal_core_osc
 
@@ -87,12 +95,12 @@ run_test metal_core_parameter_quantization
 compile_test_strict metal_core_parameter_inventory tests/metal_core_parameter_inventory_test.c
 run_test metal_core_parameter_inventory
 
-echo "== ENERGUN METAL CORE fast regression: all 18 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 20 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 18 focused host tests."
+        echo "Generated headers and compiled/executed all 20 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
