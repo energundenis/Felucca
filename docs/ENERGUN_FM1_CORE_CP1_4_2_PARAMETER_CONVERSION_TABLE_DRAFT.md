@@ -9,7 +9,7 @@ Status: **V1 encoding family accepted; numerical conversion table is a draft for
 The V1 parameter-value path uses standard Felucca 7-bit parameter values. Physical source values are quantized into the existing stored-value domain:
 
 - Unipolar controls: raw code 0..127.
-- Bipolar controls: use the signed stored domain -64..127 only where the control genuinely spans negative and positive values.
+- Bipolar controls use the standard signed 7-bit descriptor range -64..63 (128 codes), with zero represented exactly; the generic project byte container can carry -64..127, but that wider container range is not the bipolar descriptor range.
 - Frequency, ratio and time controls use logarithmic mappings.
 - Levels, depths, gains, amounts and other naturally linear controls use linear mappings.
 - Enum and Boolean controls remain discrete and are not treated as continuous 0..127 controls.
@@ -82,7 +82,7 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 
 1. Endpoints map exactly to the minimum and maximum stored code.
 2. Every representable code decodes to a value inside the declared physical range.
-3. Mapping is monotonic over the full physical input domain and all 128 (or 192 bipolar) stored codes.
+3. Mapping is monotonic over the full physical input domain and all 128 stored codes for both unipolar and signed bipolar descriptors.
 4. Encode(decode(code)) returns the original code for every legal code.
 5. Decode(encode(value)) error is measured across the physical range, including source defaults, source step boundaries and perceptually important regions.
 6. No NaN, infinity, divide-by-zero, overflow or undefined behavior at endpoints.
@@ -95,8 +95,8 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 
 - Added `tests/metal_core_parameter_quantization_test.c` as a standalone C host oracle; it is not linked into firmware and does not assign IDs or persistence ABI.
 - Added it to `tests/run_metal_core_fast.sh` as strict C11 / `-Wall -Wextra -Werror` compilation and execution.
-- Coverage: 30 continuous controls; expected default codes; exact endpoints; exhaustive encode(decode(code)) for all 128 unipolar or 192 bipolar codes; decoded-range checks; 10,001-point monotonicity sweep; invalid/non-finite input rejection; absolute/relative/default quantization error metrics.
-- FOLD SYMMETRY's signed domain has 192 codes and therefore an even number of code points: zero cannot be represented exactly. The provisional mapping selects code 32 (decoded approximately +0.00524); code 31 is the equally close negative-side neighbor. This is now an explicit design observation, not a silent assumption.
+- Coverage: 30 continuous controls; expected default codes; exact endpoints; exhaustive encode(decode(code)) for all 128 unipolar or 128 signed bipolar codes; decoded-range checks; 10,001-point monotonicity sweep; invalid/non-finite input rejection; absolute/relative/default quantization error metrics.
+- FOLD SYMMETRY's signed domain has 192 codes and therefore an even number of code points: zero cannot be represented exactly. The correct Felucca bipolar descriptor range is -64..63, so FOLD SYMMETRY zero maps exactly to code 0. The generic FUN10 container can serialize -64..127, but that broader container range must not be mistaken for the signed bipolar descriptor range.
 - Fast CI run [41403689043](https://github.com/energundenis/Felucca/actions/runs/41403689043) completed successfully on test-code HEAD `726028e9fda0a5d6b174faee0ae4e48e83f6c352`: all 16 focused tests passed, including the new CP1.4.2 reference (0 failures across 30 controls). The full baseline build run `41403689065` was still running when this note was prepared.
 - Measured worst-case relative error for logarithmic mappings: FREQ 1.114%, METAL RATIO 1.259%, CUTOFF 1.740%, RESONANCE 1.463%, LPG DECAY 1.830%, MOD RATIO 1.651%, FM ENV ATTACK / ATTACK 2.757%, FM ENV DECAY / RELEASE 2.271%, METAL DECAY / DECAY 1.625%. These are dense-grid measurements, not acceptance thresholds.
 - For linear controls near zero, relative-to-value error is not a useful quality metric (it becomes 100% at zero even when absolute error is one code step). Use absolute error normalized to the control's full-scale span for linear controls when setting acceptance limits.
@@ -116,3 +116,13 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 ## 6. Next action
 
 Review the first host-test run and its worst-case quantization metrics. Add source-step boundary fixtures from the verified v98 descriptors, establish per-control error acceptance limits, and resolve the FOLD SYMMETRY zero-code policy. Then reconcile the E0–E7 ordering and proceed with stable ID allocation.
+
+
+## 4B. Felucca signed descriptor range clarification — 2026-11-02
+
+A source-level recheck of `params.c`, `project.c` and `motion.c` identified an important distinction:
+- FUN10 project values are serialized as one byte using `value + 64`; the generic accepted in-memory/wire value range is -64..127.
+- The existing Felucca bipolar parameter format (`F_BIPCT`) is specifically -64..63, i.e. 128 signed codes with exact zero. It is not the full generic -64..127 container range.
+- The FOLD SYMMETRY reference and test were corrected to use -64..63, with code 0 for physical zero. The wider 192-value range must not be used merely because the project byte container can represent it.
+- Source evidence: `firmware/src/params.c` existing `F_BIPCT` descriptors use -64..63; `firmware/src/project.c` packs `p + 64` and rejects bytes above 191 on load; `firmware/src/motion.c` stores motion values as `int8_t` and validates against descriptor min/max as well as -64..127.
+- This correction is a host reference/test change only. No production parameter descriptor, ID, serializer, project format or firmware source was changed.
