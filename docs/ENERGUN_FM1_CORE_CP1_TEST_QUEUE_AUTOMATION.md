@@ -67,6 +67,15 @@ When a stage is implemented, the same work unit must add its executable test and
 - Queue outcome: Storage A/B PASS → FM6 staging/recovery PASS → Sidecar Format PASS → BLOCKED at Base-generation binding. This is expected because the production sequence-aware Base metadata reader has not been implemented. All later dependent stages remain blocked.
 - The Sidecar V1 module is host-tested and storage-independent. It is not yet connected to `storage.c`, project/preset/autosave call sites or physical Flash.
 
+## Base-generation binding stage now enabled (2026-11-02)
+
+- Added the internal `st_current_meta()` helper in the real `firmware/src/storage.c`; it returns the exact selected valid Base copy, sequence, payload length and payload CRC after normal A/B fallback validation. `st_load()` now uses this helper without changing its behavior.
+- Added `tests/sidecar_base_binding_test.c` and `tests/run_sidecar_base_binding_test.sh`; the test compiles real storage and Sidecar V1 code against simulated NOR.
+- Verified workflow: [41462258057](https://github.com/energundenis/Felucca/actions/runs/41462258057), exact tested code commit `95a95e383015d0fb584902770d3ea9125cd3074c`, **SUCCESS**.
+- Sidecar V1 format: **38 checks, 0 failures**. Base-generation binding: **15 checks, 0 failures**.
+- Queue now passes Storage A/B → FM6 staging/recovery → Sidecar Format → Base-generation binding, then blocks at Sidecar A/B selection because production dual-copy inspection is not implemented yet.
+- Still host-only simulated NOR. No physical sectors, object IDs, `OBJ_COUNT`, archive integration or device writes.
+
 ## Safety
 
 This is host-only automation using simulated NOR Flash and existing host-test evidence. It does not connect to or write a physical FM-1. It does not select Flash sectors, assign Sidecar object IDs, change `OBJ_COUNT`, or alter bootloader/OTA/recovery behavior. CP1.4.11 and explicit physical-device authorization remain independent gates.
