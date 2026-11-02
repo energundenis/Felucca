@@ -97,7 +97,10 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 - Added it to `tests/run_metal_core_fast.sh` as strict C11 / `-Wall -Wextra -Werror` compilation and execution.
 - Coverage: 30 continuous controls; expected default codes; exact endpoints; exhaustive encode(decode(code)) for all 128 unipolar or 192 bipolar codes; decoded-range checks; 10,001-point monotonicity sweep; invalid/non-finite input rejection; absolute/relative/default quantization error metrics.
 - FOLD SYMMETRY's signed domain has 192 codes and therefore an even number of code points: zero cannot be represented exactly. The provisional mapping selects code 32 (decoded approximately +0.00524); code 31 is the equally close negative-side neighbor. This is now an explicit design observation, not a silent assumption.
-- The first run is pending. Error metrics are reported for review; numerical acceptance thresholds are intentionally not invented before inspecting results and source-step/perceptual priorities.
+- Fast CI run [41403689043](https://github.com/energundenis/Felucca/actions/runs/41403689043) completed successfully on test-code HEAD `726028e9fda0a5d6b174faee0ae4e48e83f6c352`: all 16 focused tests passed, including the new CP1.4.2 reference (0 failures across 30 controls). The full baseline build run `41403689065` was still running when this note was prepared.
+- Measured worst-case relative error for logarithmic mappings: FREQ 1.114%, METAL RATIO 1.259%, CUTOFF 1.740%, RESONANCE 1.463%, LPG DECAY 1.830%, MOD RATIO 1.651%, FM ENV ATTACK / ATTACK 2.757%, FM ENV DECAY / RELEASE 2.271%, METAL DECAY / DECAY 1.625%. These are dense-grid measurements, not acceptance thresholds.
+- For linear controls near zero, relative-to-value error is not a useful quality metric (it becomes 100% at zero even when absolute error is one code step). Use absolute error normalized to the control's full-scale span for linear controls when setting acceptance limits.
+- Numerical acceptance thresholds are intentionally not invented before reviewing source-step/perceptual priorities.
 - Source step-boundary tests are not yet included because the full per-control source-step metadata has not yet been added to this conversion table. They remain a closure requirement.
 
 ## 5. Known constraints and open gates
