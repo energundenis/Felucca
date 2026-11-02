@@ -302,3 +302,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Restore validates the complete file before writing but commits each object independently. The Sidecar's base-sequence binding means a byte-for-byte restore is incorrect: destination base commits receive new local sequences, so archive V2 needs pair-aware sequence rebinding.
 - Archive ID 0 is a live runtime snapshot restored via `project_restore_runtime()`, not a direct persistent autosave object; this needs explicit Sidecar semantics. The FM6 patch object remains separate from preset-bank + Private Sidecar atomicity.
 - CP1.4.9 source audit complete; archive V2 design and implementation open. No protocol/source/storage/Flash/device changes.
+
+### CP1.4.2 legacy expanded-count compatibility — PASS (2026-11-02)
+
+- Full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) SUCCESS on code HEAD `33327eb312a36b83b3751560d899c577147125e4`; logs confirm `project_test` rejects valid-checksum FUN10 `np=127` on the legacy reader and `upreset_test` preserves E0–E7 while skipping 16 inserted common values in an expanded `np=127` preset.
+- Firmware backup, browser backup, project format and user preset suites also passed in the same baseline run.
+- This closes only those named host compatibility fixtures; it does not approve a new writer, stable IDs, E0–E7 order, Sidecar/archive V2 or power-loss transaction behavior.
