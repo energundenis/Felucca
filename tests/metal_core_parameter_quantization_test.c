@@ -264,8 +264,8 @@ static void test_quantization_bounds_and_clamping(void) {
             if (error > max_error) max_error = error;
         }
         if (c->map == MAP_LOG) {
-            double ratio = pow(c->max_value / c->min_value, 1.0 / 127.0);
-            bound = fmax(ratio - 1.0, 1.0 - 1.0 / ratio);
+            double half_ratio = pow(c->max_value / c->min_value, 0.5 / 127.0);
+            bound = fmax(half_ratio - 1.0, 1.0 - 1.0 / half_ratio);
         } else if (c->map == MAP_BIPOLAR_LINEAR) bound = 0.5 / 63.0;
         else bound = 0.5 / 127.0;
         (void)snprintf(label, sizeof(label), "%s dense-grid error stays within nearest-code bound", c->name);
