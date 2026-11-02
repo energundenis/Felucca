@@ -17,8 +17,8 @@ Start here:
 - **Filter qualification:** `energun-fm1-cp3-dsp-filter`.
 - **AC79 / platform QA:** `energun-fm1-cp3-platform-qa`.
 - **Sequencer bridge:** `fm1-dryrun-pattern-20261031`.
-- **Factory backup / recovery:** `fm1-factory-backup-plan-20261031`.
+- **Factory firmware baseline / recovery checkpoint:** exact factory image is user-confirmed as 100% identical to the user's FM-1; the separate two-read backup workflow is reference-only, not an active stream. Verify image integrity and restore route before first physical write.
 
 ## Governance
 
-The cross-branch register is a status/decision index, not permission to merge source branches. Keep source branches intact until a separate integration review. No physical device writes or factory firmware changes without a device-specific backup, verified recovery path and explicit authorization.
+The cross-branch register is a status/decision index, not permission to merge source branches. Keep source branches intact until a separate integration review. No physical device writes or factory firmware changes without verifying the accepted exact factory image, a practical restore path, an audited write scope and explicit authorization.
