@@ -80,6 +80,7 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - Added [Sidecar Pair Transaction Coordinator design](ENERGUN_FM1_CORE_CP1_4_5_PAIR_TRANSACTION_COORDINATOR_DESIGN.md).
 - Defines a protected matching-copy rule, staged future-bound Sidecar, base commit, and final pair verification; includes load selection, sequence-wrap rules, re-entrancy/serialization constraints and a host fault-injection matrix.
 - The design explicitly uses the real `storage.c` behavior and extends the existing NOR simulation in `tests/storage_test.c`; it does not propose a copied test model.
+- A follow-up source audit identified that `fm6_vbank.c` temporarily stages FM6 voice-bank transfers in the autosave A/B sectors. The coordinator design now requires an explicit staging reservation and live-autosave deferral; the existing `autosave_hold()` timer alone is not a hard lock.
 - This is a logical design deliverable only. No firmware source, object IDs, `OBJ_COUNT`, Sidecar ABI, Flash sectors, archive V1/V2 behavior, factory image or physical device changed.
 - CP1.4.5 remains **40%**; no implementation progress is claimed.
 
