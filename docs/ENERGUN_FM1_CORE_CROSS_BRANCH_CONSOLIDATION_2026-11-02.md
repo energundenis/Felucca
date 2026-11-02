@@ -231,3 +231,9 @@ This register is the canonical cross-branch status snapshot as of 2026-11-02. If
 - Added a source-aligned design draft for the per-part Private cache/API, capability-probed editor access, engine-specific UI, explicit P_MC Motion Lock whitelist, common value conversion and the shared 128-record motion pool.
 - The draft includes lifecycle, persistence, stale-generation protection and test matrices. It assigns no stable IDs, command numbers, page IDs, Sidecar ABI or Flash sectors; no production code changed.
 - CP1.4.3/4.4 remain OPEN and depend on resolving CP1.4.1/4.2 and freezing CP1.4.5 Sidecar identity/schema.
+
+
+### CP1.4.5 Sidecar schema and transaction draft — 2026-11-02
+- Drafted seven logical identities (4 project slots, live autosave, 2 preset banks), 14 A/B copies, project/preset payload capacity estimates and the Sidecar-to-base storage-sequence binding requirement.
+- The existing storage layer has per-object A/B commit headers, but no cross-object pairing API. Proposed transaction writes a complete Sidecar snapshot tagged with the next base sequence before committing the base object; any base rewrite must rebind even an unchanged extension. Load selects a Sidecar copy matching the exact current base sequence.
+- Logical draft only; no byte ABI, object IDs, storage source, Flash sector map or physical allocation selected. CP1.4.5 remains open pending review and CP1.4.11 Flash audit.
