@@ -199,7 +199,7 @@ def main() -> int:
     try:
         plan = build_dispatch_plan(read_json(args.registry), read_json(args.tasks))
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(plan, indent=2) + "\\n", encoding="utf-8")
+        args.output.write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         print(f"CP8_DISPATCH_VALIDATION_FAILED={exc}")
         return 1
