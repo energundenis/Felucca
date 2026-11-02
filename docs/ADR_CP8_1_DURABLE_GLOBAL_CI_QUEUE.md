@@ -53,7 +53,7 @@ Added `tests/cp8_ci_queue_store.py` and `tests/test_cp8_ci_queue_store.py`.
 - Enqueue is idempotent on repository + sorted lane set + ref + exact SHA.
 - Claims are exclusive, bound to workflow/run identity, heartbeat-extended, and recoverable only after lease expiry.
 - PASS requires evidence URLs and the exact requested SHA. Owner mismatch and expired-lease heartbeats are rejected.
-- Unit tests simulate competing writers and claimants. This is not yet a live GitHub integration test.
+- Unit tests simulate competing writers and claimants, verify retry after a CAS conflict, and reject stale owners attempting to heartbeat, start or finish after lease expiry. Idempotent no-op requests do not create redundant commits. This is not yet a live GitHub integration test.
 
 The store is **not wired into either existing workflow**. No queue branch is provisioned by this change, no write token is granted to pull-request code, and no global CI lock is enabled. A trusted coordinator integration and live Git-ref contention test remain required.
 
