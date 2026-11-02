@@ -166,7 +166,7 @@ Additional repositories referenced by the sequencer bridge:
 - Count-based migration preserves the final eight E values and corresponding motion IDs. FUN10 rejects `np > P_COUNT`; naive 127-value project writes would be unreadable by the factory firmware and exceed the fixed 3840-byte project object.
 - Recommended compatibility strategy for review: keep base FUN10 at legacy `np=111` and pair P_MC/private values in a sidecar. This is a proposal, not approved implementation.
 - User presets have 144 parameter bytes and two persisted banks of 16 slots. Private data must be represented for all 32 presets, not only five project identities; this expands logical sidecar scope to seven identities × A/B = 14 sectors if separate bank sidecars are used.
-- Critical finding: project/preset/motion parameter values are stored in -64..127, one byte after offset. Several v98 source ranges/steps require more than 192 codes. **Decision accepted 2026-11-02:** standard 7-bit Felucca encoding for V1; nonlinear mappings for frequency/ratio/time and linear mappings for levels/depths. Specific curves and quantization tests remain open.
+- Critical finding: generic project parameter values are stored in -64..127, one byte after offset; existing signed bipolar descriptors use -64..63 (128 codes), not the full generic container range. Several v98 source ranges/steps require more than 128 codes. **Decision accepted 2026-11-02:** standard 7-bit Felucca encoding for V1; nonlinear mappings for frequency/ratio/time and linear mappings for levels/depths. The host-only curve reference and exhaustive quantization/source-step tests are now implemented; per-control acceptance thresholds and exact legacy project/preset compatibility fixtures remain open.
 
 ### CP1.4.3 / CP1.4.4 host source audit
 - Added `docs/ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_ACCESS_MOTION_AUDIT.md`.
@@ -208,3 +208,13 @@ Key source records, with branch-local provenance:
 
 ---
 This register is the canonical cross-branch status snapshot as of 2026-11-02. If a source branch advances, update its audited HEAD and re-evaluate the affected decisions before treating its new contents as canonical.
+
+
+### CP1.4.2 host quantization implementation — latest update
+- Added `tests/metal_core_parameter_quantization_test.c` and wired it into `tests/run_metal_core_fast.sh`; focused suite now runs 16 tests.
+- Verified 30 continuous controls and 9,434 v98 source-step boundary values. The test checks endpoints, all legal-code encode/decode round trips, monotonicity on 10,001-point sweeps, source-step monotonicity, default codes and invalid/non-finite inputs.
+- Fast CI run [41404580795](https://github.com/energundenis/Felucca/actions/runs/41404580795) SUCCESS on code HEAD `29125b419a83b10965036d85ab7b313755dcd1eb`; 16/16 tests passed. Corrected FOLD SYMMETRY uses -64..63 and exact zero at code 0.
+- Source recheck: `project.c` serializes project parameter values as value+64; `params.c`'s existing F_BIPCT descriptor semantics are -64..63 with negative/positive halves scaled separately; `motion.c` stores int8 values and enforces descriptor bounds. The host oracle follows that signed convention. No production firmware or storage code changed.
+- Proposed quantization acceptance limits are documented but await review: <=3% relative error for logarithmic controls, <=half an LSB for linear controls, and <=0.5/63 physical units for bipolar FOLD SYMMETRY.
+- Full baseline run [41404580506](https://github.com/energundenis/Felucca/actions/runs/41404580506) on the same code HEAD was still running at the time of this update. No exact-HEAD full baseline conclusion yet.
+- E0–E7 conflict review identified an additional logical overlap: the older frozen E1/E2 entries OSC2 LEVEL and TIMBRE also occur in the current P_MC list. The map now explicitly blocks both silent duplication and implicit aliasing until the original allocation is reconciled.
