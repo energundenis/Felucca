@@ -18,11 +18,11 @@
       "id": "cp8-1-global-ci-coordination",
       "checkpoint": "CP8.1",
       "title": "Repository-wide CI concurrency coordination",
-      "state": "planned",
-      "progress_percent": 0,
+      "state": "checking",
+      "progress_percent": 10,
       "depends_on": [],
-      "implementation": "A shared GitHub Actions concurrency-group prototype was tested on the fast and baseline workflows, but both runs were cancelled because GitHub concurrency groups retain only one pending run and workflows competed for that slot. The unsafe shared group was reverted; each workflow again has its own concurrency group.",
-      "limitation": "No cross-workflow lock is currently active. Implement a durable atomic lease/lock with owner/run identity, heartbeat/expiry, stale-lock recovery, guaranteed release and concurrency tests before enabling global coordination."
+      "implementation": "Implemented a storage-agnostic CP8.1 queue-record validator and unit tests for stable idempotency keys, exact-SHA identity, fixed lane allow-list, claim/lease timestamp invariants, terminal evidence requirements and legal state transitions. This is schema/validation foundation only: no durable backend, atomic claim, coordinator workflow or cross-workflow lock is active.",
+      "limitation": "Queue persistence, atomic compare-and-swap claims, lease heartbeat/recovery, coordinator scheduling and routing existing CI workflows remain unimplemented. Do not enable a shared concurrency group until end-to-end no-loss and mutual-exclusion tests pass."
     },
     {
       "id": "cp8-2-worker-registry",
