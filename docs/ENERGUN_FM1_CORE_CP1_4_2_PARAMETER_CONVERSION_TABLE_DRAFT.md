@@ -105,6 +105,17 @@ Before CP1.4.2 closes, implement host-side reference functions and tests for eve
 - Maximum measured source-step-unit errors are largest for the log-mapped controls with fine source UI increments: FM ENV ATTACK 26.0 steps, normal ATTACK 26.0, MOD RATIO 25.55, METAL RATIO 14.66, CUTOFF 13.13, FM ENV DECAY / RELEASE 6.18. This is expected loss of source UI granularity under 7-bit quantization; the corresponding dense-grid relative errors remain below 2.76% for all log controls. These measurements do not by themselves establish acceptable musical resolution.
 - The full baseline build/regression run [41404054153](https://github.com/energundenis/Felucca/actions/runs/41404054153) was still in progress at the time of this update; only the focused lane is confirmed green.
 
+## 4C. Proposed quantization acceptance thresholds (review required)
+
+The measured dense-grid errors match the theoretical nearest-code limits. Proposed gates for review, not yet user-approved:
+
+- Logarithmic controls: maximum relative decode error <= 3.0%. The worst theoretical range is 0.001..1 s (ATTACK / FM ENV ATTACK), at 2.7569%; the measured host sweep matches this bound.
+- Unipolar linear controls: maximum absolute error <= half one code interval, i.e. 0.5/127 of the physical span (0.3937% of full span).
+- Bipolar FOLD SYMMETRY: maximum absolute error <= 0.5/63 = 0.00793651 physical units (0.3968% of the full -1..+1 span), using the centered -64..63 mapping.
+- Source-step error is reported in source-step units as a diagnostic, not as a pass/fail gate: some original v98 controls have far more than 128 source positions. For example, the measured worst-case errors are 26 source steps for ATTACK/FM ENV ATTACK, 25.55 for MOD RATIO and 14.66 for METAL RATIO, while their relative physical errors remain within the proposed 3% logarithmic bound.
+
+The limits above follow the mathematical nearest-quantization interval, rather than a subjective musical tolerance. Approval is still required before they become CP1.4.2 closure criteria.
+
 ## 5. Known constraints and open gates
 
 - The physical v98 source steps (for example FREQ 1 Hz, ratios 0.01 and envelope times 0.001/0.01 s) are not all individually representable after 7-bit quantization. The accepted design trades exact source-step granularity for native Felucca compatibility.
