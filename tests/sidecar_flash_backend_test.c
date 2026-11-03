@@ -10,6 +10,7 @@
 #define NOR_SIZE 0x2000u
 static uint8_t nor[NOR_SIZE];
 static unsigned int checks, failures, erases;
+static int program_budget = -1;
 static int bounds(uint32_t off, size_t n)
 {
     return off >= NOR_BASE && off - NOR_BASE <= NOR_SIZE &&
@@ -35,7 +36,11 @@ static int sim_program(void *ctx, uint32_t off, const void *src, size_t n)
         (off&255u)+n>256u || off%4096u>=0xF00u ||
         n>0xF00u-(off%4096u)) return -1;
     for(i=0;i<n;i++) if ((nor[off-NOR_BASE+i]&p[i])!=p[i]) return -1;
-    for(i=0;i<n;i++) nor[off-NOR_BASE+i]&=p[i];
+    for(i=0;i<n;i++) {
+        if (program_budget == 0) return -1;
+        nor[off-NOR_BASE+i]&=p[i];
+        if (program_budget > 0) --program_budget;
+    }
     return 0;
 }
 #define CHECK(label,expr) do { ++checks; if (!(expr)) { ++failures; printf("FAIL: %s\n",label); } } while(0)
