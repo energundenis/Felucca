@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. A separate host-only pair transaction harness uses real storage.c with an isolated test Sidecar backend; production pair integration remains a distinct blocked gate.",
+  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. The host-only pair transaction harness uses real storage.c across all seven Base identities with an isolated test Sidecar backend; production pair integration remains a distinct blocked gate.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -62,14 +62,14 @@
     },
     {
       "id": "pair-transaction-harness",
-      "title": "Host-only pair transaction algorithm harness (real storage.c)",
+      "title": "Host-only Base + Sidecar pair transaction across seven identities",
       "kind": "executable-host-test",
       "state": "ready",
       "depends_on": [
         "sidecar-ab-selection"
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
-      "blocker": "Runs the transaction ordering/fault model against the real Felucca storage.c and Sidecar V1 serializer. Sidecar sectors are isolated in a test-only backend; this does not qualify production coordinator or authorize Flash allocation."
+      "blocker": "Runs the transaction ordering/fault model against the real Felucca storage.c and Sidecar V1 serializer. It now exercises independent Base A/B histories for four projects, live autosave and two preset banks, with cross-identity rejection. Sidecar sectors remain an isolated test-only backend; this does not qualify production coordinator or authorize Flash allocation."
     },
     {
       "id": "sidecar-identity-matrix",
