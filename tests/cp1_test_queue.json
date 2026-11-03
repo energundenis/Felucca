@@ -83,6 +83,17 @@
       "blocker": "Host-only strict serializer test covers four project identities, Live Autosave, two preset banks, cross-identity rejection and preset slot write/erase preservation. It does not qualify the production Base+Sidecar coordinator."
     },
     {
+      "id": "fm6-staging-reservation",
+      "title": "FM6 inactive autosave-sector reservation and autosave deferral",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "fm6-staging-baseline"
+      ],
+      "command": "sh tests/run_fm6_staging_reservation_test.sh",
+      "blocker": "Storage now reserves the inactive OBJ_AUTOSAVE copy for an FM6 Voice Bank transfer. Host acceptance proves an autosave write is rejected before erase while reserved, FM6 completes and verifies the bank, then autosave resumes after release. Simulated NOR only."
+    },
+    {
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
@@ -90,7 +101,8 @@
       "depends_on": [
         "sidecar-ab-selection",
         "pair-transaction-harness",
-        "sidecar-identity-matrix"
+        "sidecar-identity-matrix",
+        "fm6-staging-reservation"
       ],
       "command": null,
       "blocker": "Production pair transaction coordinator and approved target Sidecar backend are not implemented. The host-only harness is supporting evidence, not production integration."
