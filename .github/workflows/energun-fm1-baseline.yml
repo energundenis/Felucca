@@ -266,6 +266,26 @@ jobs:
             echo "The four-part Private runtime cache compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware or executed on hardware."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Compile Private Sidecar bridge with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wextra -Wno-unused-function -Ifirmware/src \
+            -c firmware/src/energun_private_payload_v1.c \
+            -o build/metal-core-vca-target/private_payload_v1.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/private_payload_v1.o \
+            > build/metal-core-vca-target/private_payload_v1.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/private_payload_v1.o \
+            > build/metal-core-vca-target/private_payload_v1.symbols
+          grep -q "energun_private_payload_v1_project_capture" build/metal-core-vca-target/private_payload_v1.symbols
+          grep -q "energun_private_payload_v1_preset_restore" build/metal-core-vca-target/private_payload_v1.symbols
+          {
+            echo "## Private Sidecar bridge AC79 compile-only probe"
+            echo "The atomic project/live and preset-slot Private payload bridge compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware or executed on hardware."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Compile pair coordinator with AC79 target compiler
         run: |
           set -euo pipefail
