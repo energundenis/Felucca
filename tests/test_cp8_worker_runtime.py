@@ -94,7 +94,7 @@ class WorkerRuntimeTests(unittest.TestCase):
                                       now=NOW + timedelta(seconds=1))
         new = self.worker("cp1-persistence", 302)
         recovered = claim_next_for_worker(self.store, new, 302, {},
-                                          completed_owner_run_ids={301},
+                                          completed_owner_workers={(old, 301)},
                                           now=NOW + timedelta(seconds=2))
         self.assertEqual(first["request_id"], recovered["request_id"])
         self.assertEqual(recovered["attempts"], 2)
