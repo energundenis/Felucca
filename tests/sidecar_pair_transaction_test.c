@@ -627,6 +627,10 @@ int main(void)
         lifecycle_guard_value = 1;
         lifecycle_ok &= energun_lifecycle_v1_autosave(&lifecycle, OBJ_AUTOSAVE,
             base1, sizeof base1, payload, 117u) == ENERGUN_LIFECYCLE_V1_ERR_GUARD;
+        /* FM6 reservation is scoped to the autosave copy; project saves remain usable. */
+        lifecycle_ok &= energun_lifecycle_v1_save(&lifecycle, OBJ_PROJECT0 + 2u,
+            ENERGUN_SC_ID_PROJECT, 2u, base1, sizeof base1, payload, 117u) ==
+            ENERGUN_LIFECYCLE_V1_OK;
         lifecycle_guard_value = 0;
         lifecycle_ok &= energun_lifecycle_v1_autosave(&lifecycle, OBJ_AUTOSAVE,
             base1, sizeof base1, payload, 117u) == ENERGUN_LIFECYCLE_V1_OK;
