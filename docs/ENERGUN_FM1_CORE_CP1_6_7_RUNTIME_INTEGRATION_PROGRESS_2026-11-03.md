@@ -116,3 +116,5 @@ This is a backend-neutral transaction coordinator implementation and host accept
 
 The new coordinator and expanded transaction/fault tests are committed after the previously verified HEAD `7c0a884ee46c1c9b93064d701a3574c6c27db773`. Their new CI run must complete on the exact new HEAD before these changes are marked verified.
 
+Coordinator follow-up: added `energun_pair_v1_erase()`. It commits a zero-length Base tombstone to the inactive Base copy and verifies the new generation. Existing Sidecar records are left physically untouched but become non-matching orphans; the next save creates a fresh generation-bound Sidecar. Host tests cover failed erase preserving the old pair, successful erase hiding stale Sidecar data, and subsequent slot reuse. This avoids an unsafe in-place Sidecar erase and does not require any new physical Flash allocation.
+
