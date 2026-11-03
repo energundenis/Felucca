@@ -12,16 +12,17 @@ class CP8CoordinatorWorkflowTests(unittest.TestCase):
         self.assertNotIn("pull_request:", text)
         self.assertIn("contents: write", text)
 
-    def test_coordinator_has_single_serial_consumer_and_bounded_drain(self):
+    def test_three_lane_workers_have_independent_concurrency_and_bounded_drain(self):
         text = (ROOT / ".github/workflows/energun-cp8-coordinator.yml").read_text()
-        self.assertIn("group: energun-cp8-global-queue-consumer", text)
+        for lane in ("cp1", "cp2", "cp3"):
+            self.assertIn(f"group: energun-cp8-worker-{lane}", text)
         self.assertIn("cancel-in-progress: false", text)
-        self.assertIn('CP8_MAX_ITEMS_PER_RUN: "4"', text)
+        self.assertIn('CP8_MAX_ITEMS_PER_RUN: "8"', text)
 
     def test_worker_has_fixed_allow_list_and_no_shell_interpolation(self):
         text = (ROOT / "tools/cp8_queue_worker.py").read_text()
         self.assertIn('"fast-regression": ["sh", "tests/run_metal_core_fast.sh"]', text)
-        self.assertIn("if command is None:", text)
+        self.assertIn("if lane not in ALLOWED_COMMANDS:", text)
         self.assertNotIn("shell=True", text)
 
 
