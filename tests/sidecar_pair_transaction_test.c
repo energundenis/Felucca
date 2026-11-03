@@ -488,6 +488,70 @@ int main(void)
             seq == 1u && copy == 0 && !memcmp(loaded_base, base1, sizeof base1));
     }
 
+    /* Legacy compatibility: missing/invalid Sidecar restores Base and asks
+       the runtime owner to apply canonical defaults. I/O errors do not fallback. */
+    {
+        size_t base_len = 0u, ext_len = 99u;
+        energun_pair_v1_base_meta_t meta;
+        uint8_t bad_record[117];
+        int legacy_ok = 1;
+
+        reset_media();
+        legacy_ok &= coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            base1, sizeof base1, payload, 117u, NULL) == 0;
+        legacy_ok &= energun_pair_v1_load_compat(&pair_test_ops, NULL,
+            &coordinator_workspace, OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            loaded_base, sizeof loaded_base, &base_len,
+            loaded_sc, sizeof loaded_sc, &ext_len, 0u, &meta) == ENERGUN_PAIR_V1_OK &&
+            base_len == sizeof base1 && ext_len == 117u &&
+            !memcmp(loaded_base, base1, sizeof base1);
+
+        memset(sc_nor[0][0].bytes, 0xFF, sizeof sc_nor[0][0].bytes);
+        memset(sc_nor[0][1].bytes, 0xFF, sizeof sc_nor[0][1].bytes);
+        memset(loaded_sc, 0xA5, sizeof loaded_sc);
+        base_len = 0u; ext_len = 99u;
+        legacy_ok &= energun_pair_v1_load_compat(&pair_test_ops, NULL,
+            &coordinator_workspace, OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            loaded_base, sizeof loaded_base, &base_len,
+            loaded_sc, sizeof loaded_sc, &ext_len, 0u, &meta) ==
+            ENERGUN_PAIR_V1_LEGACY_FALLBACK &&
+            base_len == sizeof base1 && ext_len == 0u &&
+            meta.sequence == 1u && meta.payload_length == sizeof base1 &&
+            !memcmp(loaded_base, base1, sizeof base1) && loaded_sc[0] == 0xA5;
+
+        memset(bad_record, 0, sizeof bad_record);
+        legacy_ok &= sc_write_copy(ENERGUN_SC_ID_PROJECT, 0u, 0u,
+            bad_record, sizeof bad_record, 7u) == 0;
+        base_len = 0u; ext_len = 99u;
+        legacy_ok &= energun_pair_v1_load_compat(&pair_test_ops, NULL,
+            &coordinator_workspace, OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            loaded_base, sizeof loaded_base, &base_len,
+            loaded_sc, sizeof loaded_sc, &ext_len, 0u, &meta) ==
+            ENERGUN_PAIR_V1_LEGACY_FALLBACK &&
+            base_len == sizeof base1 && ext_len == 0u &&
+            meta.sequence == 1u && !memcmp(loaded_base, base1, sizeof base1);
+
+        sc_read_error = 1;
+        base_len = 0u; ext_len = 99u;
+        legacy_ok &= energun_pair_v1_load_compat(&pair_test_ops, NULL,
+            &coordinator_workspace, OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            loaded_base, sizeof loaded_base, &base_len,
+            loaded_sc, sizeof loaded_sc, &ext_len, 0u, &meta) ==
+            ENERGUN_PAIR_V1_ERR_SIDECAR_IO &&
+            base_len == 0u && ext_len == 0u;
+        sc_read_error = 0;
+
+        reset_media();
+        base_len = 0u; ext_len = 99u;
+        legacy_ok &= energun_pair_v1_load_compat(&pair_test_ops, NULL,
+            &coordinator_workspace, OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            loaded_base, sizeof loaded_base, &base_len,
+            loaded_sc, sizeof loaded_sc, &ext_len, 0u, &meta) ==
+            ENERGUN_PAIR_V1_ERR_NO_MATCH &&
+            base_len == 0u && ext_len == 0u;
+        bad += check("legacy Base fallback: missing/invalid Sidecar, I/O guard and no-Base", legacy_ok);
+    }
+
     printf("%s\n", bad ? "SIDECAR PAIR TEST FAILED" : "SIDECAR PAIR TEST PASSED");
     return bad ? 1 : 0;
 }
