@@ -55,6 +55,8 @@ energun_sc_status_t energun_sc_project_payload_v1_decode(
     payload_copy(&payload->private_values[0][0], input + 64u, 52u);
     payload->motion_count = input[116];
     payload_copy((uint8_t *)payload->motion, input + 117u, motion_bytes);
+    while (motion_bytes < sizeof payload->motion)
+        ((uint8_t *)payload->motion)[motion_bytes++] = 0u;
     return ENERGUN_SC_OK;
 }
 
