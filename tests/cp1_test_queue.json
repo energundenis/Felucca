@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently with the four-part Private runtime cache; the Private-to-project/preset payload bridge joins after both the runtime cache and typed payload codecs. A/B selection and pair transactions remain independent host acceptance stages. Production lifecycle integration remains a separate blocked gate. Legacy Base-only project compatibility is now an explicit acceptance stage: absent or invalid Sidecar returns the Base with zero extension length for canonical-default restoration; I/O faults remain errors.",
+  "description": "Dependency-aware CP1 persistence verification. Project/live lifecycle orchestration now has a separate host acceptance stage for Save, Load, Rename, Save As, tombstone erase, legacy defaults and FM6 autosave reservation guard. Production project.c/upreset.c call-site wiring and a target Sidecar backend remain distinct gates.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -93,6 +93,19 @@
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
       "blocker": "Host acceptance covers valid pair load, missing Sidecar, semantically invalid Sidecar, Base absence and Sidecar I/O fault separation. The caller must apply canonical defaults when LEGACY_FALLBACK is returned; production project.c runtime wiring remains a separate integration gate."
+    },
+    {
+      "id": "project-live-lifecycle-adapter",
+      "title": "CP1.6 Project/Live lifecycle pair adapter",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "legacy-sidecar-fallback",
+        "private-payload-bridge",
+        "fm6-staging-reservation"
+      ],
+      "command": "sh tests/run_sidecar_pair_transaction_test.sh",
+      "blocker": "Host acceptance exercises shared lifecycle orchestration for pair Save/Load, Rename from the stored pair, Save As into an isolated identity, legacy Base-only canonical defaults, Base tombstone erase, and FM6 autosave reservation guard. AC79 compile-only probe is separate. This is not production project.c/autosave_poll() call-site integration and does not provide target Sidecar storage."
     },
     {
       "id": "sidecar-payload-codec",
