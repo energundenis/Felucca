@@ -16,6 +16,10 @@ typedef struct {
     const energun_pair_v1_ops_t *ops;
     void *storage_context;
     energun_pair_v1_workspace_t *workspace;
+    uint8_t *base_scratch;
+    size_t base_scratch_capacity;
+    uint8_t *sidecar_scratch;
+    size_t sidecar_scratch_capacity;
     const uint8_t *canonical_sidecar_defaults;
     uint16_t canonical_sidecar_defaults_length;
     uint16_t base_motion_count;
