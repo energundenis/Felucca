@@ -380,6 +380,24 @@ int main(void)
         bad += check("coordinator: seven identities, A/B histories and exact pair roundtrip", matrix_ok);
     }
 
+    /* A failed tombstone cannot displace the previous Base + Sidecar pair. */
+    reset_media();
+    bad += check("seed pair before erase fault", coordinator_commit_test(
+        OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) == 0);
+    fail_bytes = 0;
+    bad += check("failed erase preserves previous pair",
+        energun_pair_v1_erase(&pair_test_ops, NULL, OBJ_PROJECT0) == ENERGUN_PAIR_V1_ERR_BASE_COMMIT &&
+        (fail_bytes = -1, coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            loaded_base, sizeof loaded_base, loaded_sc, sizeof loaded_sc, &seq, &copy) == 0) &&
+        seq == 1u && !memcmp(loaded_base, base1, sizeof base1));
+    bad += check("successful erase tombstone hides stale Sidecar",
+        energun_pair_v1_erase(&pair_test_ops, NULL, OBJ_PROJECT0) == ENERGUN_PAIR_V1_OK &&
+        energun_pair_v1_load(&pair_test_ops, NULL, &coordinator_workspace,
+            OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            loaded_base, sizeof loaded_base, &(size_t){0u},
+            loaded_sc, sizeof loaded_sc, &(size_t){0u}, 0u,
+            &(energun_pair_v1_base_meta_t){0}) == ENERGUN_PAIR_V1_ERR_NO_MATCH);
+
     /* Every torn Sidecar payload/header byte must leave the original pair readable. */
     for (cut = 0; cut < ENERGUN_SC_V1_HEADER_SIZE + 117u + sizeof(st_hdr_t); ++cut) {
         reset_media();
