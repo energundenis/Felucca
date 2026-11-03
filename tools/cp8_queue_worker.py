@@ -16,9 +16,9 @@ from cp8_ci_queue_store import (  # noqa: E402
 
 ALLOWED_COMMANDS = {
     "fast-regression": ["sh", "tests/run_metal_core_fast.sh"],
-    "cp1-persistence": ["python3", "tools/cp8_worker_lanes.py", "cp1-persistence"],
-    "cp2-dsp-vca": ["python3", "tools/cp8_worker_lanes.py", "cp2-dsp-vca"],
-    "cp3-sequencer": ["python3", "tools/cp8_worker_lanes.py", "cp3-sequencer"],
+    "cp1-persistence": ["python3", "/tmp/energun_cp8_worker_lanes.py", "cp1-persistence"],
+    "cp2-dsp-vca": ["python3", "/tmp/energun_cp8_worker_lanes.py", "cp2-dsp-vca"],
+    "cp3-sequencer": ["python3", "/tmp/energun_cp8_worker_lanes.py", "cp3-sequencer"],
 }
 
 
@@ -135,6 +135,8 @@ def drain(lane: str) -> None:
         raise RuntimeError(f"lane is not allow-listed: {lane}")
     max_items = int(os.environ.get("CP8_MAX_ITEMS_PER_RUN", "2"))
     lane_runner_source = (ROOT / "tools" / "cp8_worker_lanes.py").read_text(encoding="utf-8")
+    lane_runner_path = Path("/tmp/energun_cp8_worker_lanes.py")
+    lane_runner_path.write_text(lane_runner_source, encoding="utf-8")
     processed = 0
     while processed < max_items:
         record = store.claim_next(f"cp8-{lane}-worker", run_id, lease_seconds=3600, required_lane=lane)
@@ -150,14 +152,12 @@ def drain(lane: str) -> None:
         try:
             store.mark_running(request_id, run_id)
             checkout_sha(sha)
-            # Run the coordinator-approved lane harness even for older source SHAs
-            # that predate its introduction; firmware/tests still come from exact SHA.
-            lane_runner = ROOT / "tools" / "cp8_worker_lanes.py"
-            lane_runner.parent.mkdir(parents=True, exist_ok=True)
-            lane_runner.write_text(lane_runner_source, encoding="utf-8")
+            # Keep the coordinator-approved harness outside the tested checkout.
             command = ALLOWED_COMMANDS[lane]
+            child_env = os.environ.copy()
+            child_env["CP8_WORKSPACE"] = str(ROOT)
             print(f"RUN lane={lane} command={' '.join(command)}")
-            subprocess.run(command, cwd=ROOT, check=True)
+            subprocess.run(command, cwd=ROOT, env=child_env, check=True)
             store.finish(
                 request_id, run_id, "passed",
                 "All allow-listed queue lanes passed.",
