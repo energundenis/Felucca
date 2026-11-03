@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently after storage/FM6 foundations; Sidecar A/B selection joins both results before pair-commit stages.",
+  "description": "Dependency-aware CP1 persistence and parameter verification. Independent quantization, Sidecar format and Base-generation binding suites run concurrently after storage/FM6 foundations; Sidecar A/B selection joins its prerequisites before pair-commit stages.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -46,6 +46,18 @@
       "command": "sh tests/run_sidecar_base_binding_test.sh",
       "blocker": "The internal st_current_meta() helper returns the exact selected, payload-CRC-validated Base copy, sequence, payload CRC and length. The host test compiles the real storage.c and Sidecar V1 source against simulated NOR and proves stale-generation rejection and fallback binding.",
       "enable_when": "Real storage metadata helper and exact Base fingerprint acceptance test committed together."
+    },
+    {
+      "id": "parameter-quantization",
+      "title": "CP1.4.2 7-bit parameter quantization reference",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "fm6-staging-baseline"
+      ],
+      "command": "sh tests/run_cp1_parameter_quantization_test.sh",
+      "blocker": "The host reference checks 30 continuous controls, source-step boundaries and mathematical nearest-code bounds. This is quantizer correctness evidence only; musical-resolution acceptance and legacy project/preset compatibility remain open.",
+      "enable_when": "The standalone strict-C11 quantization reference and all 30-control acceptance sweeps are committed."
     },
     {
       "id": "sidecar-ab-selection",

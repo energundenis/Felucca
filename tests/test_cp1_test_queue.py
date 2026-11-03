@@ -128,6 +128,19 @@ class CP1QueueTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "PASS")
 
+    def test_repository_manifest_runs_quantization_as_independent_stage(self):
+        manifest_path = self.old[1]
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        stages = {stage["id"]: stage for stage in manifest["stages"]}
+        quantization = stages["parameter-quantization"]
+        self.assertEqual(manifest["max_parallel"], 3)
+        self.assertEqual(quantization["state"], "ready")
+        self.assertEqual(quantization["depends_on"], ["fm6-staging-baseline"])
+        self.assertEqual(quantization["command"],
+                         "sh tests/run_cp1_parameter_quantization_test.sh")
+        self.assertTrue((manifest_path.parent /
+                         "run_cp1_parameter_quantization_test.sh").is_file())
+
     def test_dependency_cycle_is_rejected(self):
         stages = [
             {"id": "first", "title": "First", "state": "blocked", "depends_on": ["second"]},
