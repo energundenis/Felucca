@@ -39,6 +39,11 @@ run_test() {
 compile_test storage tests/storage_test.c
 run_test storage
 
+# The pair harness includes the real storage.c and Sidecar V1 serializer; its
+# Sidecar sectors live only in a separate test backend, never in target Flash.
+compile_test_strict sidecar_pair_transaction tests/sidecar_pair_transaction_test.c
+run_test sidecar_pair_transaction
+
 compile_test fm6bank tests/fm6bank_test.c -lm
 run_test fm6bank
 
@@ -101,12 +106,12 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 21 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 22 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 21 focused host tests."
+        echo "Generated headers and compiled/executed all 22 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
