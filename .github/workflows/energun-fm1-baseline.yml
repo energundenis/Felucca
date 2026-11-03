@@ -246,6 +246,26 @@ jobs:
             echo "The explicit project/live and preset-bank payload codecs compile for pi32v2. This is compile/codegen evidence only; they are not linked into firmware or executed on hardware."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Compile Private runtime cache with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wextra -Wno-unused-function -Ifirmware/src \
+            -c firmware/src/energun_private_v1.c \
+            -o build/metal-core-vca-target/private_v1.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/private_v1.o \
+            > build/metal-core-vca-target/private_v1.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/private_v1.o \
+            > build/metal-core-vca-target/private_v1.symbols
+          grep -q "energun_private_v1_init" build/metal-core-vca-target/private_v1.symbols
+          grep -q "energun_private_v1_replace" build/metal-core-vca-target/private_v1.symbols
+          {
+            echo "## Private runtime cache AC79 compile-only probe"
+            echo "The four-part Private runtime cache compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware or executed on hardware."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Compile pair coordinator with AC79 target compiler
         run: |
           set -euo pipefail
