@@ -203,3 +203,16 @@ The full baseline workflow on this exact HEAD, run `41340134381`, was pending at
 - Fast workflow [41408630658](https://github.com/energundenis/Felucca/actions/runs/41408630658) completed SUCCESS on exact code HEAD `baaf8b1106bce93377dfda692423d5b363d657c4`; all 17 focused programs passed.
 - The real OSC host-lifecycle program reported 8/8 assertions PASS: production `trk_note_on_source()`, fresh phase reset, actual `track_render()` advancement using host `vmod_t.inc`, real MONO retrigger preservation through `voice_start()`, Note Off retirement, and fresh reuse reset.
 - The test descriptor remains host-only. This is not a production METAL CORE registration, complete DSP graph, target cycle measurement or hardware test.
+
+
+## CP3.2 AC79 OSC1/OSC2 voice-adapter compile probe — 2026-11-03
+
+- Added `tests/metal_core_osc_target_probe.c`. It includes the generated `felucca_tables.h` before `core.h`, then the real production `engines.c` translation unit (including the pinned Felucca shared `dsp.c`) and `eng_metal_core_osc_voice.h`.
+- The noinline probe functions exercise the real adapter's note-on phase reset and both OSC1/OSC2 sample paths using the supplied host `vmod_t.inc`. No waveform/parameter IDs or production descriptor were added.
+- The full baseline workflow compiles the probe with the pinned AC79 `pi32v2` compiler, emits disassembly/symbol artifacts, and verifies both probe symbols. The artifact is included in the existing `build/metal-core-vca-target/*` upload.
+- Fast regression [41597864607](https://github.com/energundenis/Felucca/actions/runs/41597864607) passed on exact code HEAD `35d1c2feb5df95e3b6ffeaffbff9ee03a0765a10`; all 21 focused tests passed, including the existing real OSC host-dispatch test. The full baseline [41597864611](https://github.com/energundenis/Felucca/actions/runs/41597864611) was still in progress at this documentation checkpoint. Its unmodified firmware build and AC79 VCA/OSC/Sidecar compile step had passed; full host/web regression had not yet completed.
+- The host-side OSC lifecycle evidence remains the separate real-dispatch test compiled through `tests/hostsim.c`; the AC79 probe is intentionally not compiled by the fast host script because it needs the target firmware translation-unit environment.
+
+### Acceptance boundary
+
+This adds **target compile/code-generation evidence only** for the OSC phase adapter. It does not link the adapter into a METAL CORE engine, register an engine, render the complete DSP chain, measure AC79 cycles, execute on hardware, or establish audible behavior. CP3 remains **40%**; this probe alone does not close CP3.2 or CP3.4.
