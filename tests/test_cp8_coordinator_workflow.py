@@ -1,7 +1,10 @@
 import unittest
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from cp8_queue_worker import completed_owner_workers
 
 
 class CP8CoordinatorWorkflowTests(unittest.TestCase):
@@ -18,6 +21,14 @@ class CP8CoordinatorWorkflowTests(unittest.TestCase):
             self.assertIn(f"group: energun-cp8-worker-{lane}", text)
         self.assertIn("cancel-in-progress: false", text)
         self.assertIn('CP8_MAX_ITEMS_PER_RUN: "8"', text)
+
+    def test_git_transport_recovers_abandoned_workers_by_lease_without_rest(self):
+        class GitOnlyClient:
+            pass
+        class Store:
+            client = GitOnlyClient()
+            branch = "energun-ci-queue"
+        self.assertEqual(completed_owner_workers(Store()), set())
 
     def test_worker_has_fixed_allow_list_and_no_shell_interpolation(self):
         text = (ROOT / "tools/cp8_queue_worker.py").read_text()
