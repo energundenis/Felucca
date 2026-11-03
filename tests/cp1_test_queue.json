@@ -73,15 +73,27 @@
       "enable_when": "Core API, Sidecar-first ordering and simulated A/B fault-injection acceptance committed together."
     },
     {
+      "id": "pair-storage-adapter-simulated-nor",
+      "title": "Felucca Base adapter + Sidecar callback integration on simulated NOR",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "pair-transaction-core"
+      ],
+      "command": "sh tests/run_pair_storage_adapter_test.sh",
+      "blocker": "Pair-aware Base target selection, Sidecar callback contract, exact-pair recovery and NOR fault-injection host tests are implemented. The physical Sidecar backend and runtime callsite wiring remain separate gates.",
+      "enable_when": "The adapter is bound to st_read_copy_meta/st_save_to and the host test models NOR erase/program/page semantics and interrupted pair commits."
+    },
+    {
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "pair-transaction-core"
+        "pair-storage-adapter-simulated-nor"
       ],
       "command": null,
-      "blocker": "Production storage adapter is not wired to st_save_to and a qualified Sidecar A/B Flash backend. Do not enable firmware callsites until the physical map and real simulated-NOR adapter tests pass."
+      "blocker": "The Base adapter is now bound to the existing Felucca A/B primitives and passes the simulated-NOR host test. This stage remains blocked until a qualified Sidecar A/B backend is implemented after the user's full device dump is verified, and production save/load callsites are integrated."
     },
     {
       "id": "pair-power-loss",
