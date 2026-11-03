@@ -209,6 +209,28 @@ jobs:
             echo "The storage-independent Sidecar V1 encoder/validator compiled for pi32v2. This is target compile/codegen evidence only; it is not linked into firmware or executed on hardware."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Compile Sidecar Flash backend with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wno-unused-function -Ifirmware/src \
+            -c firmware/src/energun_sidecar_flash.c \
+            -o build/metal-core-vca-target/sidecar_flash.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/sidecar_flash.o \
+            > build/metal-core-vca-target/sidecar_flash.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/sidecar_flash.o \
+            > build/metal-core-vca-target/sidecar_flash.symbols
+          grep -q "energun_sc_flash_init" build/metal-core-vca-target/sidecar_flash.symbols
+          grep -q "energun_sc_flash_read_copy" build/metal-core-vca-target/sidecar_flash.symbols
+          grep -q "energun_sc_flash_write_copy" build/metal-core-vca-target/sidecar_flash.symbols
+          grep -q "energun_sc_flash_storage_ops" build/metal-core-vca-target/sidecar_flash.symbols
+          {
+            echo "## Sidecar Flash backend AC79 compile-only probe"
+            echo "The bounded A/B backend compiled for pi32v2 and exported its init/read/write callbacks. This is target code-generation evidence only; hardware transport binding, firmware link integration and Flash execution are not implied."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Compile pair transaction coordinator with AC79 target compiler
         run: |
           set -euo pipefail
