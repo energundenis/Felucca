@@ -170,3 +170,29 @@ Runtime integration remains deliberately gated: the new Private cache is current
 - Added strict test `tests/energun_private_v1_test.c` with **28 checks, 0 failures**, run by `tests/run_private_v1_test.sh`.
 - Added the `private-runtime-cache` DAG stage. On Fast Regression [41704249158](https://github.com/energundenis/Felucca/actions/runs/41704249158), exact HEAD `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`, the 24-test fast suite passed and the Private cache stage passed 28/28 while Sidecar format and Base-generation binding ran concurrently. The queue correctly remains BLOCKED at production Pair Commit Ordering.
 - This closes the standalone host-tested Private cache primitive only. Editor protocol/UI, canonical defaults ownership, production project/preset call sites and target integration remain open. The new source has not yet been added to the AC79 compile-only probe.
+
+
+## 11. Private runtime ↔ Sidecar payload bridge
+
+Added a typed bridge between the four-part Private runtime cache and the frozen project/live and preset-bank Sidecar payload structures:
+
+- `firmware/src/energun_private_payload_v1.h/.c`
+- `tests/private_payload_v1_test.c`
+- `tests/run_private_payload_v1_test.sh`
+- CP1 queue stage `private-payload-bridge`, dependent on both `private-runtime-cache` and `sidecar-payload-codec`.
+- Baseline workflow includes an AC79 pi32v2 compile-only probe for the bridge.
+
+Semantics:
+- Project/live capture first snapshots and validates all four runtime parts, then copies the 4 × 13 Private values into the typed payload. A failed snapshot leaves the payload unchanged.
+- Project/live restore stages a complete candidate cache, validates every key in every part, and only then replaces the live cache. Restored state is clean (dirty masks cleared) and each part's generation advances from the previous runtime cache generation.
+- Preset capture updates only the selected slot's 13 values and its presence bit; unrelated slots and bitmap bits remain untouched.
+- Preset restore applies the selected slot to one runtime part, or canonical descriptor defaults when that slot has no Private extension. Validation happens before replacing that part.
+- Canonical defaults remain supplied by the descriptor owner. The bridge does not invent defaults or assign numeric P_MC IDs.
+
+Verification boundary:
+- This is a host-testable lifecycle bridge, not yet production call-site integration in `project.c` or `upreset.c`.
+- It has no Flash address, storage object, target Sidecar backend or editor transport.
+- Fast Regression and AC79 compile-only checks are pending on the new exact branch HEAD until their current Actions runs complete. Do not infer success from earlier runs.
+- Baseline #514 on the preceding HEAD was cancelled when the bridge commits arrived; its firmware build and five AC79 probes had passed before cancellation, but its full host/web regression did not complete.
+
+No changes to `main`, factory V15, Flash allocation/whitelist, loader, OTA or physical device state. No device was flashed.
