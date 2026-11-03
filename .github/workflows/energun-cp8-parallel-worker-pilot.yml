@@ -234,7 +234,7 @@ jobs:
         with:
           python-version: '3.x'
       - name: Validate durable queue ledger and CAS store
-        run: python3 -m unittest discover -s tests -p 'test_cp8_ci_queue*.py' -v
+        run: python3 -m unittest discover -s tests -p 'test_cp8_*.py' -v
       - name: Upload queue worker evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -278,6 +278,6 @@ jobs:
             echo "| CP8.1 Queue qualification | ${CP8_QUEUE_RESULT} |"
             echo
             echo 'Only workstreams affected by changed source paths are scheduled; unchanged lanes are skipped.'
-            echo 'CP8.1 queue qualification tests validate local queue/CAS primitives; a live global coordinator is not yet enabled.'
+            echo 'CP8 queue qualification covers durable queue/CAS, persistent worker registry, DAG-gated claims, lease recovery and fencing. The three lane workers execute independently through the shared ledger.'
             echo 'Host-only tests; no physical FM-1, Flash write, firmware install or flashing.'
           } >> "$GITHUB_STEP_SUMMARY"
