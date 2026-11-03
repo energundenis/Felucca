@@ -192,7 +192,8 @@ Semantics:
 Verification boundary:
 - This is a host-testable lifecycle bridge, not yet production call-site integration in `project.c` or `upreset.c`.
 - It has no Flash address, storage object, target Sidecar backend or editor transport.
-- Fast Regression and AC79 compile-only checks are pending on the new exact branch HEAD until their current Actions runs complete. Do not infer success from earlier runs.
+- Fast Regression [#393](https://github.com/energundenis/Felucca/actions/runs/41707569035) completed **SUCCESS** on exact code HEAD `f2d0b72f88309d7f6b8888f7334efd0f0263b714`: 24 focused regression tests passed; Private Sidecar bridge passed **233 checks, 0 failures**; the CP1 queue correctly remains BLOCKED at production Pair Commit Ordering.
+- Baseline Build [#520](https://github.com/energundenis/Felucca/actions/runs/41707569124) on the same exact code HEAD passed the unmodified Felucca firmware build and all six AC79 compile-only probes (VCA, Sidecar V1, typed payload codecs, Private cache, Private Sidecar bridge and pair coordinator). Its full host/web regression was still running at the last status check; do not report the whole baseline workflow as green until it concludes.
 - Baseline #514 on the preceding HEAD was cancelled when the bridge commits arrived; its firmware build and five AC79 probes had passed before cancellation, but its full host/web regression did not complete.
 
 No changes to `main`, factory V15, Flash allocation/whitelist, loader, OTA or physical device state. No device was flashed.
