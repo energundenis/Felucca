@@ -2,8 +2,8 @@
 Date: 2026-11-03
 Canonical repository: `energundenis/Felucca`
 Canonical working branch: `energun-metal-core`
-Documentation synchronization base HEAD: `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`
-Latest code/test HEAD with confirmed fast-lane result: `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`
+Documentation synchronization base HEAD: `61cdd693cc7b4ddaf5700530e3d1ba257d45d5a2`
+Latest code/test HEAD with confirmed fast-lane result: `f2d0b72f88309d7f6b8888f7334efd0f0263b714`
 
 ## Authority and percentage method
 This is the current status entry point. It supersedes stale checkbox/status wording in the original planning baseline and older checkpoint snapshots. The detailed source documents remain authoritative for technical scope and acceptance.
@@ -31,7 +31,7 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 |---|---|---:|---|
 | CP1.4.1 | Logical parameter inventory | **100%** | Frozen logical map: 8 Engine EDIT + 16 P_MC + 13 Private per part; four independent Private banks. Host inventory contract test passes in the 18-program fast lane. Numeric IDs and firmware descriptors are deliberately not assigned. |
 | CP1.4.2 | 7-bit conversion and compatibility | **80%** | Standard Felucca 7-bit V1 encoding accepted. 30-control reference, 9,434 source-step boundaries, 100,001-point nearest-code sweeps, endpoint clamping and corrected bipolar mapping are documented/tested. Remaining: musical-resolution review, final per-control acceptance, base-compatible FUN10/preset strategy and exact-head compatibility evidence. |
-| CP1.4.3 | Private parameter access/runtime model | **55%** | New typed four-part Private runtime cache provides validated get/set, defaults fallback, atomic snapshot replacement, dirty tracking and generation-safe persistence acknowledgement; strict host acceptance passes 28/28. Production integration, canonical defaults owner, editor protocol and UI remain open. |
+| CP1.4.3 | Private parameter access/runtime model | **60%** | Typed four-part Private runtime cache plus atomic project/live and preset-slot payload bridge; strict host cache and bridge acceptance pass (35/35 and 233/233 checks). Cache and bridge pass AC79 pi32v2 compile-only probes. Production project/preset call sites, canonical defaults owner, editor protocol and UI remain open. |
 | CP1.4.4 | P_MC Motion Lock policy | **80%** | Sidecar V1 validator enforces exactly IDs 103–118, masks Motion Lock for comparison and retains the flag; boundary and denied-ID tests pass. Production `motion_param()` integration, runtime merge/split and lifecycle tests remain open. |
 | CP1.4.5 | Sidecar schema and pair transaction | **90%** | V1 envelope/semantic validator, exact Base metadata, validated A/B reader/selector, backend-neutral pair coordinator and seven-identity torn-write/retry/fallback harness are implemented and host-tested. Target Sidecar backend and production lifecycle hooks remain open. |
 | CP1.4.6 | Sidecar logical capacity | **100%** | Capacity arithmetic verified: 501-byte project/live payload and 210-byte preset-bank payload before provisional envelope; no physical sector allocation. |
@@ -163,3 +163,15 @@ After CP1, continue CP3 production engine integration and CP4/CP5 UI/sequencer i
 - Added `private-runtime-cache` as an independent CP1 queue stage. It ran in parallel with Sidecar format and Base-generation binding under the queue's three-worker limit.
 - Fast Regression [41704249158](https://github.com/energundenis/Felucca/actions/runs/41704249158): **SUCCESS** on exact code/test HEAD `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`; all 24 focused regression tests passed and Private runtime cache passed 28/28. The CP1 queue correctly remains **BLOCKED** at production Pair Commit Ordering because the target Sidecar backend and project/preset runtime call sites are not integrated.
 - This cache is a host-tested runtime primitive, not completed production CP1.6/CP1.7 integration. No stable IDs, editor commands/pages, target Sidecar address, Flash whitelist, archive V1, loader, OTA, factory firmware or physical device were changed.
+
+
+## Private runtime ↔ Sidecar payload bridge — 2026-11-03
+
+- Added `firmware/src/energun_private_payload_v1.h/.c`, joining the four-part typed Private runtime cache to the frozen Sidecar project/live and preset-bank payload structures.
+- Project/live capture snapshots all four parts before writing the payload. Project/live restore stages and validates all 52 Private values before atomically replacing the cache; restored parts are clean and generation-advanced.
+- Preset capture/restore handles one of 16 slots in a bank, updates only that slot and its presence bit, preserves unrelated slot data, and falls back to descriptor-owner canonical defaults when the slot has no Private extension.
+- Added strict acceptance `tests/private_payload_v1_test.c` / `tests/run_private_payload_v1_test.sh`; **233 checks, 0 failures**.
+- Fast Regression [41707569035](https://github.com/energundenis/Felucca/actions/runs/41707569035): **SUCCESS** on exact code/test HEAD `f2d0b72f88309d7f6b8888f7334efd0f0263b714`; all 24 focused regression tests passed; the Private payload bridge passed 233/233. CP1 queue correctly reports **BLOCKED** at production Pair Commit Ordering.
+- Baseline Build [41707569124](https://github.com/energundenis/Felucca/actions/runs/41707569124) on the same code/test HEAD: unmodified Felucca build and six AC79 pi32v2 compile-only probes (VCA, Sidecar V1, typed Sidecar codecs, Private cache, Private payload bridge and pair coordinator) passed. Full host/web regression was still running at the time of this documentation update; complete baseline workflow conclusion remains pending.
+- CP1.6/CP1.7 production lifecycle call sites are not connected. This bridge is a host-tested, target-compiled adapter layer only; it does not authorize a target Sidecar Flash backend or any physical address.
+- No changes to `main`, factory V15, storage whitelist, physical Flash map, loader, OTA or device state. No device was flashed.
