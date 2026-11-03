@@ -253,6 +253,7 @@ int main(void)
           st_save(OBJ_COUNT, probe, sizeof probe) != 0 &&
           st_load(OBJ_COUNT, probe, sizeof probe) < 0);
     CHECK("first save commits Base A + Sidecar A",
+          setup(&adapter) == 0 &&
           save_value(&adapter, &workspace, 10u) == ENERGUN_PAIR_OK &&
           recover_equals(&adapter, (uint8_t[16]){10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25}, 16u, 1u, 10u));
 
