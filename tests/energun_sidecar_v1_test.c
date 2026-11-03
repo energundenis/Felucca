@@ -220,6 +220,52 @@ static void test_preset_bank(void)
           ENC_PRESET(record, payload, sizeof payload) == ENERGUN_SC_ERR_PRIVATE_VALUE);
 }
 
+
+static void test_preset_base_binding(void)
+{
+    uint8_t bank[3080u];
+    uint8_t sidecar[ENERGUN_SC_V1_PRESET_PAYLOAD];
+    uint8_t *slot0, *slot15, *bad;
+    memset(bank, 0, sizeof bank);
+    memset(sidecar, 0, sizeof sidecar);
+    bank[0] = 'U'; bank[1] = 'P'; bank[2] = 'B'; bank[3] = '1';
+    bank[4] = 192u; bank[6] = 16u;
+    slot0 = bank + 8u;
+    slot0[0] = 0xA5u; slot0[1] = 4u; slot0[2] = 2u; slot0[3] = 111u;
+    slot0[4] = 'A'; slot0[16] = 64u;
+    slot15 = bank + 8u + 15u * 192u;
+    slot15[0] = 0xA5u; slot15[1] = 5u; slot15[2] = 13u; slot15[3] = 8u;
+    slot15[4] = 'Z';
+    sidecar[0] = 1u; sidecar[1] = 0x80u;
+    check("Base bank and Sidecar agree on occupied slots 0 and 15",
+          energun_sc_v1_validate_preset_bank_binding(bank, sizeof bank, 14u,
+              sidecar, sizeof sidecar) == ENERGUN_SC_OK);
+    sidecar[0] = 0u;
+    check("Base occupied slot missing from Sidecar bitmap is rejected",
+          energun_sc_v1_validate_preset_bank_binding(bank, sizeof bank, 14u,
+              sidecar, sizeof sidecar) == ENERGUN_SC_ERR_SLOT_BITMAP);
+    sidecar[0] = 1u; sidecar[1] = 0u;
+    check("Sidecar slot with no valid Base record is rejected",
+          energun_sc_v1_validate_preset_bank_binding(bank, sizeof bank, 14u,
+              sidecar, sizeof sidecar) == ENERGUN_SC_ERR_SLOT_BITMAP);
+    sidecar[1] = 0x80u;
+    bad = slot15;
+    bad[2] = 14u;
+    check("engine outside target NENGINES is treated as an empty Base slot",
+          energun_sc_v1_validate_preset_bank_binding(bank, sizeof bank, 14u,
+              sidecar, sizeof sidecar) == ENERGUN_SC_ERR_SLOT_BITMAP);
+    bad[2] = 13u;
+    check("invalid v4+ packed parameter makes Base slot unoccupied",
+          (bad[16] = 192u,
+           energun_sc_v1_validate_preset_bank_binding(bank, sizeof bank, 14u,
+              sidecar, sizeof sidecar) == ENERGUN_SC_ERR_SLOT_BITMAP));
+    bad[16] = 0u;
+    check("wrong Base bank header is rejected before bitmap comparison",
+          (bank[0] = 0u,
+           energun_sc_v1_validate_preset_bank_binding(bank, sizeof bank, 14u,
+              sidecar, sizeof sidecar) == ENERGUN_SC_ERR_LENGTH));
+}
+
 static void test_envelope_rejection_and_atomic_encode(void)
 {
     uint8_t payload[ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD];

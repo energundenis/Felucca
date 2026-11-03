@@ -285,6 +285,64 @@ energun_sc_status_t energun_sc_v1_inspect(
         base_motion_count, view);
 }
 
+
+/* Frozen upreset.c bank ABI: 8-byte header + sixteen 192-byte records.
+ * These are logical payload bytes, not physical Flash offsets.
+ */
+#define SC_UP_BANK_MAGIC       0x31425055u
+#define SC_UP_BANK_HEADER      8u
+#define SC_UP_BANK_SLOTS       16u
+#define SC_UP_RECORD_SIZE      192u
+#define SC_UP_BANK_SIZE        (SC_UP_BANK_HEADER + SC_UP_BANK_SLOTS * SC_UP_RECORD_SIZE)
+#define SC_UP_USED             0xA5u
+#define SC_UP_VER_MAX          5u
+#define SC_UP_PMAX             72u
+
+static int sc_up_record_valid(const uint8_t *record, uint8_t engine_count)
+{
+    unsigned int i;
+    uint8_t version = record[1];
+    uint8_t np = record[3];
+    if (record[0] != SC_UP_USED || version == 0u || version > SC_UP_VER_MAX ||
+        record[2] >= engine_count || np < 8u ||
+        np > (version >= 4u ? SC_UP_PMAX * 2u : SC_UP_PMAX) ||
+        record[4] == 0u)
+        return 0;
+    if (version >= 4u)
+        for (i = 0; i < np; ++i)
+            if (record[16u + i] > 191u)
+                return 0;
+    return 1;
+}
+
+energun_sc_status_t energun_sc_v1_validate_preset_bank_binding(
+    const uint8_t *base_bank, size_t base_bank_length, uint8_t engine_count,
+    const uint8_t *sidecar_payload, uint16_t sidecar_payload_length)
+{
+    uint8_t expected[2] = { 0u, 0u };
+    unsigned int slot;
+    energun_sc_status_t status;
+    if (base_bank == NULL || sidecar_payload == NULL || engine_count == 0u)
+        return ENERGUN_SC_ERR_ARGUMENT;
+    if (base_bank_length != SC_UP_BANK_SIZE ||
+        sc_get_u32(base_bank) != SC_UP_BANK_MAGIC ||
+        sc_get_u16(base_bank + 4u) != SC_UP_RECORD_SIZE ||
+        sc_get_u16(base_bank + 6u) != SC_UP_BANK_SLOTS)
+        return ENERGUN_SC_ERR_LENGTH;
+    status = sc_validate_preset(sidecar_payload, sidecar_payload_length);
+    if (status != ENERGUN_SC_OK)
+        return status;
+    for (slot = 0u; slot < SC_UP_BANK_SLOTS; ++slot) {
+        const uint8_t *record = base_bank + SC_UP_BANK_HEADER +
+                                slot * SC_UP_RECORD_SIZE;
+        if (sc_up_record_valid(record, engine_count))
+            expected[slot >> 3] |= (uint8_t)(1u << (slot & 7u));
+    }
+    return expected[0] == sidecar_payload[0] &&
+           expected[1] == sidecar_payload[1] ?
+           ENERGUN_SC_OK : ENERGUN_SC_ERR_SLOT_BITMAP;
+}
+
 static int sc_sequence_newer(uint32_t a, uint32_t b)
 {
     return a != b && (uint32_t)(a - b) < 0x80000000u;

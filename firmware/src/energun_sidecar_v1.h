@@ -114,6 +114,14 @@ energun_sc_status_t energun_sc_v1_encode(
     const uint8_t *payload, uint16_t payload_length,
     uint16_t base_motion_count);
 
+/* Compare a preset Sidecar bitmap with the actual occupied slots in a raw
+ * upreset.c bank. engine_count must be the target build's NENGINES so legacy
+ * and optional-engine records follow the exact up_valid() rule.
+ */
+energun_sc_status_t energun_sc_v1_validate_preset_bank_binding(
+    const uint8_t *base_bank, size_t base_bank_length, uint8_t engine_count,
+    const uint8_t *sidecar_payload, uint16_t sidecar_payload_length);
+
 const char *energun_sc_v1_status_string(energun_sc_status_t status);
 
 #endif
