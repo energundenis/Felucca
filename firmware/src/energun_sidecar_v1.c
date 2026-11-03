@@ -163,10 +163,14 @@ static energun_sc_status_t sc_validate_project(
         const uint8_t *event = payload + SC_PROJECT_MOTION_OFF + i * 3u;
         uint8_t place = event[0];
         uint8_t param = event[1];
+        uint8_t logical_pmc = (uint8_t)(param & 0x7Fu);
         int value = sc_i8_value(event[2]);
         (void)place; /* all 256 encodings map to track 0..3 / step 0..63 */
-        (void)param; /* numeric P_MC IDs remain unassigned at this stage */
-        if (value < -64 || value > 127)
+        /* Sidecar Motion owns only the sixteen common P_MC controls.
+         * Bit 7 is the existing Motion Lock flag; Private and MCX namespaces
+         * are deliberately excluded from V1 events.
+         */
+        if (logical_pmc >= 16u || value < -64 || value > 127)
             return ENERGUN_SC_ERR_MOTION_EVENT;
         for (j = 0; j < i; ++j) {
             const uint8_t *prior = payload + SC_PROJECT_MOTION_OFF + j * 3u;
