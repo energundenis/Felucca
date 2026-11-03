@@ -152,13 +152,18 @@ static const energun_sidecar_storage_ops_t sc_test_ops = {
 };
 
 static int recover_equals(energun_pair_storage_adapter_t *adapter,
-    const uint8_t *expected, uint32_t length, uint32_t sequence)
+    const uint8_t *expected, uint32_t length, uint32_t sequence,
+    uint8_t sidecar_marker)
 {
-    uint8_t loaded[64];
+    uint8_t loaded[64], sidecar[117];
+    uint16_t sidecar_length = 0u;
     energun_pair_base_meta_t meta;
     int n = energun_pair_storage_adapter_load(adapter, loaded,
-        sizeof loaded, ENERGUN_SC_ID_PROJECT, 0u, 0u, &meta);
+        sizeof loaded, sidecar, sizeof sidecar, &sidecar_length,
+        ENERGUN_SC_ID_PROJECT, 0u, 0u, &meta);
     return n == (int)length && meta.sequence == sequence &&
+           sidecar_length == sizeof sidecar &&
+           sidecar[0] == (uint8_t)(sidecar_marker % 3u) &&
            memcmp(loaded, expected, length) == 0;
 }
 static void make_sidecar_payload(uint8_t payload[117], uint8_t marker)
@@ -200,11 +205,11 @@ int main(void)
           setup(&adapter) == 0);
     CHECK("first save commits Base A + Sidecar A",
           save_value(&adapter, &workspace, 10u) == ENERGUN_PAIR_OK &&
-          recover_equals(&adapter, (uint8_t[16]){10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25}, 16u, 0u));
+          recover_equals(&adapter, (uint8_t[16]){10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25}, 16u, 0u, 10u));
 
     CHECK("second save commits matching B copies",
           save_value(&adapter, &workspace, 20u) == ENERGUN_PAIR_OK &&
-          recover_equals(&adapter, (uint8_t[16]){20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35}, 16u, 1u));
+          recover_equals(&adapter, (uint8_t[16]){20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35}, 16u, 1u, 20u));
 
     for (i = 0; i < sizeof old_base; ++i) {
         old_base[i] = (uint8_t)(20u + i);
@@ -216,21 +221,21 @@ int main(void)
     CHECK("fixture creates newer orphan Base generation",
           st_save_to(OBJ_PROJECT0, orphan, sizeof orphan, 0) == 0);
     CHECK("recovery ignores orphan Base and returns previous complete pair",
-          recover_equals(&adapter, old_base, sizeof old_base, 1u));
+          recover_equals(&adapter, old_base, sizeof old_base, 1u, 20u));
     CHECK("planner overwrites orphan A, not protected matching Base B",
           save_value(&adapter, &workspace, 30u) == ENERGUN_PAIR_OK &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
 
     sidecar_fault_stage = SC_FAULT_PAYLOAD;
     CHECK("Sidecar payload failure preserves previous complete pair",
           save_value(&adapter, &workspace, 40u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
     sidecar_fault_stage = SC_FAULT_NONE;
 
     base_erase_failure = 1;
     CHECK("Base erase failure after Sidecar staging preserves old pair",
           save_value(&adapter, &workspace, 50u) == ENERGUN_PAIR_ERR_BASE_COMMIT &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
     base_erase_failure = 0;
 
     /* Verify NOR page boundaries and 1->0 programming are enforced. */
