@@ -240,7 +240,7 @@ static int st_save_to(uint32_t obj, const void *src, uint32_t len, int to)
  * ownership gate, not an interrupt lock: st_save_to() refuses that exact sector until
  * its owner releases it. FM6 Voice Bank uses it while staging in OBJ_AUTOSAVE's older copy.
  */
-static int st_reserve(uint32_t obj, uint32_t copy, uint8_t owner)
+static inline int st_reserve(uint32_t obj, uint32_t copy, uint8_t owner)
 {
     st_hdr_t h;
     int current;
@@ -256,18 +256,18 @@ static int st_reserve(uint32_t obj, uint32_t copy, uint8_t owner)
     return 0;
 }
 
-static int st_reserved_by(uint32_t obj, uint32_t copy, uint8_t owner)
+static inline int st_reserved_by(uint32_t obj, uint32_t copy, uint8_t owner)
 {
     return st_reservation.active && st_reservation.obj == obj && st_reservation.copy == copy &&
            st_reservation.owner == owner;
 }
 
-static int st_object_reserved(uint32_t obj)
+static inline int st_object_reserved(uint32_t obj)
 {
     return st_reservation.active && st_reservation.obj == obj;
 }
 
-static void st_release(uint32_t obj, uint32_t copy, uint8_t owner)
+static inline void st_release(uint32_t obj, uint32_t copy, uint8_t owner)
 {
     if (st_reserved_by(obj, copy, owner))
         st_reservation.active = 0u;
