@@ -209,6 +209,25 @@ jobs:
             echo "The storage-independent Sidecar V1 encoder/validator compiled for pi32v2. This is target compile/codegen evidence only; it is not linked into firmware or executed on hardware."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Compile pair transaction coordinator with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wno-unused-function -Ifirmware/src \
+            -c firmware/src/energun_pair_txn.c \
+            -o build/metal-core-vca-target/pair_txn.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/pair_txn.o \
+            > build/metal-core-vca-target/pair_txn.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/pair_txn.o \
+            > build/metal-core-vca-target/pair_txn.symbols
+          grep -q "energun_pair_txn_save" build/metal-core-vca-target/pair_txn.symbols
+          {
+            echo "## Pair transaction coordinator AC79 compile-only probe"
+            echo "The backend-independent transaction core compiled for pi32v2. This confirms target code generation only; no storage adapter or hardware execution is implied."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run Felucca host and web regression tests
         run: tests/run_tests.sh
 
