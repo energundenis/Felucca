@@ -62,7 +62,7 @@ def heartbeat_worker(store: Any, worker_id: str, run_id: int,
 
 def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
                           dependencies: dict[str, list[str]],
-                          completed_owner_run_ids: set[int] | None = None,
+                          completed_owner_workers: set[tuple[str, int]] | None = None,
                           lease_seconds: int = 3600,
                           now: datetime | None = None) -> dict[str, Any] | None:
     current = now or datetime.now(timezone.utc)
@@ -70,7 +70,7 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
         raise ValueError("lease_seconds must be at least 30")
     timestamp = _iso(current)
     expiry = _iso(current + timedelta(seconds=lease_seconds))
-    completed_owner_run_ids = completed_owner_run_ids or set()
+    completed_owner_workers = completed_owner_workers or set()
 
     def mutate(ledger: dict[str, Any]) -> dict[str, Any] | None:
         workers = ledger.setdefault("workers", {})
@@ -85,7 +85,7 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
         for record in records:
             if record.get("state") == "passed":
                 completed.update(record.get("requested_lanes", []))
-        active_global = sum(1 for item in records if item.get("state") in ACTIVE_STATES and (item.get("claim") or {}).get("owner_run_id") not in completed_owner_run_ids)
+        active_global = sum(1 for item in records if item.get("state") in ACTIVE_STATES and ((item.get("claim") or {}).get("owner_workflow"), (item.get("claim") or {}).get("owner_run_id")) not in completed_owner_workers)
         if active_global >= 3:
             return None
         active_for_worker = [
@@ -115,7 +115,7 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
                 lease = claim.get("lease_expires_at")
                 owner = claim.get("owner_run_id")
                 expired = bool(lease and _parse_iso(lease) <= current)
-                owner_finished = owner in completed_owner_run_ids
+                owner_finished = (claim.get("owner_workflow"), owner) in completed_owner_workers
                 if owner_finished:
                     candidates.append(item)
         if not candidates:
@@ -126,7 +126,7 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
         previous = selected.get("claim") or {}
         previous_worker_id = previous.get("owner_workflow")
         previous_owner_run_id = previous.get("owner_run_id")
-        if previous_worker_id and previous_owner_run_id in completed_owner_run_ids:
+        if previous_worker_id and (previous_worker_id, previous_owner_run_id) in completed_owner_workers:
             previous_worker = workers.get(previous_worker_id)
             if previous_worker and previous_worker.get("run_id") == previous_owner_run_id:
                 previous_worker["state"] = "offline"
