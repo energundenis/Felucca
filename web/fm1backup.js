@@ -103,9 +103,10 @@ export function readBackup(file) {
       if (!entry || entry.kind !== kind || entry.index !== index || entry.base_id !== baseId ||
           entry.schema !== 1 || !base || !Number.isInteger(entry.base_crc32) ||
           entry.base_crc32 < 0 || entry.base_crc32 > 0xffffffff || entry.base_crc32 !== base.crc ||
-          !Number.isInteger(entry.size) || !Number.isInteger(entry.crc) ||
-          entry.crc < 0 || entry.crc > 0xffffffff || typeof entry.data !== "string" ||
-          entry.data.length !== 4 * Math.ceil(entry.size / 3) ||
+          !Number.isInteger(entry.size) || entry.size < (payloadKind === "project" ? 117 : 210) ||
+          entry.size > (payloadKind === "project" ? 501 : 210) ||
+          !Number.isInteger(entry.crc) || entry.crc < 0 || entry.crc > 0xffffffff ||
+          typeof entry.data !== "string" || entry.data.length !== 4 * Math.ceil(entry.size / 3) ||
           !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(entry.data))
         throw new Error("Invalid Archive V2 Sidecar entry");
       const bytes = Uint8Array.from(atob(entry.data), (c) => c.charCodeAt(0));
