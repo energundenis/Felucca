@@ -53,10 +53,8 @@ run_test metal_core_osc_voice
 compile_test metal_core_osc_real_dispatch tests/metal_core_osc_real_dispatch_test.c -lm
 run_test metal_core_osc_real_dispatch
 
-echo "== Compile the OSC voice adapter with the real Felucca engine DSP source"
-"$CC" -O2 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src \
-    -c tests/metal_core_osc_target_probe.c -o "$OUT/metal_core_osc_target_probe.o"
-nm "$OUT/metal_core_osc_target_probe.o" | grep -q "eng_metal_osc_target_probe_pair"
+# Real OSC host behavior is covered by metal_core_osc_real_dispatch; the AC79
+# compile-only probe runs in the full baseline workflow.
 
 compile_test metal_core_lpg tests/metal_core_lpg_test.c
 run_test metal_core_lpg
