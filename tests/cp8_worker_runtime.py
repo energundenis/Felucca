@@ -98,6 +98,7 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
             return None
 
         candidates = []
+        recoverable = []
         for item in records:
             lane_list = item.get("requested_lanes", [])
             if worker.get("lane") not in lane_list:
@@ -117,12 +118,12 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
                 expired = bool(lease and _parse_iso(lease) <= current)
                 owner_finished = (claim.get("owner_workflow"), owner) in completed_owner_workers
                 if owner_finished:
-                    candidates.append(item)
-        if not candidates:
+                    recoverable.append(item)
+        if not candidates and not recoverable:
             worker["state"] = "available"
             worker["heartbeat_at"] = timestamp
             return None
-        selected = min(candidates, key=lambda item: (item["created_at"], item["request_id"]))
+        selected = min(recoverable or candidates, key=lambda item: (item["created_at"], item["request_id"]))
         previous = selected.get("claim") or {}
         previous_worker_id = previous.get("owner_workflow")
         previous_owner_run_id = previous.get("owner_run_id")
