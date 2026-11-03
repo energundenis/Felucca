@@ -139,18 +139,20 @@ def completed_owner_workers(store) -> set[tuple[str, int]]:
         if item.get("state") in {"claimed", "running"}
     }
     expected_names = {
-        "cp8-cp1-persistence-worker": "Queue Worker CP1 — persistence",
-        "cp8-cp2-dsp-vca-worker": "Queue Worker CP2 — DSP/VCA",
-        "cp8-cp3-sequencer-worker": "Queue Worker CP3 — sequencer",
+        "cp8-cp1-persistence-run-": "Queue Worker CP1 — persistence",
+        "cp8-cp2-dsp-vca-run-": "Queue Worker CP2 — DSP/VCA",
+        "cp8-cp3-sequencer-run-": "Queue Worker CP3 — sequencer",
     }
     completed: set[tuple[str, int]] = set()
     for worker_id, owner_run_id in owners:
-        if worker_id not in expected_names or not isinstance(owner_run_id, int):
+        job_name = next((name for prefix, name in expected_names.items()
+                         if isinstance(worker_id, str) and worker_id.startswith(prefix)), None)
+        if job_name is None or not isinstance(owner_run_id, int):
             continue
         try:
             payload = store.client.request("GET", f"/actions/runs/{owner_run_id}/jobs?per_page=100")
             for job in payload.get("jobs", []):
-                if job.get("name") == expected_names[worker_id] and job.get("status") == "completed":
+                if job.get("name") == job_name and job.get("status") == "completed":
                     completed.add((worker_id, owner_run_id))
                     break
         except QueueStoreError as exc:
