@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "registry_id": "ENERGUN-FM1-CODING-WORKERS",
-  "status": "registry-schema-only",
+  "status": "runtime-ledger-backed",
   "policy": {
     "require_isolated_branch": true,
     "allow_main_write": false,
@@ -9,7 +9,7 @@
     "allow_physical_device_access": false,
     "allow_flash_write": false,
     "require_review": true,
-    "max_parallel_assignments": 2
+    "max_parallel_assignments": 3
   },
   "capability_catalog": [
     "dsp",
@@ -24,9 +24,11 @@
   ],
   "workers": [],
   "notes": [
-    "No external coding worker is currently registered or connected.",
+    "Live Worker registrations, availability, ownership and occupancy are persisted atomically in the dedicated Git-ref queue ledger.",
+    "Static workers remains empty by design: ephemeral GitHub Actions runners enroll at job start and go offline at job completion.",
+    "Worker identity is bound to lane and GitHub Actions run ID; stale owners are fenced by attempt number.",
+    "Dependency checks run before each claim; only completed prerequisite lanes satisfy the DAG.",
     "Do not add credentials or tokens to this file.",
-    "Worker identity and permissions must be provisioned outside untrusted pull-request code.",
-    "Workers must receive task-scoped paths and isolated feature branches."
+    "Workers have no main-branch write, auto-merge, physical-device or Flash-write permissions."
   ]
 }
