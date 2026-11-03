@@ -21,8 +21,9 @@
  * 1, the next seq) last and only once the voices match the editor's CRC; then it is copied to 0xE7000 (erase, payload,
  * commit record, read back). A power cut anywhere leaves the old bank (nothing committed) or the new one (committed:
  * fvb_boot finishes the copy at the next power-on, before any autosave can take that sector): never half of one. A
- * wrong CRC commits nothing. An autosave between two requests (it waits 10 s after the last, project.c) takes the
- * sector: WRITE and END find its commit record there and answer 5 (start again). Included by upreset.c. */
+ * wrong CRC commits nothing. FM6 holds a wrap-safe 30-second staging lease across the multi-message transfer;
+ * project.c defers autosave while that lease is live. An abandoned transfer expires, then autosave may use the sector.
+ * The header check still rejects any unexpected external writer. Included by upreset.c. */
 #define FVB_HOME 0xE7000u
 #define FVB_INFO 224u                          /* the bank's header; the voices from FVB_VOICES */
 #define FVB_VOICES 256u
