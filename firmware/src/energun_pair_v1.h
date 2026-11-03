@@ -71,6 +71,15 @@ energun_pair_v1_status_t energun_pair_v1_commit(
     const uint8_t *sidecar_payload, uint16_t sidecar_length,
     uint16_t base_motion_count);
 
+/* Commit a zero-length Base tombstone to the inactive copy. Existing Sidecar
+ * records become harmless orphans because no record can match the new Base
+ * sequence/CRC. A later save starts a fresh pair without requiring a risky
+ * in-place Sidecar erase.
+ */
+energun_pair_v1_status_t energun_pair_v1_erase(
+    const energun_pair_v1_ops_t *ops, void *context,
+    uint32_t object);
+
 /* Load Base and its exact identity/generation-bound Sidecar as one pair.
  * No Base or Sidecar payload is returned unless an exact matching record
  * validates successfully.
