@@ -147,30 +147,16 @@ energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_erase_slot(
         new_base_bank_length, &payload);
 }
 
-energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_restore_slot(
-    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t bank,
-    uint8_t part, uint8_t slot,
-    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_apply_slot(
+    const energun_sc_preset_payload_v1_t *sidecar,
     energun_private_cache_v1_t *private_cache,
-    const uint8_t defaults[ENERGUN_PRIVATE_V1_KEYS],
-    energun_pair_v1_base_meta_t *base_meta)
+    uint8_t part, uint8_t slot,
+    const uint8_t defaults[ENERGUN_PRIVATE_V1_KEYS])
 {
-    energun_sc_preset_payload_v1_t payload;
-    energun_lifecycle_v1_status_t status;
-    energun_private_status_v1_t private_status;
-    if (!preset_args_valid(lifecycle, bank) || part >= ENERGUN_PRIVATE_V1_PARTS ||
-        slot >= ENERGUN_SC_V1_PRESET_SLOTS || private_cache == NULL || defaults == NULL)
+    if (sidecar == NULL || private_cache == NULL || defaults == NULL ||
+        part >= ENERGUN_PRIVATE_V1_PARTS || slot >= ENERGUN_SC_V1_PRESET_SLOTS)
         return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
-    status = energun_preset_lifecycle_v1_load_bank(lifecycle, object, bank,
-        base_payload, base_capacity, base_length, &payload, base_meta);
-    if (status != ENERGUN_LIFECYCLE_V1_OK &&
-        status != ENERGUN_LIFECYCLE_V1_LEGACY_DEFAULTS)
-        return status;
-    private_status = energun_private_payload_v1_preset_restore(
-        private_cache, part, slot, &payload, defaults);
-    if (private_status != ENERGUN_PRIVATE_V1_OK) {
-        if (base_length != NULL) *base_length = 0u;
-        return ENERGUN_LIFECYCLE_V1_ERR_PAIR;
-    }
-    return status;
+    return energun_private_payload_v1_preset_restore(private_cache, part,
+        slot, sidecar, defaults) == ENERGUN_PRIVATE_V1_OK ?
+        ENERGUN_LIFECYCLE_V1_OK : ENERGUN_LIFECYCLE_V1_ERR_PAIR;
 }
