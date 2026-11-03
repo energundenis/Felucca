@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * ENERGUN FM-1 CORE — bounded Sidecar A/B Flash backend contract.
  *
- * This module is address-bounded and transport-injected. Production binding
- * remains separate until the target build and FM6 arbitration are qualified.
+ * This module is address-bounded and transport-injected. Runtime callsites
+ * remain gated on a frozen payload/ownership contract and full target-link
+ * qualification. The addresses below are candidate-only; this header does not
+ * approve production sector allocation or physical writes.
  */
 #ifndef ENERGUN_SIDECAR_FLASH_H
 #define ENERGUN_SIDECAR_FLASH_H
