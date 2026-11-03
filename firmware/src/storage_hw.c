@@ -111,7 +111,7 @@ static const energun_sc_flash_io_t scf_hw_io = {
     scf_hw_read, scf_hw_erase4k, scf_hw_program_page
 };
 static energun_sc_flash_t scf_hw_instance;
-static int energun_sidecar_flash_hw_init(void)
+int energun_sidecar_flash_hw_init(void)
 {
     return energun_sc_flash_init(&scf_hw_instance, &scf_hw_io, 0);
 }
