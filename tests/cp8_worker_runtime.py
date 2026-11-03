@@ -124,6 +124,14 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
             return None
         selected = min(candidates, key=lambda item: (item["created_at"], item["request_id"]))
         previous = selected.get("claim") or {}
+        previous_worker_id = previous.get("owner_workflow")
+        previous_owner_run_id = previous.get("owner_run_id")
+        if previous_worker_id and previous_owner_run_id in completed_owner_run_ids:
+            previous_worker = workers.get(previous_worker_id)
+            if previous_worker and previous_worker.get("run_id") == previous_owner_run_id:
+                previous_worker["state"] = "offline"
+                previous_worker["active_request_id"] = None
+                previous_worker["heartbeat_at"] = timestamp
         selected["state"] = "claimed"
         selected["attempts"] += 1
         selected["updated_at"] = timestamp
