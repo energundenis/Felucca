@@ -93,7 +93,7 @@
         "pair-storage-adapter-simulated-nor"
       ],
       "command": null,
-      "blocker": "The Base adapter is now bound to the existing Felucca A/B primitives and passes the simulated-NOR host test. This stage remains blocked until a qualified Sidecar A/B backend is implemented after the user's full device dump is verified, and production save/load callsites are integrated."
+      "blocker": "The Base adapter is bound to the existing Felucca A/B primitives and passes the simulated-NOR host test. The factory V15 image remains the immutable reference; no additional dump from the user is required for software development. A physical Sidecar A/B backend remains blocked until the candidate Flash region, loader/update-record exclusions, sector ownership and recovery behavior are independently qualified from authoritative source/build evidence. V15 is a firmware image, not a complete physical Flash snapshot, so it cannot by itself prove free sectors. Production save/load callsites must also be integrated and tested. No physical sector is allocated and no device write path is enabled."
     },
     {
       "id": "pair-power-loss",
