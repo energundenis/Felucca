@@ -80,7 +80,7 @@ static int sc_read_copy(energun_sc_identity_kind_t kind, uint8_t index,
         return -1;
     if (st_crc32(sc_nor[identity][copy].bytes + SC_TEST_PAYLOAD_OFF, h.len) != h.crc)
         return -1;
-    memcpy(record, sc_nor[copy].bytes + SC_TEST_PAYLOAD_OFF, h.len);
+    memcpy(record, sc_nor[identity][copy].bytes + SC_TEST_PAYLOAD_OFF, h.len);
     *record_len = h.len;
     *sequence = h.seq;
     return 0;
