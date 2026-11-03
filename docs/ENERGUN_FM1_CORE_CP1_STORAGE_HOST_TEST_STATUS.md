@@ -93,3 +93,10 @@ The FM6 bank test proves the existing FM6 staging behavior under its current hos
 - Current `storage_hw.c` still permits only the existing `0xE7000` FM6 sector within XDATA1; it does **not** permit writes to the candidate sectors. This is intentional until backend implementation and independent tests are complete.
 - Added `tests/sidecar_flash_map_test.py` and `tests/run_sidecar_flash_map_test.sh`, and inserted the source audit as an independent CP1 queue stage after the FM6 baseline. It is host-only static source validation; it does not access a device, allocate Flash, or enable writes.
 - Remaining gates: implement a bounded A/B backend with the loader-tail exclusion, prove the actual firmware build includes the pinned BSP and guards, connect project/preset/autosave serialization and restore callsites, coordinate with FM6 staging ownership, then run exhaustive simulated-NOR fault injection. No physical FM-1 access or Flash write is authorized.
+
+
+## Flash-map audit CI correction — 2026-11-03
+
+- The first queue execution on intermediate SHA `48d381a3` failed because the source test searched the entire `storage_hw.c` file for a token that also appeared in a comment. This was a test assertion defect, not a firmware build or Flash test failure.
+- Tightened the assertion to inspect only the active `ST_OK` guard macro in commit `02e1473264320dfe937c2ac53b683efda00b65e7`.
+- The corrected exact-SHA CP1 request is queued for re-execution; no passing result is claimed until its worker evidence is recorded.
