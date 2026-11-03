@@ -14,6 +14,14 @@ class CP8CoordinatorWorkflowTests(unittest.TestCase):
         self.assertIn('cron: "*/5 * * * *"', text)
         self.assertNotIn("pull_request:", text)
         self.assertIn("contents: write", text)
+        self.assertIn("Validate CP8 worker runtime before enqueue", text)
+
+    def test_direct_pilot_is_manual_only_to_avoid_duplicate_lane_execution(self):
+        text = (ROOT / ".github/workflows/energun-cp8-parallel-worker-pilot.yml").read_text()
+        triggers = text.split("permissions:", 1)[0]
+        self.assertIn("workflow_dispatch:", triggers)
+        self.assertNotIn("  push:", triggers)
+        self.assertNotIn("  pull_request:", triggers)
 
     def test_three_lane_workers_have_independent_concurrency_and_bounded_drain(self):
         text = (ROOT / ".github/workflows/energun-cp8-coordinator.yml").read_text()
