@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 90
     concurrency:
       group: energun-cp8-worker-cp1
-      cancel-in-progress: false
+      cancel-in-progress: true
     steps:
       - name: Checkout coordinator tools
         uses: actions/checkout@v4
