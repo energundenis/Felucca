@@ -1,3 +1,5 @@
+#include "energun_flash_arbiter.h"
+
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* The FM6 voice bank (1.4.1, Discussion #168): 32 voices loaded at once from the web editor (a 32-voice .syx, its
@@ -25,6 +27,7 @@
 #define FVB_INFO 224u                          /* the bank's header; the voices from FVB_VOICES */
 #define FVB_VOICES 256u
 #define FVB_MAGIC 0x56364D46u                  /* "FM6V" */
+#define FVB_STAGE_LEASE_MS 30000u
 typedef struct {
     uint32_t magic;
     uint16_t ver, n;                           /* 1, FM6_NBANK */
@@ -40,6 +43,7 @@ static struct {
     uint32_t used;                             /* the voices written since FM6B_BEGIN */
     uint8_t on, copy;                          /* a transfer is open; its sector: the autosave's copy A (0) / B (1) */
 } fvb_tx __attribute__((section(".pool")));    /* (zeroed at boot) */
+static energun_flash_arbiter_t fvb_stage_arbiter;
 
 /* the bank was replaced: a track on a bank slot keeps the voice it loaded, as its own patch (SLOT OWN) */
 static void fm6_bank_changed(void)
@@ -133,31 +137,64 @@ static void fvb_boot(void)
         fm6_bank_used = ((const fvb_info_t *)st_buf)->used;
 }
 
-/* the transfer's sector holds only what it wrote: no autosave took it since FM6B_BEGIN (its commit record still
- * erased); else the transfer ends */
+/* FM6 reserves the older autosave sector across its multi-message transfer.
+ * The bounded lease expires abandoned transfers and allows autosave to resume.
+ */
+static void fvb_abort(void)
+{
+    fvb_tx.on = 0;
+    (void)energun_flash_arbiter_release(&fvb_stage_arbiter,
+                                        ENERGUN_FLASH_OWNER_FM6_STAGE);
+}
+
+static int fvb_busy(void)
+{
+    if (!fvb_tx.on)
+        return 0;
+    if (!energun_flash_arbiter_held(&fvb_stage_arbiter,
+            ENERGUN_FLASH_OWNER_FM6_STAGE, fm1_ms)) {
+        fvb_tx.on = 0;
+        return 0;
+    }
+    return 1;
+}
+
 static int fvb_tx_ok(void)
 {
     uint8_t b[32];
     uint32_t i, x = 0xFFu;
-    if (!fvb_tx.on || st_read(fvb_stage(), b, sizeof b))
+    if (!fvb_busy() ||
+        energun_flash_arbiter_renew(&fvb_stage_arbiter,
+            ENERGUN_FLASH_OWNER_FM6_STAGE, fm1_ms) != 0) {
+        fvb_abort();
         return 0;
+    }
+    if (st_read(fvb_stage(), b, sizeof b)) {
+        fvb_abort();
+        return 0;
+    }
     for (i = 0; i < sizeof b; i++)
         x &= b[i];
-    if (x != 0xFFu)
-        fvb_tx.on = 0;
-    return fvb_tx.on;
+    if (x != 0xFFu) {
+        fvb_abort();
+        return 0;
+    }
+    return 1;
 }
 
-/* FM6B_BEGIN: the sector erased, no voice yet. rc 0, 4 flash */
+/* FM6B_BEGIN: reserve and erase the autosave's older copy. rc 0, 4 flash/busy */
 static uint32_t fvb_begin(void)
 {
     st_hdr_t h;
-    fvb_tx.on = 0;
-    if (!flash_ok)
+    fvb_abort();
+    if (!flash_ok || energun_flash_arbiter_acquire(&fvb_stage_arbiter,
+            ENERGUN_FLASH_OWNER_FM6_STAGE, fm1_ms, FVB_STAGE_LEASE_MS) != 0)
         return 4;
-    fvb_tx.copy = st_current(OBJ_AUTOSAVE, &h) == 0 ? 1u : 0u;   /* the copy st_save writes next */
-    if (st_erase(fvb_stage()))
+    fvb_tx.copy = st_current(OBJ_AUTOSAVE, &h) == 0 ? 1u : 0u;
+    if (st_erase(fvb_stage())) {
+        fvb_abort();
         return 4;
+    }
     fvb_tx.used = 0;
     fvb_tx.on = 1;
     return 0;
@@ -173,40 +210,41 @@ static uint32_t fvb_write(uint32_t k, const uint8_t *pk)
         return 1;
     upf_pk_put(pk, d);
     if (fvb_prog(fvb_stage() + FVB_VOICES + k * UPF_PK, d, UPF_PK)) {
-        fvb_tx.on = 0;
+        fvb_abort();
         return 4;
     }
     fvb_tx.used |= 1u << k;
     return 0;
 }
 
-/* FM6B_END: name (10 bytes), crc: the CRC-32 of the written voices' records in index order. Staged, committed,
- * copied to 0xE7000. rc 0, 2 the CRC (nothing changed), 4 flash, 5 no transfer */
+/* FM6B_END: commit staged bank and copy it home before releasing autosave. */
 static uint32_t fvb_end(const uint8_t *name, uint32_t crc)
 {
     fvb_info_t *in = (fvb_info_t *)st_buf;
     st_hdr_t h;
-    uint32_t k, c = 0xFFFFFFFFu, seq, base = fvb_stage();
+    uint32_t k, c = 0xFFFFFFFFu, seq, base = fvb_stage(), result = 4u;
     if (!fvb_tx_ok())
         return 5;
-    fvb_tx.on = 0;
     for (k = 0; k < FM6_NBANK; k++)
         if ((fvb_tx.used >> k) & 1u) {
             uint8_t d[UPF_PK], pk[FM6_PACKED];
             if (st_read(base + FVB_VOICES + k * UPF_PK, d, UPF_PK))
-                return 4;
+                goto done;
             upf_pk_get(d, pk);
             c = st_crc32_add(c, pk, FM6_PACKED);
         }
-    if (~c != crc)
-        return 2;
-    seq = fvb_valid(FVB_HOME, 0, &h) ? 0u : h.seq;           /* after the newest bank anywhere */
+    if (~c != crc) {
+        result = 2u;
+        goto done;
+    }
+    seq = fvb_valid(FVB_HOME, 0, &h) ? 0u : h.seq;
     for (k = 0; k < 2u; k++)
-        if (!fvb_valid(st_sector(OBJ_AUTOSAVE, k), 1, &h) && h.seq - seq < 0x80000000u)
+        if (!fvb_valid(st_sector(OBJ_AUTOSAVE, k), 1, &h) &&
+            h.seq - seq < 0x80000000u)
             seq = h.seq;
     seq++;
-    if (st_read(base + FVB_INFO, st_buf, FVB_LEN))           /* the voices as written, the header still erased */
-        return 4;
+    if (st_read(base + FVB_INFO, st_buf, FVB_LEN))
+        goto done;
     memset(in, 0, sizeof *in);
     in->magic = FVB_MAGIC;
     in->ver = 1;
@@ -214,11 +252,15 @@ static uint32_t fvb_end(const uint8_t *name, uint32_t crc)
     in->used = fvb_tx.used;
     for (k = 0; k < 10u; k++)
         in->name[k] = (char)(name[k] >= 32u && name[k] <= 126u ? name[k] : ' ');
-    if (fvb_prog(base + FVB_INFO, in, sizeof *in) || fvb_commit(base, 1, seq) || fvb_valid(base, 1, &h))
-        return 4;
-    fvb_boot();                                              /* the copy to 0xE7000, the voices */
+    if (fvb_prog(base + FVB_INFO, in, sizeof *in) ||
+        fvb_commit(base, 1, seq) || fvb_valid(base, 1, &h))
+        goto done;
+    fvb_boot();
     fm6_bank_changed();
-    return fvb_valid(FVB_HOME, 0, &h) || h.seq != seq ? 4u : 0u;
+    result = fvb_valid(FVB_HOME, 0, &h) || h.seq != seq ? 4u : 0u;
+done:
+    fvb_abort();
+    return result;
 }
 
 /* FM6B_LIST: the bank at 0xE7000 -> its header (0 = none) */
@@ -228,6 +270,7 @@ static const fvb_info_t *fvb_info(void)
     return flash_ok && !fvb_valid(FVB_HOME, 0, &h) ? (const fvb_info_t *)st_buf : 0;
 }
 #else
+static int fvb_busy(void) { return 0; }
 static void fvb_boot(void) {}
 static uint32_t fvb_begin(void) { return 4; }
 static uint32_t fvb_write(uint32_t k, const uint8_t *pk) { (void)k; (void)pk; return 5; }
