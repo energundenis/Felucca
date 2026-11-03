@@ -1,0 +1,153 @@
+name: ENERGUN FM-1 CP8 parallel worker pilot
+
+on:
+  push:
+    branches:
+      - energun-development-orchestrator
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches:
+      - energun-metal-core
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# This scopes duplicate pilot runs for the same ref only. It is NOT a durable
+# cross-workflow queue or a global lock; CP8.1 coordinator work remains open.
+concurrency:
+  group: energun-cp8-worker-pilot-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  cp1-persistence:
+    name: Worker CP1 — persistence
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install header-generation dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Run pair transaction fault-injection suite
+        run: sh tests/run_pair_txn_test.sh
+      - name: Run production adapter against simulated NOR
+        run: sh tests/run_pair_storage_adapter_test.sh
+      - name: Run dependency-aware CP1 persistence queue
+        run: python3 tests/run_cp1_test_queue.py
+      - name: Upload CP1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp1-${{ github.sha }}
+          path: build/cp1-test-queue/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp2-dsp-vca:
+    name: Worker CP2 — DSP and VCA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install header-generation dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Run focused DSP/VCA and voice-engine host regression
+        run: sh tests/run_metal_core_fast.sh
+      - name: Upload CP2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp2-${{ github.sha }}
+          path: build/metal-core-fast/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp3-sequencer:
+    name: Worker CP3 — sequencer
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install header-generation dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Generate firmware headers
+        run: python3 -c 'import runpy; runpy.run_path("tools/build.py")["generate"]()'
+      - name: Compile sequencer host tests
+        run: |
+          set -euo pipefail
+          mkdir -p build/cp8-cp3
+          for test in chord ratchet step15 seq155 swing; do
+            cc -O1 -w -Ibuild/gen -Ifirmware/src -o "build/cp8-cp3/${test}_test" "tests/${test}_test.c" -lm
+          done
+      - name: Run sequencer host tests
+        run: |
+          set -euo pipefail
+          for test in chord ratchet step15 seq155 swing; do
+            echo "== CP3 ${test}"
+            "build/cp8-cp3/${test}_test"
+          done
+      - name: Upload CP3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp3-${{ github.sha }}
+          path: build/cp8-cp3/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  pilot-summary:
+    name: CP8 worker pilot summary
+    if: always()
+    needs:
+      - cp1-persistence
+      - cp2-dsp-vca
+      - cp3-sequencer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report exact-SHA lane results
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          CP1_RESULT: ${{ needs.cp1-persistence.result }}
+          CP2_RESULT: ${{ needs.cp2-dsp-vca.result }}
+          CP3_RESULT: ${{ needs.cp3-sequencer.result }}
+        run: |
+          {
+            echo '## CP8 parallel worker pilot'
+            echo
+            echo "Commit: \`${SOURCE_SHA}\`"
+            echo
+            echo '| Worker | Result |'
+            echo '|---|---|'
+            echo "| CP1 Persistence | ${CP1_RESULT} |"
+            echo "| CP2 DSP/VCA | ${CP2_RESULT} |"
+            echo "| CP3 Sequencer | ${CP3_RESULT} |"
+            echo
+            echo 'The three lane jobs are independently scheduled by GitHub Actions. This pilot is not yet backed by the CP8.1 durable global queue.'
+            echo 'Host-only tests; no physical FM-1, Flash write, firmware install or flashing.'
+          } >> "$GITHUB_STEP_SUMMARY"
