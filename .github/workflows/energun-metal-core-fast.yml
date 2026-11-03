@@ -57,6 +57,9 @@ jobs:
       - name: Run focused ENERGUN METAL CORE regression
         run: sh tests/run_metal_core_fast.sh
 
+      - name: Verify immutable stock FM-1 V15 reference verifier
+        run: python3 tests/test_verify_stock_v15.py
+
       - name: Run dependency-aware parallel CP1 persistence test queue
         id: cp1-queue
         continue-on-error: true
