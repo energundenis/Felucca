@@ -60,6 +60,9 @@ jobs:
       - name: Verify immutable stock FM-1 V15 reference verifier
         run: python3 tests/test_verify_stock_v15.py
 
+      - name: Run CP1 pair transaction coordinator core fault-injection tests
+        run: sh tests/run_pair_txn_test.sh
+
       - name: Run dependency-aware parallel CP1 persistence test queue
         id: cp1-queue
         continue-on-error: true

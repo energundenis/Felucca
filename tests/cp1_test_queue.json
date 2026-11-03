@@ -61,15 +61,27 @@
       "enable_when": "Real explicit A/B copy reader, selector and simulated-NOR acceptance test committed together."
     },
     {
+      "id": "pair-transaction-core",
+      "title": "Backend-independent pair transaction coordinator core",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "sidecar-ab-selection"
+      ],
+      "command": "sh tests/run_pair_txn_test.sh",
+      "blocker": "Coordinator core and simulated host fault-injection suite implemented. Production storage adapter, physical Sidecar map and callsite integration remain separate gates.",
+      "enable_when": "Core API, Sidecar-first ordering and simulated A/B fault-injection acceptance committed together."
+    },
+    {
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "sidecar-ab-selection"
+        "pair-transaction-core"
       ],
       "command": null,
-      "blocker": "Production pair transaction coordinator is not implemented. Test preservation of the old matching pair when staging or Base commit fails."
+      "blocker": "Production storage adapter is not wired to st_save_to and a qualified Sidecar A/B Flash backend. Do not enable firmware callsites until the physical map and real simulated-NOR adapter tests pass."
     },
     {
       "id": "pair-power-loss",
