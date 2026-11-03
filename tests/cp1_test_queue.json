@@ -62,14 +62,14 @@
     },
     {
       "id": "pair-transaction-harness",
-      "title": "Host-only Base + Sidecar pair transaction across seven identities",
+      "title": "Backend-neutral pair coordinator host acceptance across seven identities",
       "kind": "executable-host-test",
       "state": "ready",
       "depends_on": [
         "sidecar-ab-selection"
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
-      "blocker": "Runs the transaction ordering/fault model against the real Felucca storage.c and Sidecar V1 serializer. It now exercises independent Base A/B histories for four projects, live autosave and two preset banks, with cross-identity rejection. Sidecar sectors remain an isolated test-only backend; this does not qualify production coordinator or authorize Flash allocation."
+      "blocker": "The reusable energun_pair_v1 coordinator now owns Sidecar-first/Base-second commit ordering, readback validation, exact generation binding and pair load. Its host adapter runs against the real storage.c with a separate test-only Sidecar backend; no target Flash backend or runtime call sites are connected."
     },
     {
       "id": "sidecar-identity-matrix",
@@ -101,22 +101,23 @@
       "depends_on": [
         "sidecar-ab-selection",
         "pair-transaction-harness",
+        "pair-power-loss",
         "sidecar-identity-matrix",
         "fm6-staging-reservation"
       ],
       "command": null,
-      "blocker": "Production pair transaction coordinator and approved target Sidecar backend are not implemented. The host-only harness is supporting evidence, not production integration."
+      "blocker": "The backend-neutral coordinator is implemented and host-tested. Production pair ordering remains blocked on the approved target Sidecar storage adapter, runtime integration and the full-device Flash/recovery gate; no physical address is authorized."
     },
     {
       "id": "pair-power-loss",
       "title": "Power-loss injection across every pair-commit phase",
       "kind": "executable-host-test",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
-        "pair-commit-order"
+        "pair-transaction-harness"
       ],
-      "command": null,
-      "blocker": "Requires the real pair coordinator and deterministic simulated-NOR fault injection at Sidecar payload/header and Base erase/payload/header boundaries."
+      "command": "sh tests/run_sidecar_pair_transaction_test.sh",
+      "blocker": "The coordinator host harness injects torn writes at every Sidecar payload/header byte and Base payload/header byte, verifies old-pair retention after failed Base commit, retries around an orphan, and tests fallback after newest Base corruption. Simulated NOR only."
     },
     {
       "id": "sidecar-integrity",
