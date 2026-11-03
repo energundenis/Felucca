@@ -77,7 +77,7 @@ static int scf_hw_erase4k(void *context, uint32_t off)
     uint32_t took, f;
     int rc;
     (void)context;
-    if (!scf_hw_sector(off))
+    if (!flash_ok || !scf_hw_sector(off))
         return -8;
     f = irq_save();
     audio_silence();
@@ -91,7 +91,7 @@ static int scf_hw_program_page(void *context, uint32_t off,
 {
     uint32_t sector_off;
     (void)context;
-    if (src == 0 || n == 0u || n > 256u ||
+    if (!flash_ok || src == 0 || n == 0u || n > 256u ||
         (off & 0xFFu) + n > 256u)
         return -8;
     if (off >= ENERGUN_SC_FLASH_A && off < ENERGUN_SC_FLASH_A + 0x1000u)
