@@ -68,6 +68,8 @@ Sidecar offsets. The model enforces:
   pair;
 - Base + Sidecar payload roundtrip.
 
+Latest focused CI result: **17 adapter/NOR checks, 0 failures** on the tested feature-branch revision. The independent pair transaction core suite reports 11 checks, 0 failures. These are host-model results only.
+
 The test-only Sidecar offsets are not production Flash-map proposals.
 
 ## Explicitly not complete
