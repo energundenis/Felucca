@@ -206,6 +206,73 @@ static void test_preset_bank(void)
           ENC_PRESET(record, payload, sizeof payload) == ENERGUN_SC_ERR_PRIVATE_VALUE);
 }
 
+static void test_preset_bank_all_slots(void)
+{
+    static const uint8_t maximum[13] = {
+        2u, 1u, 1u, 1u, 3u, 2u, 127u, 2u, 127u, 127u, 127u, 127u, 127u
+    };
+    uint8_t payload[ENERGUN_SC_V1_PRESET_PAYLOAD];
+    uint8_t record[ENERGUN_SC_V1_MAX_RECORD];
+    uint8_t saved[ENERGUN_SC_V1_PRESET_PAYLOAD];
+    energun_sc_view_t view;
+    size_t n;
+    unsigned int bank, slot, key;
+
+    for (bank = 0u; bank < 2u; ++bank) {
+        make_preset(payload);
+        payload[0] = 0xFFu;
+        payload[1] = 0xFFu;
+        for (slot = 0u; slot < 16u; ++slot)
+            for (key = 0u; key < 13u; ++key)
+                payload[2u + slot * 13u + key] =
+                    (uint8_t)((slot + key) % ((unsigned int)maximum[key] + 1u));
+        n = 0u;
+        check("all sixteen Private preset slots encode for each of two banks",
+              energun_sc_v1_encode(record, sizeof record, &n,
+                  ENERGUN_SC_ID_PRESET_BANK, (uint8_t)bank, bank + 1u,
+                  PRESET_CRC, payload, sizeof payload, 0u) == ENERGUN_SC_OK &&
+              energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PRESET_BANK,
+                  (uint8_t)bank, bank + 1u, PRESET_CRC, 0u, &view) == ENERGUN_SC_OK &&
+              memcmp(view.payload, payload, sizeof payload) == 0);
+    }
+
+    make_preset(payload);
+    payload[0] = 0xFFu;
+    payload[1] = 0xFFu;
+    for (slot = 0u; slot < 16u; ++slot)
+        for (key = 0u; key < 13u; ++key)
+            payload[2u + slot * 13u + key] =
+                (uint8_t)((slot + key) % ((unsigned int)maximum[key] + 1u));
+    memcpy(saved, payload, sizeof saved);
+
+    /* Delete slot 7: clear its presence bit and all thirteen Private bytes. */
+    payload[0] &= (uint8_t)~(1u << 7);
+    memset(payload + 2u + 7u * 13u, 0, 13u);
+    n = 0u;
+    check("deleting a preset clears its entire Private extension",
+          energun_sc_v1_encode(record, sizeof record, &n,
+              ENERGUN_SC_ID_PRESET_BANK, 0u, 10u, PRESET_CRC,
+              payload, sizeof payload, 0u) == ENERGUN_SC_OK &&
+          energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PRESET_BANK,
+              0u, 10u, PRESET_CRC, 0u, &view) == ENERGUN_SC_OK &&
+          memcmp(view.payload, payload, sizeof payload) == 0);
+
+    /* Reuse slot 7 with a new value set; all other slots must remain unchanged. */
+    payload[0] |= (uint8_t)(1u << 7);
+    for (key = 0u; key < 13u; ++key)
+        payload[2u + 7u * 13u + key] = maximum[key];
+    n = 0u;
+    check("reusing a deleted preset slot cannot alter the other fifteen slots",
+          energun_sc_v1_encode(record, sizeof record, &n,
+              ENERGUN_SC_ID_PRESET_BANK, 0u, 11u, PRESET_CRC,
+              payload, sizeof payload, 0u) == ENERGUN_SC_OK &&
+          energun_sc_v1_validate(record, n, ENERGUN_SC_ID_PRESET_BANK,
+              0u, 11u, PRESET_CRC, 0u, &view) == ENERGUN_SC_OK &&
+          memcmp(view.payload + 2u, saved + 2u, 7u * 13u) == 0 &&
+          memcmp(view.payload + 2u + 8u * 13u,
+                 saved + 2u + 8u * 13u, 8u * 13u) == 0);
+}
+
 static void test_envelope_rejection_and_atomic_encode(void)
 {
     uint8_t payload[ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD];
@@ -263,6 +330,7 @@ int main(void)
     test_private_types();
     test_motion_payload();
     test_preset_bank();
+    test_preset_bank_all_slots();
     test_envelope_rejection_and_atomic_encode();
     printf("CP1.4.5 Sidecar V1: %u checks, %u failures\n", checks, failures);
     return failures != 0u;
