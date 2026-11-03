@@ -2,7 +2,7 @@
 
 Date: 2026-11-03  
 Branch: `energun-metal-core`  
-Code/test HEAD verified by CI: `dbed170650bddab3b41d769a9531f3080b9b8c8b`
+Code/test HEAD verified by CI: `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`
 
 ## 1. Work completed in this milestone
 
@@ -12,7 +12,7 @@ Added `docs/ENERGUN_FM1_CORE_CP1_4_11_FLASH_AND_RECOVERY_GATE.md`.
 
 The audit reconciles the Felucca storage object map, update-loader scan window, stock update-record sector, FM6/autosave staging ownership, current storage allowlist and Sidecar's full 14-sector logical A/B requirement (four projects + live autosave + two preset banks).
 
-Result: source audit complete; physical sector allocation remains blocked until the user's own full 1 MiB V1.5 dump is obtained, hashed, preserved and compared with the loader/SPL map. No physical allocation or write is authorized.
+Result: source audit complete using V1.5 as the user's accepted authoritative reference. Physical allocation/write remains separately gated by the exact operation's address-level ownership, collision analysis and a verified recovery route. This is a physical safety gate, not a V15-fidelity or generic second-dump requirement. No physical allocation or write is authorized.
 
 ### CP1.6 — host-only pair transaction acceptance harness
 
@@ -49,7 +49,7 @@ The queue then correctly reports **BLOCKED** at production Pair Commit Ordering.
 |---|---|---|
 | CP1.17 logical Sidecar schema | Closed | Runtime integration is separate |
 | CP2/CP3 inventory, logical IDs, ownership, persistence boundary | Closed | Production descriptor/engine/Sequencer integration remains separate |
-| CP1.4.11 source map and loader/recovery audit | Source audit complete | User's own full-device dump and recovery verification |
+| CP1.4.11 source map and loader/recovery audit | Source audit complete on accepted V15 | Read-only rescue-path audit, final sector policy and physical safety qualification |
 | CP1.6 project runtime | Not integrated | Production pair coordinator, approved Sidecar backend, save/load/rename/erase/autosave call sites, archive compatibility |
 | CP1.7 preset runtime | Not integrated | Bank Sidecar transaction, 32-slot preservation/erase/reuse, load/save/rename/delete call sites |
 | Archive V2 | Not implemented | Pair-aware validation and restore |
@@ -61,7 +61,7 @@ The queue then correctly reports **BLOCKED** at production Pair Commit Ordering.
 3. Complete project lifecycle tests for Save As, Rename, Erase, Load, live Autosave boot and autosave writes. Preserve the legacy FUN10 base serializer and default extension state when Sidecar is absent.
 4. Add preset bank tests for all 32 slots, bank mutation, Private Sidecar defaults, erase/reuse and the independent FM6 patch object.
 5. Keep archive V1 byte-for-byte compatible; design archive V2 only after pair commit/recovery semantics are stable.
-6. After the user's own dump and recovery gate are closed and the exact sector map is approved, implement the target Sidecar backend and production coordinator; only then wire CP1.6 and CP1.7 runtime call sites.
+6. After the physical safety/recovery gate is closed and an exact sector map is separately approved, implement the target Sidecar backend and production coordinator; only then wire CP1.6 and CP1.7 runtime call sites.
 
 ## 5. Safety
 
@@ -159,4 +159,14 @@ This is a serialization building block, not a runtime snapshot adapter. It does 
 - Added strict host cases for P_MC IDs 103 and 118, locked ID 103, below-range ID 102, E0 ID 119 and unallocated ID 127. These tests are pending exact-head CI.
 - The previous baseline run was cancelled when a newer commit arrived after all AC79 compile probes succeeded. Do not treat it as a complete baseline pass; the new head must complete both workflows.
 
-Runtime integration remains deliberately gated: the agreed Private controls have no production per-part cache/owner in the current engine runtime, and the Sidecar target backend has no approved physical sector map. Do not invent an adapter that persists transient DSP state or silently changes FUN10 compatibility.
+Runtime integration remains deliberately gated: the new Private cache is currently a host-tested standalone primitive and is not yet connected to production project/preset owners, while the Sidecar target backend has no approved physical sector map. Do not persist transient DSP state or silently change FUN10 compatibility.
+
+
+## 12. CP1.4.3 Private runtime cache — 2026-11-03
+
+- Added `firmware/src/energun_private_v1.h/.c`, a standalone typed cache with four independent part banks and 13 logical keys per part.
+- The module validates each key's boolean/enum/7-bit domain, exposes get/set and snapshots, supports all-or-none compare-and-replace, restores supplied V1 defaults for a missing/invalid extension, tracks per-key dirty bits, and only acknowledges persistence when the saved generation still matches.
+- The cache is intentionally separate from `track_t.p[]` and `engine_t.mem`. Canonical defaults remain owned by the parameter specification; the runtime module accepts a validated defaults table and does not guess values.
+- Added strict test `tests/energun_private_v1_test.c` with **28 checks, 0 failures**, run by `tests/run_private_v1_test.sh`.
+- Added the `private-runtime-cache` DAG stage. On Fast Regression [41704249158](https://github.com/energundenis/Felucca/actions/runs/41704249158), exact HEAD `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`, the 24-test fast suite passed and the Private cache stage passed 28/28 while Sidecar format and Base-generation binding ran concurrently. The queue correctly remains BLOCKED at production Pair Commit Ordering.
+- This closes the standalone host-tested Private cache primitive only. Editor protocol/UI, canonical defaults ownership, production project/preset call sites and target integration remain open. The new source has not yet been added to the AC79 compile-only probe.
