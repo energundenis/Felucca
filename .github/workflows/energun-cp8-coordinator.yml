@@ -1,0 +1,61 @@
+name: ENERGUN CP8 trusted queue coordinator
+
+on:
+  push:
+    branches:
+      - energun-development-orchestrator
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+# This workflow deliberately does not run for pull_request events. Its write
+# token is available only to trusted pushes/manual dispatches on this branch.
+permissions:
+  contents: write
+
+jobs:
+  enqueue:
+    name: Queue trusted source revision
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Enqueue exact source SHA
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/cp8_queue_worker.py enqueue
+
+  coordinator:
+    name: CP8 single queue consumer
+    needs: enqueue
+    if: always() && (needs.enqueue.result == 'success' || needs.enqueue.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: energun-cp8-global-queue-consumer
+      cancel-in-progress: false
+    steps:
+      - name: Checkout coordinator source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install test dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Drain durable queue (allow-listed lanes only)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CP8_MAX_ITEMS_PER_RUN: "4"
+        run: python3 tools/cp8_queue_worker.py drain
