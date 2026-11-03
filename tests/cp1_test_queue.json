@@ -145,7 +145,7 @@
         "fm6-staging-arbitration-host"
       ],
       "command": null,
-      "blocker": "The bounded A/B backend and its host acceptance are now implemented; production runtime save/load callsites, FM6 staging arbitration, target firmware build/link evidence and exhaustive backend power-cut acceptance remain required before pair commit can be enabled. Candidate sectors remain protected by the bounded transport; no physical device write has been performed."
+      "blocker": "The bounded A/B backend, FM6 staging arbitration and AC79 compile-only probes are implemented. Pair commit remains blocked on frozen Sidecar payload/parameter ownership, production project/preset/autosave/rename/erase callsites, full target firmware link evidence and exhaustive backend power-cut acceptance. Candidate sectors remain protected; no physical device write has been performed. Candidate sectors remain protected by the bounded transport; no physical device write has been performed."
     },
     {
       "id": "pair-power-loss",
@@ -200,7 +200,7 @@
         "archive-v2-restore"
       ],
       "command": null,
-      "blocker": "An explicit FM6 staging reservation/ownership contract and Sidecar autosave deferral implementation are not present."
+      "blocker": "FM6 staging reservation, lease renewal/expiry and ordinary autosave exclusion are implemented and host-tested. The remaining gap is to route Sidecar pair saves and live-autosave snapshots through the same ownership/deferral contract after the Sidecar payload schema and runtime serialization are frozen."
     },
     {
       "id": "cp1-full-host-regression",
