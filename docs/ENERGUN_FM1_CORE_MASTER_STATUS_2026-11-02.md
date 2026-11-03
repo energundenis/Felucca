@@ -39,7 +39,7 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 | CP1.4.8 | Automated storage/fault regression | **50%** | Sidecar V1 format **38/38**, Base-generation binding **16/16**, Sidecar A/B selection **17/17** pass under strict host compilation and simulated NOR. Pair-commit, power-loss and full round-trip matrix remains open. |
 | CP1.4.9 | Backup/Restore audit | **100% audit** | Source audit complete: archive V1 omits Sidecar; archive V2 needs pair-aware restore and destination-sequence rebinding. Implementation remains 0%. |
 | CP1.4.10 | Integration | **20%** | Integration dependencies and boundaries are documented; production Private/P_MC/Sidecar integration is not implemented. |
-| CP1.4.11 | Flash map, bootloader and recovery audit | **0%** | Physical allocation remains blocked pending a complete source/image map and recovery qualification. No sectors are selected or authorized. |
+| CP1.4.11 | Flash map, bootloader and recovery audit | **70% (source audit)** | V15 accepted as authoritative; source-derived ownership map, loader scan windows, OTA/FM6 staging and current allowlist audited. Read-only rescue/recovery procedure, final sector policy and physical safety qualification remain open; no sectors are selected or authorized. |
 
 CP1.4 percentages distinguish completion of an audit/design deliverable from implementation. In particular, CP1.4.6 and the CP1.4.9 source audit are complete only within their stated scopes; neither authorizes Flash allocation or archive V2 implementation.
 
@@ -67,17 +67,20 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - CP3 lifecycle tests cover real Felucca host paths within their stated scope; they do not establish production engine registration or full DSP graph.
 - Source branches are preserved. No source branch merge is implied by this status document.
 
-## Next execution order
+## Accepted CP1 execution order — 2026-11-03
 
-1. Finish CP1.4.2: review audible/musical 7-bit resolution, lock per-control mapping decisions, close remaining legacy project/preset compatibility evidence.
-2. Complete CP1.4.3 and CP1.4.4 implementation design review, then implement typed Private access and explicit P_MC Motion Lock numeric-ID whitelist behind tests.
-3. Continue CP1.4.5 with Sidecar A/B matching-copy selection using the new exact Base metadata helper, then implement the pair coordinator; retain the protected-old-pair invariant.
-4. Extend CP1.4.7/4.8 with real storage-backed Sidecar reads, A/B fallback, power-loss injection and complete round-trip regression.
-5. Implement CP1.4.9 archive V2 only after pair semantics are stable; preserve archive V1.
-6. Complete CP1.4.10 integration and CP1.4.11 independent Flash/bootloader/recovery audit before any physical allocation.
-7. Continue CP3 production engine integration in parallel only where its dependencies are already fixed; keep production registration gated.
-8. Start CP4/CP5 production UI and sequencer integration after stable parameter and engine contracts exist.
-9. Close CP6 target resource/stress qualification and CP7 package/recovery/device validation only after prior gates pass.
+The following six-step order is accepted as the active CP1 execution plan:
+
+1. **CP1.4.2–CP1.4.4:** close 7-bit compatibility, Private runtime model/API, and P_MC Motion whitelist.
+2. **CP1.4.5–CP1.4.8:** complete Sidecar pair transactions, integrity handling, storage-backed A/B behavior, and fault-injection regression.
+3. **CP1.6:** integrate Sidecar with project Save/Load/Save As/Rename/Erase and Live Autosave.
+4. **CP1.7:** integrate Sidecar with preset Save/Overwrite/Rename/Delete/Load and coordinate bank operations with FM6 staging.
+5. **CP1.4.9:** implement Archive V2 after Base+Sidecar pair semantics and runtime integration are stable; preserve Archive V1 compatibility.
+6. **CP1.4.10–CP1.4.11:** complete end-to-end integration and finalize the physically safe storage/recovery design. V15 is the accepted authoritative reference; physical allocation/write remains separately gated by address-level ownership, loader/OTA/FM6 collision analysis, and a verified recovery route.
+
+Do not reorder these dependencies merely to increase parallelism. Independent host-only tests and audits may run in parallel where they do not violate the dependency order. Keep physical Flash writes, bootloader/OTA changes, device flashing, and production sector allocation unauthorized until their explicit safety gates are satisfied.
+
+After CP1, continue CP3 production engine integration and CP4/CP5 UI/sequencer integration against the stable parameter and persistence contracts, then CP6 target qualification and CP7 release/device validation.
 
 ## CP1.4.5 coordinator design update — 2026-11-02
 
