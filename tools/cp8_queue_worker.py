@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -217,10 +216,9 @@ def drain(lane: str) -> None:
             print(f"claimed request={request_id} sha={sha} lane={lane} attempt={record['attempts']}")
             try:
                 mark_worker_running(store, request_id, worker_id, run_id)
-                hold_seconds = int(os.environ.get("CP8_TEST_HOLD_SECONDS", "0"))
-                if lane == "cp1-persistence" and hold_seconds > 0:
-                    print(f"TEST_HOLD_AFTER_CLAIM_SECONDS={hold_seconds}", flush=True)
-                    time.sleep(min(hold_seconds, 180))
+                if lane == "cp1-persistence" and os.environ.get("CP8_TEST_CRASH_AFTER_CLAIM") == "1":
+                    print("TEST_CRASH_AFTER_CLAIM=1; leaving the durable lease for recovery", flush=True)
+                    raise SystemExit(86)
                 checkout_sha(sha)
                 command = ALLOWED_COMMANDS[lane]
                 child_env = os.environ.copy()
