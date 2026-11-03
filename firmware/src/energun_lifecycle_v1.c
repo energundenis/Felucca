@@ -7,6 +7,8 @@ static int lifecycle_valid(const energun_lifecycle_v1_t *lifecycle)
 {
     return lifecycle != NULL && lifecycle->ops != NULL &&
            lifecycle->workspace != NULL &&
+           lifecycle->base_scratch != NULL && lifecycle->base_scratch_capacity > 0u &&
+           lifecycle->sidecar_scratch != NULL && lifecycle->sidecar_scratch_capacity > 0u &&
            lifecycle->canonical_sidecar_defaults != NULL &&
            lifecycle->canonical_sidecar_defaults_length > 0u;
 }
@@ -84,8 +86,6 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_copy_stored(
     uint8_t destination_index,
     const uint8_t *destination_base, size_t destination_base_length)
 {
-    uint8_t source_base[4096];
-    uint8_t source_sidecar[ENERGUN_PAIR_V1_RECORD_MAX];
     size_t source_base_length = 0u, source_sidecar_length = 0u;
     energun_pair_v1_base_meta_t source_meta;
     energun_lifecycle_v1_status_t load_status;
@@ -94,15 +94,15 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_copy_stored(
         return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
     load_status = energun_lifecycle_v1_load(lifecycle,
         source_object, source_kind, source_index,
-        source_base, sizeof source_base, &source_base_length,
-        source_sidecar, sizeof source_sidecar, &source_sidecar_length,
+        lifecycle->base_scratch, lifecycle->base_scratch_capacity, &source_base_length,
+        lifecycle->sidecar_scratch, lifecycle->sidecar_scratch_capacity, &source_sidecar_length,
         &source_meta);
     if (load_status != ENERGUN_LIFECYCLE_V1_OK &&
         load_status != ENERGUN_LIFECYCLE_V1_LEGACY_DEFAULTS)
         return load_status;
     return lifecycle_commit(lifecycle, destination_object,
         destination_kind, destination_index, destination_base,
-        destination_base_length, source_sidecar, (uint16_t)source_sidecar_length);
+        destination_base_length, lifecycle->sidecar_scratch, (uint16_t)source_sidecar_length);
 }
 
 energun_lifecycle_v1_status_t energun_lifecycle_v1_erase(
