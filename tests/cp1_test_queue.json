@@ -178,7 +178,7 @@
         "fm6-staging-reservation"
       ],
       "command": null,
-      "blocker": "The backend-neutral coordinator is implemented and host-tested. Production pair ordering remains blocked on the approved target Sidecar storage adapter, runtime integration and the full-device Flash/recovery gate; no physical address is authorized."
+      "blocker": "The backend-neutral coordinator and expanded host fault-injection harness are implemented. The new Sidecar byte-cut sweep is committed but not yet CI-verified. Production pair ordering remains blocked on the approved target Sidecar storage adapter, runtime integration and the target Flash/recovery gate; no physical address is authorized."
     },
     {
       "id": "sidecar-integrity",
@@ -201,7 +201,7 @@
         "legacy-sidecar-fallback"
       ],
       "command": null,
-      "blocker": "Backend-neutral generation-bound pair load and simulated recovery are implemented and tested. Missing: production runtime pair restore, legacy FUN10 E0–E7 fallback/default handling, and restoration of live engine/runtime caches at actual project and preset load call sites."
+      "blocker": "Backend-neutral generation-bound pair load and simulated recovery are implemented and tested. The 2026-11-04 checkpoint adds an exhaustive byte-cut sweep over Sidecar record/header programming and proves the old pair remains loadable at every cut. Missing: production runtime pair restore, legacy FUN10 E0–E7 fallback/default handling, and restoration of live engine/runtime caches at actual project and preset load call sites. The new sweep still requires exact-HEAD CI execution."
     },
     {
       "id": "archive-v2-offline-validation",
