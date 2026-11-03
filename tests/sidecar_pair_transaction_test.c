@@ -43,6 +43,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n)
 
 #include "../firmware/src/storage.c"
 #include "../firmware/src/energun_sidecar_v1.c"
+#include "../firmware/src/energun_pair_v1.c"
 
 #define SC_TEST_TYPE 0x7Eu
 #define SC_TEST_PAYLOAD_OFF 256u
@@ -239,6 +240,68 @@ static int pair_commit(uint32_t obj, energun_sc_identity_kind_t kind, uint8_t in
     return 0;
 }
 
+static int pair_test_base_current(void *context, uint32_t obj,
+                                   energun_pair_v1_base_meta_t *meta)
+{
+    st_meta_t m;
+    (void)context;
+    if (meta == NULL) return -1;
+    if (st_current_meta(obj, &m) < 0) return 1;
+    meta->copy = m.copy;
+    meta->sequence = m.sequence;
+    meta->payload_length = m.payload_length;
+    meta->payload_crc32 = m.payload_crc;
+    return 0;
+}
+
+static int pair_test_base_load(void *context, uint32_t obj, uint8_t *payload,
+                               size_t capacity, energun_pair_v1_base_meta_t *meta)
+{
+    st_meta_t current, loaded;
+    (void)context;
+    if (payload == NULL || meta == NULL || st_current_meta(obj, &current) < 0 ||
+        current.payload_length > capacity ||
+        st_read_copy_meta(obj, current.copy, payload, (uint32_t)capacity, &loaded) < 0)
+        return -1;
+    meta->copy = loaded.copy;
+    meta->sequence = loaded.sequence;
+    meta->payload_length = loaded.payload_length;
+    meta->payload_crc32 = loaded.payload_crc;
+    return 0;
+}
+
+static int pair_test_base_write(void *context, uint32_t obj, uint8_t copy,
+                                const uint8_t *payload, size_t length)
+{
+    (void)context;
+    return st_save_to(obj, payload, (uint32_t)length, (int)copy);
+}
+
+static int pair_test_sidecar_read(void *context, energun_sc_identity_kind_t kind,
+                                  uint8_t index, uint8_t copy, uint8_t *record,
+                                  size_t capacity, size_t *length, uint32_t *sequence)
+{
+    (void)context;
+    return sc_read_copy(kind, index, copy, record, capacity, length, sequence);
+}
+
+static int pair_test_sidecar_write(void *context, energun_sc_identity_kind_t kind,
+                                   uint8_t index, uint8_t copy,
+                                   const uint8_t *record, size_t length,
+                                   uint32_t sequence)
+{
+    (void)context;
+    return sc_write_copy(kind, index, copy, record, length, sequence);
+}
+
+static const energun_pair_v1_ops_t pair_test_ops = {
+    pair_test_base_current,
+    pair_test_base_load,
+    pair_test_base_write,
+    pair_test_sidecar_read,
+    pair_test_sidecar_write
+};
+
 static int check(const char *label, int ok)
 {
     printf("%-58s %s\n", label, ok ? "PASS" : "FAIL");
@@ -278,7 +341,7 @@ int main(void)
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 2u && copy == target && !memcmp(loaded_base, base2, sizeof base2));
 
-    /* Seven independent Base A/B histories: four projects, live autosave, two preset banks. */
+    /* Seven identities exercise the reusable coordinator, not a test-local ordering model. */
     {
         static const struct {
             energun_sc_identity_kind_t kind;
@@ -294,37 +357,50 @@ int main(void)
             { ENERGUN_SC_ID_PRESET_BANK, 0u, OBJ_UPRESET0 + 0u, ENERGUN_SC_V1_PRESET_PAYLOAD },
             { ENERGUN_SC_ID_PRESET_BANK, 1u, OBJ_UPRESET0 + 1u, ENERGUN_SC_V1_PRESET_PAYLOAD }
         };
+        static energun_pair_v1_workspace_t workspace;
         unsigned i;
         int matrix_ok = 1;
         reset_media();
         for (i = 0; i < 7u; ++i) {
-            uint8_t p1[64], p2[64], ext[SC_TEST_MAX_RECORD], got[128];
+            uint8_t p1[64], p2[64], got[128], ext[ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD];
             uint8_t logical[ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD];
-            uint32_t got_seq = 0;
-            int got_copy = -1;
+            size_t got_base_len = 0u, got_ext_len = 0u;
+            energun_pair_v1_base_meta_t meta;
             memset(logical, 0, sizeof logical);
             memset(p1, (int)(0x20u + i), sizeof p1);
             memset(p2, (int)(0x60u + i), sizeof p2);
-            if (pair_commit(ids[i].object, ids[i].kind, ids[i].index,
-                            p1, sizeof p1, logical, ids[i].payload_len, NULL) ||
-                pair_commit(ids[i].object, ids[i].kind, ids[i].index,
-                            p2, sizeof p2, logical, ids[i].payload_len, NULL) ||
-                pair_load(ids[i].object, ids[i].kind, ids[i].index, got, sizeof got,
-                          ext, sizeof ext, &got_seq, &got_copy) ||
-                got_seq != 2u || memcmp(got, p2, sizeof p2) != 0)
+            if (energun_pair_v1_commit(&pair_test_ops, NULL, &workspace,
+                    ids[i].object, ids[i].kind, ids[i].index,
+                    p1, sizeof p1, logical, ids[i].payload_len, 0u) != ENERGUN_PAIR_V1_OK ||
+                energun_pair_v1_commit(&pair_test_ops, NULL, &workspace,
+                    ids[i].object, ids[i].kind, ids[i].index,
+                    p2, sizeof p2, logical, ids[i].payload_len, 0u) != ENERGUN_PAIR_V1_OK ||
+                energun_pair_v1_load(&pair_test_ops, NULL, &workspace,
+                    ids[i].object, ids[i].kind, ids[i].index,
+                    got, sizeof got, &got_base_len, ext, sizeof ext, &got_ext_len,
+                    0u, &meta) != ENERGUN_PAIR_V1_OK ||
+                meta.sequence != 2u || got_base_len != sizeof p2 ||
+                got_ext_len != ids[i].payload_len ||
+                memcmp(got, p2, sizeof p2) != 0 ||
+                memcmp(ext, logical, ids[i].payload_len) != 0)
                 matrix_ok = 0;
-            /* A valid Base object must not load an extension from a different logical identity. */
+
+            /* A Base object must never load a Sidecar through a different identity. */
             if (ids[i].kind == ENERGUN_SC_ID_PROJECT) {
                 uint8_t wrong_index = (uint8_t)((ids[i].index + 1u) & 3u);
-                if (pair_load(ids[i].object, ENERGUN_SC_ID_PROJECT, wrong_index,
-                              got, sizeof got, ext, sizeof ext, &got_seq, &got_copy) == 0)
+                if (energun_pair_v1_load(&pair_test_ops, NULL, &workspace,
+                        ids[i].object, ENERGUN_SC_ID_PROJECT, wrong_index,
+                        got, sizeof got, &got_base_len, ext, sizeof ext, &got_ext_len,
+                        0u, &meta) == ENERGUN_PAIR_V1_OK)
                     matrix_ok = 0;
-            } else if (pair_load(ids[i].object, ENERGUN_SC_ID_PROJECT, 0u,
-                                 got, sizeof got, ext, sizeof ext, &got_seq, &got_copy) == 0) {
+            } else if (energun_pair_v1_load(&pair_test_ops, NULL, &workspace,
+                    ids[i].object, ENERGUN_SC_ID_PROJECT, 0u,
+                    got, sizeof got, &got_base_len, ext, sizeof ext, &got_ext_len,
+                    0u, &meta) == ENERGUN_PAIR_V1_OK) {
                 matrix_ok = 0;
             }
         }
-        bad += check("seven identities: independent Base A/B histories and exact pair roundtrip", matrix_ok);
+        bad += check("coordinator: seven identities, A/B histories and exact pair roundtrip", matrix_ok);
     }
 
     /* Every torn Sidecar payload/header byte must leave the original pair readable. */
