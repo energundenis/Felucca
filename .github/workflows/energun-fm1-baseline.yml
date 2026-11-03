@@ -168,6 +168,23 @@ jobs:
           "$TC/common/bin/objdump" -t build/metal-core-vca-target/vca_harness_probe.o > build/metal-core-vca-target/vca_harness_probe.symbols
           grep -q "eng_metal_vca_harness_target_sample" build/metal-core-vca-target/vca_harness_probe.dis
           grep -q "eng_metal_vca_harness_target_block32" build/metal-core-vca-target/vca_harness_probe.dis
+          # Compile the OSC1/OSC2 phase adapter with the real Felucca DSP primitives.
+          # This is target compile/codegen evidence only; no production engine is registered.
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wno-unused-function -Ifirmware/src \
+            -c tests/metal_core_osc_target_probe.c \
+            -o build/metal-core-vca-target/osc_voice_probe.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/osc_voice_probe.o \
+            > build/metal-core-vca-target/osc_voice_probe.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/osc_voice_probe.o \
+            > build/metal-core-vca-target/osc_voice_probe.symbols
+          grep -q "eng_metal_osc_target_probe_note_on" build/metal-core-vca-target/osc_voice_probe.dis
+          grep -q "eng_metal_osc_target_probe_pair" build/metal-core-vca-target/osc_voice_probe.dis
+
+          {
+            echo "## ENERGUN OSC1/OSC2 AC79 compile-only probe"
+            echo "The probe compiles the real Felucca shared DSP translation unit together with the ENERGUN per-voice OSC adapter for pi32v2. It is not linked into firmware, executed on hardware, or a cycle measurement."
+          } >> "$GITHUB_STEP_SUMMARY"
 
           # Feedback-delay candidate probe: compile-only, no hardware execution.
           "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \

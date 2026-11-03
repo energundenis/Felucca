@@ -1,0 +1,36 @@
+/* SPDX-License-Identifier: GPL-3.0-only
+ * ENERGUN METAL CORE — AC79/pi32v2 OSC voice-adapter compile probe.
+ *
+ * Compile-only evidence. The real Felucca engine DSP translation unit is
+ * included so osc_sine/tri/saw/pulse resolve from the pinned shared source.
+ * This does not register METAL CORE, link firmware, execute on AC79, or
+ * measure render-loop cycles.
+ */
+#include "../firmware/src/core.h"
+#include "../firmware/src/engines.c"
+#include "../firmware/src/eng_metal_core_osc_voice.h"
+
+_Static_assert(sizeof(((voice_t *)0)->ph) >= 2u * sizeof(uint32_t),
+               "Felucca voice must retain independent OSC1/OSC2 phase slots");
+
+#if defined(__clang__) || defined(__GNUC__)
+#define OSC_PROBE __attribute__((noinline, used))
+#else
+#define OSC_PROBE
+#endif
+
+OSC_PROBE void eng_metal_osc_target_probe_note_on(voice_t *voice)
+{
+    eng_metal_osc_voice_note_on(voice);
+}
+
+OSC_PROBE int32_t eng_metal_osc_target_probe_pair(
+    voice_t *voice, const vmod_t *mod,
+    uint32_t osc1_wave, uint32_t osc2_wave, uint32_t pulse_width)
+{
+    int32_t osc1 = eng_metal_osc_voice1_next(
+        voice, mod, osc1_wave, pulse_width);
+    int32_t osc2 = eng_metal_osc_voice2_next(
+        voice, mod, osc2_wave, pulse_width);
+    return osc1 + osc2;
+}
