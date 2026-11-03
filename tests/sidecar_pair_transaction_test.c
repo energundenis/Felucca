@@ -185,8 +185,10 @@ static int pair_test_sidecar_read(void *context, energun_sc_identity_kind_t kind
                                   uint8_t index, uint8_t copy, uint8_t *record,
                                   size_t capacity, size_t *length, uint32_t *sequence)
 {
+    int rc;
     (void)context;
-    return sc_read_copy(kind, index, copy, record, capacity, length, sequence);
+    rc = sc_read_copy(kind, index, copy, record, capacity, length, sequence);
+    return rc == 0 ? 0 : 1; /* simulated NOR: invalid/empty is not an I/O fault */
 }
 
 static int pair_test_sidecar_write(void *context, energun_sc_identity_kind_t kind,
