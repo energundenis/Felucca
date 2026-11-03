@@ -21,6 +21,17 @@ energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_load_bank(
     energun_sc_preset_payload_v1_t *sidecar,
     energun_pair_v1_base_meta_t *base_meta);
 
+/* Strict variant for the native 16-slot upreset.c bank ABI. On a valid pair,
+ * also requires the Sidecar slot bitmap to match records accepted by the
+ * target build's up_valid() rules. Legacy Base-only fallback stays unchanged.
+ */
+energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_load_bank_checked(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t bank,
+    uint8_t engine_count,
+    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+    energun_sc_preset_payload_v1_t *sidecar,
+    energun_pair_v1_base_meta_t *base_meta);
+
 /* Capture one part's Private state into one slot, then commit the complete
  * caller-prepared Base bank and updated Sidecar bank as a pair.
  */
