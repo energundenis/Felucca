@@ -124,13 +124,10 @@ static void make_bank(bank_t *b, char tag, uint32_t used, const char *name)
 
 /* the editor's transfer: BEGIN, a WRITE per used voice, END with the name and the CRC (crc_xor: a wrong one) -> END's rc
  * (or the first rc that was not 0) */
-static uint32_t send_bank(const bank_t *b, uint32_t crc_xor)
+static uint32_t send_bank_body(const bank_t *b, uint32_t crc_xor)
 {
     uint8_t a[1 + FM6_PACKED], e[15];
     uint32_t k, c = 0xFFFFFFFFu, rc;
-    request(ED_FM6B_BEGIN, a, 0);
-    if ((rc = rep[0]) != 0)
-        return rc;
     for (k = 0; k < FM6_NBANK; k++) {
         if (!((b->used >> k) & 1u))
             continue;
@@ -148,6 +145,16 @@ static uint32_t send_bank(const bank_t *b, uint32_t crc_xor)
         e[10 + k] = (uint8_t)((c >> (7u * k)) & 127u);
     request(ED_FM6B_END, e, sizeof e);
     return rep[0];
+}
+
+static uint32_t send_bank(const bank_t *b, uint32_t crc_xor)
+{
+    uint8_t a[1];
+    uint32_t rc;
+    request(ED_FM6B_BEGIN, a, 0);
+    if ((rc = rep[0]) != 0)
+        return rc;
+    return send_bank_body(b, crc_xor);
 }
 
 /* the bank the device holds now equals b (its voices, the used mask, the name: LIST) */
@@ -186,6 +193,7 @@ static void reset(void)
     memset(&ui, 0, sizeof ui);
     memset(&motion, 0, sizeof motion);
     memset(&fvb_tx, 0, sizeof fvb_tx);
+    memset(&st_reservation, 0, sizeof st_reservation);
     host_tracks_init();
     fm6_init();
     for (k = 0; k < NTRK; k++) {
@@ -288,28 +296,22 @@ static int store_test(void)
     ok &= rep[0] == 1;
     ok &= bank_is(&a);
     bad += check("WRITE without BEGIN: rc 5; a voice twice, index 32, a short record, a short END: rc 1; the bank stays", ok);
-    /* an autosave between two requests takes the transfer's sector: the transfer ends, nothing else lost */
+    /* An autosave cannot take the reserved staging copy while the FM6 transfer is open. */
     request(ED_FM6B_BEGIN, arg, 0);
-    ok = rep[0] == 0;
+    ok = rep[0] == 0 && st_reserved_by(OBJ_AUTOSAVE, fvb_tx.copy, ST_RES_FM6_VBANK);
     memset(as_data, 'T', sizeof as_data);
-    st_save(OBJ_AUTOSAVE, as_data, sizeof as_data);      /* (into the copy BEGIN took: the older one) */
-    arg[0] = 1;
-    request(ED_FM6B_WRITE, arg, sizeof arg);
-    ok &= rep[1] == 5;
-    request(ED_FM6B_END, arg, 0);                         /* (a short END: 1) */
-    ok &= rep[0] == 1;
-    {
-        uint8_t e[15] = {0};
-        request(ED_FM6B_END, e, sizeof e);
-        ok &= rep[0] == 5;
-    }
-    bad += check("an autosave between BEGIN and WRITE: WRITE / END answer 5; the bank and the new autosave kept",
-                 ok && bank_is(&a) && st_load(OBJ_AUTOSAVE, got, sizeof got) == (int)sizeof as_data &&
-                     !memcmp(got, as_data, sizeof as_data));
+    ok &= st_save(OBJ_AUTOSAVE, as_data, sizeof as_data) == -8; /* hard storage gate: no erase */
+    ok &= st_load(OBJ_AUTOSAVE, got, sizeof got) == (int)sizeof as_data && got[0] == 'S';
+    ok &= send_bank_body(&b, 0) == 0 && rep[1] == 3 && bank_is(&b);
+    ok &= !st_object_reserved(OBJ_AUTOSAVE);
+    ok &= st_save(OBJ_AUTOSAVE, as_data, sizeof as_data) == 0 &&
+          st_load(OBJ_AUTOSAVE, got, sizeof got) == (int)sizeof as_data && !memcmp(got, as_data, sizeof as_data);
+    bad += check("FM6 reserves inactive autosave sector: autosave write is deferred, bank commits, autosave resumes after release",
+                 ok);
     /* the next bank: staged in the autosave's older copy again (A now), the new autosave (B) kept */
-    ok = send_bank(&b, 0) == 0 && rep[1] == 3 && bank_is(&b) && st_load(OBJ_AUTOSAVE, got, sizeof got) == (int)sizeof as_data &&
+    ok = send_bank(&a, 0) == 0 && rep[1] == 32 && bank_is(&a) && st_load(OBJ_AUTOSAVE, got, sizeof got) == (int)sizeof as_data &&
          !memcmp(got, as_data, sizeof as_data) && ((st_hdr_t *)(nor + 0xE5000u))->type == OBJ_FM6VB;
-    bad += check("a second bank (3 voices): staged in the other copy, the autosave kept, read back exactly", ok);
+    bad += check("a second bank (32 voices): staged in the other copy, the autosave kept, read back exactly", ok);
     /* an empty bank: BEGIN, END (the CRC of nothing) */
     {
         bank_t e;
