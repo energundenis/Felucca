@@ -155,6 +155,16 @@ static const energun_sidecar_storage_ops_t sc_test_ops = {
 /* Seed an outer-CRC-valid but semantically orphaned Sidecar copy so target
  * selection can be tested independently of Base/Sidecar pair recovery.
  */
+static int sc_copy_matches(uint8_t copy, uint32_t sequence, uint8_t marker)
+{
+    uint8_t record[ENERGUN_SC_V1_MAX_RECORD];
+    size_t length = 0u;
+    uint32_t actual_sequence = 0u;
+    return sc_test_read(0, ENERGUN_SC_ID_PROJECT, 0u, copy, record,
+        sizeof record, &length, &actual_sequence) == 0 &&
+        length == 1u && actual_sequence == sequence && record[0] == marker;
+}
+
 static int seed_sc_copy(uint8_t copy, uint32_t sequence, uint8_t marker)
 {
     test_sc_header_t h;
@@ -235,9 +245,7 @@ int main(void)
           seed_sc_copy(0u, 0xFFFFFFFEu, 0xA0u) == 0 &&
           seed_sc_copy(1u, 2u, 0xB0u) == 0 &&
           save_value(&adapter, &workspace, 77u) == ENERGUN_PAIR_OK &&
-          sc_test_read(0, ENERGUN_SC_ID_PROJECT, 0u, 1u,
-              (uint8_t[ENERGUN_SC_V1_MAX_RECORD]){0},
-              ENERGUN_SC_V1_MAX_RECORD, &(size_t){0}, &(uint32_t){0}) == 0 &&
+          sc_copy_matches(1u, 2u, 0xB0u) &&
           recover_equals(&adapter,
               (uint8_t[16]){77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92},
               16u, 1u, 77u));
