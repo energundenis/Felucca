@@ -44,6 +44,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n)
 #include "../firmware/src/storage.c"
 #include "../firmware/src/energun_sidecar_v1.c"
 #include "../firmware/src/energun_pair_v1.c"
+#include "../firmware/src/energun_lifecycle_v1.c"
 
 #define SC_TEST_TYPE 0x7Eu
 #define SC_TEST_PAYLOAD_OFF 256u
@@ -269,6 +270,13 @@ static int check(const char *label, int ok)
 {
     printf("%-58s %s\n", label, ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
+}
+
+static int lifecycle_guard_value;
+static int lifecycle_test_guard(void *context)
+{
+    (void)context;
+    return lifecycle_guard_value;
 }
 
 static void reset_media(void)
@@ -550,6 +558,87 @@ int main(void)
             ENERGUN_PAIR_V1_ERR_NO_MATCH &&
             base_len == 0u && ext_len == 0u;
         bad += check("legacy Base fallback: missing/invalid Sidecar, I/O guard and no-Base", legacy_ok);
+    }
+
+
+    /* CP1.6 lifecycle adapter acceptance. */
+    {
+        static energun_pair_v1_workspace_t lifecycle_workspace;
+        static uint8_t base_scratch[4096];
+        static uint8_t sidecar_scratch[ENERGUN_PAIR_V1_RECORD_MAX];
+        static uint8_t canonical_defaults[117];
+        energun_lifecycle_v1_t lifecycle;
+        energun_pair_v1_base_meta_t meta;
+        uint8_t renamed[64], copied[64], got_base[128], got_sidecar[128];
+        size_t got_base_len = 0u, got_sidecar_len = 0u;
+        int lifecycle_ok = 1;
+        memset(&lifecycle, 0, sizeof lifecycle);
+        memset(canonical_defaults, 0, sizeof canonical_defaults);
+        lifecycle.ops = &pair_test_ops;
+        lifecycle.workspace = &lifecycle_workspace;
+        lifecycle.base_scratch = base_scratch;
+        lifecycle.base_scratch_capacity = sizeof base_scratch;
+        lifecycle.sidecar_scratch = sidecar_scratch;
+        lifecycle.sidecar_scratch_capacity = sizeof sidecar_scratch;
+        lifecycle.canonical_sidecar_defaults = canonical_defaults;
+        lifecycle.canonical_sidecar_defaults_length = sizeof canonical_defaults;
+        lifecycle.write_guard = lifecycle_test_guard;
+        lifecycle.base_motion_count = 0u;
+
+        reset_media();
+        lifecycle_ok &= energun_lifecycle_v1_save(&lifecycle, OBJ_PROJECT0,
+            ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u) ==
+            ENERGUN_LIFECYCLE_V1_OK;
+        memcpy(renamed, base1, sizeof renamed);
+        renamed[0] = 0x7Au;
+        lifecycle_ok &= energun_lifecycle_v1_copy_stored(&lifecycle,
+            OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            renamed, sizeof renamed) == ENERGUN_LIFECYCLE_V1_OK;
+        lifecycle_ok &= energun_lifecycle_v1_load(&lifecycle, OBJ_PROJECT0,
+            ENERGUN_SC_ID_PROJECT, 0u, got_base, sizeof got_base, &got_base_len,
+            got_sidecar, sizeof got_sidecar, &got_sidecar_len, &meta) ==
+            ENERGUN_LIFECYCLE_V1_OK && got_base_len == sizeof renamed &&
+            got_sidecar_len == 117u && !memcmp(got_base, renamed, sizeof renamed) &&
+            !memcmp(got_sidecar, payload, 117u) && meta.sequence == 2u;
+
+        memcpy(copied, renamed, sizeof copied);
+        copied[1] = 0x6Bu;
+        lifecycle_ok &= energun_lifecycle_v1_copy_stored(&lifecycle,
+            OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            OBJ_PROJECT0 + 1u, ENERGUN_SC_ID_PROJECT, 1u,
+            copied, sizeof copied) == ENERGUN_LIFECYCLE_V1_OK;
+        lifecycle_ok &= energun_lifecycle_v1_load(&lifecycle, OBJ_PROJECT0 + 1u,
+            ENERGUN_SC_ID_PROJECT, 1u, got_base, sizeof got_base, &got_base_len,
+            got_sidecar, sizeof got_sidecar, &got_sidecar_len, &meta) ==
+            ENERGUN_LIFECYCLE_V1_OK && meta.sequence == 1u &&
+            !memcmp(got_base, copied, sizeof copied) &&
+            !memcmp(got_sidecar, payload, 117u);
+
+        reset_media();
+        lifecycle_ok &= st_save(OBJ_PROJECT0, base1, sizeof base1) == 0;
+        lifecycle_ok &= energun_lifecycle_v1_load(&lifecycle, OBJ_PROJECT0,
+            ENERGUN_SC_ID_PROJECT, 0u, got_base, sizeof got_base, &got_base_len,
+            got_sidecar, sizeof got_sidecar, &got_sidecar_len, &meta) ==
+            ENERGUN_LIFECYCLE_V1_LEGACY_DEFAULTS && got_base_len == sizeof base1 &&
+            got_sidecar_len == sizeof canonical_defaults &&
+            !memcmp(got_sidecar, canonical_defaults, sizeof canonical_defaults);
+
+        lifecycle_guard_value = 1;
+        lifecycle_ok &= energun_lifecycle_v1_autosave(&lifecycle, OBJ_AUTOSAVE,
+            base1, sizeof base1, payload, 117u) == ENERGUN_LIFECYCLE_V1_ERR_GUARD;
+        lifecycle_guard_value = 0;
+        lifecycle_ok &= energun_lifecycle_v1_autosave(&lifecycle, OBJ_AUTOSAVE,
+            base1, sizeof base1, payload, 117u) == ENERGUN_LIFECYCLE_V1_OK;
+        lifecycle_ok &= energun_lifecycle_v1_erase(&lifecycle, OBJ_PROJECT0) ==
+            ENERGUN_LIFECYCLE_V1_OK;
+        got_base_len = got_sidecar_len = 0u;
+        lifecycle_ok &= energun_lifecycle_v1_load(&lifecycle, OBJ_PROJECT0,
+            ENERGUN_SC_ID_PROJECT, 0u, got_base, sizeof got_base, &got_base_len,
+            got_sidecar, sizeof got_sidecar, &got_sidecar_len, &meta) ==
+            ENERGUN_LIFECYCLE_V1_ERR_PAIR && got_base_len == 0u;
+        lifecycle_guard_value = 0;
+        bad += check("CP1.6 lifecycle adapter: save/rename/Save As/legacy/autosave guard/erase", lifecycle_ok);
     }
 
     printf("%s\n", bad ? "SIDECAR PAIR TEST FAILED" : "SIDECAR PAIR TEST PASSED");
