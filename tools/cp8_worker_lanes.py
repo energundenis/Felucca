@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Deterministic, allow-listed CP8 host-test lanes."""
 from __future__ import annotations
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("CP8_WORKSPACE", Path(__file__).resolve().parents[1]))
 
 
 def run(args: list[str]) -> None:
