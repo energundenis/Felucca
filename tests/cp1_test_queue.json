@@ -36,6 +36,19 @@
       "enable_when": "The pinned BSP and loader source-level range/exclusion audit is committed with a host-only test."
     },
     {
+      "id": "sidecar-flash-backend-host",
+      "title": "Bounded Sidecar A/B backend simulated-NOR acceptance",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "sidecar-flash-map-source-audit",
+        "pair-storage-adapter-simulated-nor"
+      ],
+      "command": "sh tests/run_sidecar_flash_backend_test.sh",
+      "blocker": "The bounded transport-injected backend enforces exact A/B sectors, 256-byte page boundaries, header-last commit, readback and CRC. This host suite is necessary but does not itself qualify production runtime callsites or FM6 arbitration.",
+      "enable_when": "Backend implementation and strict-C11 simulated-NOR acceptance runner are committed together."
+    },
+    {
       "id": "sidecar-format",
       "title": "Sidecar schema, envelope and semantic validation",
       "kind": "executable-host-test",
@@ -115,10 +128,11 @@
       "state": "blocked",
       "depends_on": [
         "pair-storage-adapter-simulated-nor",
-        "sidecar-flash-map-source-audit"
+        "sidecar-flash-map-source-audit",
+        "sidecar-flash-backend-host"
       ],
       "command": null,
-      "blocker": "The pinned BSP source audit now qualifies XDATA1 [0xE7000,0xFC000) as firmware-owned data space. FM6 owns [0xE7000,0xE8000); sectors 0xE8000 and 0xE9000 are candidate Sidecar A/B sectors before globals. The loader checks update-record markers at each sector +0xF00, so the backend must leave the final 256 bytes of each sector erased. Production storage_hw.c still rejects candidate writes. Pair commit remains blocked until the bounded production A/B backend, firmware build/link evidence, project/preset/autosave runtime wiring, FM6 staging arbitration, and exhaustive simulated-NOR acceptance are implemented. No physical sector is allocated and no device write path is enabled."
+      "blocker": "The bounded A/B backend and its host acceptance are now implemented; production runtime save/load callsites, FM6 staging arbitration, target firmware build/link evidence and exhaustive backend power-cut acceptance remain required before pair commit can be enabled. Candidate sectors remain protected by the bounded transport; no physical device write has been performed."
     },
     {
       "id": "pair-power-loss",
