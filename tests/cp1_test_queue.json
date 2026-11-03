@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. The host-only pair transaction harness uses real storage.c across all seven Base identities with an isolated test Sidecar backend; production pair integration remains a distinct blocked gate.",
+  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. The backend-neutral coordinator is host-tested across all seven identities, including pair power-loss, Rename rebind and Save As destination isolation. Production lifecycle integration remains a separate blocked gate.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -62,14 +62,14 @@
     },
     {
       "id": "pair-transaction-harness",
-      "title": "Backend-neutral pair coordinator host acceptance across seven identities",
+      "title": "Backend-neutral pair coordinator: seven identities, lifecycle semantics and host acceptance",
       "kind": "executable-host-test",
       "state": "ready",
       "depends_on": [
         "sidecar-ab-selection"
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
-      "blocker": "The reusable energun_pair_v1 coordinator implements Sidecar-first/Base-second commit ordering, readback validation, exact generation binding, pair load and Base tombstone erase. Host adapters use real storage.c with a separate test-only Sidecar backend; no target Flash backend or runtime call sites are connected."
+      "blocker": "The reusable coordinator implements Sidecar-first/Base-second ordering, readback validation, generation-bound pair load and Base tombstone erase. Host adapters use real storage.c with a separate test-only Sidecar backend. Coverage includes seven independent Base A/B histories, Rename preserving/rebinding the stored extension, Save As creating an isolated destination identity, torn writes, orphan retry and fallback. No target Flash backend or runtime call sites are connected."
     },
     {
       "id": "sidecar-identity-matrix",
