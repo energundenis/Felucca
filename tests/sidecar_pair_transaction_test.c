@@ -148,14 +148,14 @@ static int pair_load(uint32_t obj, uint8_t *base, size_t base_cap,
         return -1;
     sc_candidates(candidates, records);
     if (energun_sc_v1_select_ab(candidates, ENERGUN_SC_ID_PROJECT, 0u,
-            meta.sequence, meta.payload_crc32, 0u, &selection) != ENERGUN_SC_OK ||
+            meta.sequence, meta.payload_crc, 0u, &selection) != ENERGUN_SC_OK ||
         selection.matching_copy < 0)
         return -2;
     rc = sc_read_copy((unsigned)selection.matching_copy,
                       extension, extension_cap, &ext_len, &meta.sequence);
     if (rc) return -3;
     rc = energun_sc_v1_validate(extension, ext_len, ENERGUN_SC_ID_PROJECT, 0u,
-            read_meta.sequence, read_meta.payload_crc32, 0u, &view);
+            read_meta.sequence, read_meta.payload_crc, 0u, &view);
     if (rc != ENERGUN_SC_OK) return -4;
     *base_seq = read_meta.sequence;
     *sidecar_copy = selection.matching_copy;
