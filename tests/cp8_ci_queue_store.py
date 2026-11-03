@@ -200,7 +200,8 @@ class GitRefCASQueueStore:
         return self._transact(mutate)
 
     def claim_next(self, owner_workflow: str, owner_run_id: int, now: datetime | None = None,
-                   lease_seconds: int = 900, required_lane: str | None = None) -> dict[str, Any] | None:
+                   lease_seconds: int = 900, required_lane: str | None = None,
+                   recover_owner_run_ids: set[int] | None = None) -> dict[str, Any] | None:
         current = now or datetime.now(timezone.utc)
         if lease_seconds < 30:
             raise ValueError("lease_seconds must be at least 30")
@@ -219,7 +220,10 @@ class GitRefCASQueueStore:
                     candidates.append(item)
                 elif state in {"claimed", "running"}:
                     lease = item.get("claim", {}).get("lease_expires_at")
-                    if lease and _parse_iso(lease) <= current:
+                    owner_run_id = item.get("claim", {}).get("owner_run_id")
+                    lease_expired = bool(lease and _parse_iso(lease) <= current)
+                    owner_finished = owner_run_id in (recover_owner_run_ids or set())
+                    if lease_expired or owner_finished:
                         candidates.append(item)
             if not candidates:
                 return None
