@@ -301,9 +301,10 @@ jobs:
             > build/metal-core-vca-target/pair_v1.symbols
           grep -q "energun_pair_v1_commit" build/metal-core-vca-target/pair_v1.symbols
           grep -q "energun_pair_v1_load" build/metal-core-vca-target/pair_v1.symbols
+          grep -q "energun_pair_v1_load_compat" build/metal-core-vca-target/pair_v1.symbols
           {
             echo "## ENERGUN pair coordinator AC79 compile-only probe"
-            echo "The backend-neutral Base + Sidecar V1 transaction coordinator compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware and has no target Flash backend or runtime call sites."
+            echo "The backend-neutral Base + Sidecar V1 transaction coordinator, including legacy Base-only fallback, compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware and has no target Flash backend or runtime call sites."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run Felucca host and web regression tests
