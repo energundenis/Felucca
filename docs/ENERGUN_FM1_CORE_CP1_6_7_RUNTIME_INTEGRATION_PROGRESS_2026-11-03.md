@@ -98,3 +98,21 @@ The FM6 staging reservation acceptance passed in the Fast Regression workflow be
 
 The reservation changes are production firmware source changes in `storage.c`, `fm6_vbank.c` and `project.c`, but are not physical-device validation. No Flash sector map, whitelist, Sidecar target address, loader, OTA or factory image was changed. No device was flashed. The production Base + Sidecar coordinator and target Sidecar backend remain unimplemented; CP1.6/CP1.7 lifecycle integration is not closed.
 
+## 8. Backend-neutral pair coordinator implementation
+
+New follow-up on 2026-11-03:
+
+- Added `firmware/src/energun_pair_v1.h` and `firmware/src/energun_pair_v1.c`.
+- The coordinator accepts explicit Base and Sidecar backend callbacks; it defines no Flash addresses, object IDs, sectors or target whitelist.
+- Commit sequence is now implemented in reusable code: read selected Base metadata; inspect both Sidecar A/B candidates; protect the matching generation and choose the safe Sidecar target; encode the future Base sequence/CRC; commit Sidecar; read back and semantically validate that exact future-bound Sidecar; only then commit the inactive Base copy; finally verify selected Base copy, sequence, length and CRC.
+- A failed Base commit leaves the future-bound Sidecar as an orphan. On retry, the selector protects the old matching Sidecar and reuses the orphan side rather than overwriting the only valid pair.
+- Pair load selects the exact current Base metadata, requires a matching identity + sequence + payload CRC Sidecar, validates its semantic payload, then loads and rechecks the exact Base copy before returning both payloads.
+- Extended `tests/sidecar_pair_transaction_test.c` so seven-identity history, pair load, Sidecar torn-write sweep, Base torn-write sweep, failed Base commit/retry and corrupted-newest-Base fallback run through the new coordinator. Its adapters use actual `storage.c` with simulated NOR and a separate in-memory Sidecar A/B backend.
+- CP1 queue now marks the coordinator power-loss harness executable. Production pair commit ordering remains blocked until a target backend and runtime call sites are approved and integrated.
+
+### Scope and verification
+
+This is a backend-neutral transaction coordinator implementation and host acceptance, **not** production FM-1 runtime integration. It is not included in the Felucca main translation unit; the target baseline workflow is being extended with a pi32v2 compile-only probe. No Sidecar Flash sectors or object IDs have been assigned, no storage whitelist or loader/OTA/factory code has changed, and no device was flashed.
+
+The new coordinator and expanded transaction/fault tests are committed after the previously verified HEAD `7c0a884ee46c1c9b93064d701a3574c6c27db773`. Their new CI run must complete on the exact new HEAD before these changes are marked verified.
+
