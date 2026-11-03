@@ -66,10 +66,22 @@
       "kind": "executable-host-test",
       "state": "ready",
       "depends_on": [
-        "sidecar-ab-selection"
+        "sidecar-ab-selection",
+        "sidecar-payload-codec"
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
       "blocker": "The reusable coordinator implements Sidecar-first/Base-second ordering, readback validation, generation-bound pair load and Base tombstone erase. Host adapters use real storage.c with a separate test-only Sidecar backend. Coverage includes seven independent Base A/B histories, Rename preserving/rebinding the stored extension, Save As creating an isolated destination identity, torn writes, orphan retry and fallback. No target Flash backend or runtime call sites are connected."
+    },
+    {
+      "id": "sidecar-payload-codec",
+      "title": "Typed project/live and preset-bank Sidecar payload codecs",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "sidecar-format"
+      ],
+      "command": "sh tests/run_sidecar_payload_v1_test.sh",
+      "blocker": "Explicit byte codecs map four-part P_MC/Private/Motion payloads and 16-slot preset-bank payloads without C struct padding. Strict host acceptance covers 501-byte project maximum, 210-byte preset payload, roundtrip, malformed lengths and insufficient capacity. Semantic value validation remains in Sidecar V1 validator."
     },
     {
       "id": "sidecar-identity-matrix",
