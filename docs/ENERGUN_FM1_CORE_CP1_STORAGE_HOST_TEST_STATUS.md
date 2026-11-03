@@ -29,7 +29,7 @@ Evidence commit: `a648633b6976b6c63a5df232599dfd44470962cd`
 
 This is host-only evidence using simulated NOR Flash and the real Felucca storage/FΜ6-bank C paths. No physical FM-1 was connected or written. No factory firmware, bootloader, OTA or physical Flash allocation was changed.
 
-The Sidecar pair coordinator is not implemented yet. Therefore the following remain OPEN and must receive their own executable tests as the coordinator and Sidecar format are implemented:
+The backend-independent pair transaction core and Felucca Base storage adapter now exist and pass simulated-NOR host tests. The production Sidecar Flash backend and runtime project/preset/autosave callsites are still not connected. The following remain OPEN:
 
 - exact base-generation binding and orphan/stale Sidecar rejection;
 - matching-copy selection independent of Sidecar-local sequence;
@@ -71,3 +71,14 @@ The FM6 bank test proves the existing FM6 staging behavior under its current hos
 - Queue passes through Sidecar A/B selection and blocks at Pair Commit Ordering. Production pair transaction coordinator and fault injection remain unimplemented.
 - Latest baseline workflow [41478848463](https://github.com/energundenis/Felucca/actions/runs/41478848463) was still running host/web regression at the time of this update; no final baseline result claimed.
 - Simulated NOR only. No physical Flash, object IDs, `OBJ_COUNT`, archive V1, bootloader, OTA or device write.
+
+
+## Pair transaction coordinator and exhaustive fault-injection update — 2026-11-03
+
+- Added/verified `firmware/src/energun_pair_txn.c/.h`: backend-independent Sidecar-first transaction core. It plans the next Base generation, stages/validates Sidecar, commits Base only after Sidecar succeeds, then verifies the pair.
+- Added/verified `firmware/src/energun_pair_storage_adapter.c/.h`: binds the coordinator to Felucca's real Base A/B storage primitives while injecting a separate Sidecar backend. No production Sidecar sector address is defined.
+- Added/verified simulated-NOR adapter acceptance in `tests/pair_storage_adapter_test.c`; the suite uses test-only RAM offsets and the real included `storage.c` implementation.
+- Expanded interruption coverage to **every programmed byte** in the current fixture: 169 Sidecar payload/header cut positions and 48 Base payload/header cut positions. All 217 interruption cases preserved the previous complete pair; 0 failures.
+- Pair transaction core: **11 checks, 0 failures**. Adapter: **18 checks, 0 failures**.
+- Exact tested HEAD: `97de9b7abf893c18064fcde942c46f637b2c3e9a`. CP1 worker run [41640259969](https://github.com/energundenis/Felucca/actions/runs/41640259969): SUCCESS. Focused fast regression [41640260005](https://github.com/energundenis/Felucca/actions/runs/41640260005): SUCCESS.
+- The queue still blocks at pair-commit-order because the production Sidecar Flash backend, authoritative physical region exclusions and production callsite wiring are not qualified. No physical map, sector, bootloader, OTA, factory image or device state was changed.
