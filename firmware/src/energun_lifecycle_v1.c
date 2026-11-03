@@ -7,8 +7,6 @@ static int lifecycle_valid(const energun_lifecycle_v1_t *lifecycle)
 {
     return lifecycle != NULL && lifecycle->ops != NULL &&
            lifecycle->workspace != NULL &&
-           lifecycle->base_scratch != NULL && lifecycle->base_scratch_capacity > 0u &&
-           lifecycle->sidecar_scratch != NULL && lifecycle->sidecar_scratch_capacity > 0u &&
            lifecycle->canonical_sidecar_defaults != NULL &&
            lifecycle->canonical_sidecar_defaults_length > 0u;
 }
@@ -89,7 +87,9 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_copy_stored(
     size_t source_base_length = 0u, source_sidecar_length = 0u;
     energun_pair_v1_base_meta_t source_meta;
     energun_lifecycle_v1_status_t load_status;
-    if (!lifecycle_valid(lifecycle) || destination_base == NULL ||
+    if (!lifecycle_valid(lifecycle) || lifecycle->base_scratch == NULL ||
+        lifecycle->base_scratch_capacity == 0u || lifecycle->sidecar_scratch == NULL ||
+        lifecycle->sidecar_scratch_capacity == 0u || destination_base == NULL ||
         destination_base_length == 0u)
         return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
     load_status = energun_lifecycle_v1_load(lifecycle,
