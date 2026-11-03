@@ -226,11 +226,11 @@ int main(void)
           st_load(OBJ_COUNT, probe, sizeof probe) < 0);
     CHECK("first save commits Base A + Sidecar A",
           save_value(&adapter, &workspace, 10u) == ENERGUN_PAIR_OK &&
-          recover_equals(&adapter, (uint8_t[16]){10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25}, 16u, 0u, 10u));
+          recover_equals(&adapter, (uint8_t[16]){10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25}, 16u, 1u, 10u));
 
     CHECK("second save commits matching B copies",
           save_value(&adapter, &workspace, 20u) == ENERGUN_PAIR_OK &&
-          recover_equals(&adapter, (uint8_t[16]){20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35}, 16u, 1u, 20u));
+          recover_equals(&adapter, (uint8_t[16]){20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35}, 16u, 2u, 20u));
 
     for (i = 0; i < sizeof old_base; ++i) {
         old_base[i] = (uint8_t)(20u + i);
@@ -242,15 +242,15 @@ int main(void)
     CHECK("fixture creates newer orphan Base generation",
           st_save_to(OBJ_PROJECT0, orphan, sizeof orphan, 0) == 0);
     CHECK("recovery ignores orphan Base and returns previous complete pair",
-          recover_equals(&adapter, old_base, sizeof old_base, 1u, 20u));
+          recover_equals(&adapter, old_base, sizeof old_base, 2u, 20u));
     CHECK("planner overwrites orphan A, not protected matching Base B",
           save_value(&adapter, &workspace, 30u) == ENERGUN_PAIR_OK &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 4u, 30u));
 
     sidecar_fault_stage = SC_FAULT_ERASE;
     CHECK("Sidecar erase failure preserves previous complete pair",
           save_value(&adapter, &workspace, 40u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 4u, 30u));
     sidecar_fault_stage = SC_FAULT_PAYLOAD;
     CHECK("Sidecar payload failure preserves previous complete pair",
           save_value(&adapter, &workspace, 41u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
@@ -321,7 +321,7 @@ int main(void)
         sidecar_fail_after = -1;
         if (!recover_equals(&adapter,
                 (uint8_t[16]){60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75},
-                16u, 0u, 60u)) {
+                16u, 1u, 60u)) {
             ok = 0; break;
         }
     }
