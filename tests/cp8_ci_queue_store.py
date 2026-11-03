@@ -20,7 +20,7 @@ from cp8_ci_queue import make_idempotency_key, validate_queue_record
 
 LEDGER_PATH = "queue/ledger.json"
 DEFAULT_BRANCH = "energun-ci-queue"
-MAX_CAS_RETRIES = 8
+MAX_CAS_RETRIES = 24
 
 
 class QueueStoreError(RuntimeError):
@@ -160,7 +160,7 @@ class GitRefCASQueueStore:
             except QueueCASConflict:
                 if attempt + 1 == self.max_retries:
                     raise
-                self.sleep(min(0.05 * (2 ** attempt), 1.0))
+                self.sleep(min(0.1 * (2 ** attempt), 2.0))
         raise QueueStoreError("queue transaction exhausted retries")
 
     def enqueue(self, repository: str, lanes: list[str], ref: str, commit_sha: str,
