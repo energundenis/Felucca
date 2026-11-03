@@ -83,6 +83,56 @@ const badV2Motion = structuredClone(v2file); {
 ok(throws(() => readBackup(badV2Motion)), "backup V2: malformed Motion payload length is refused");
 const badV2Preset = structuredClone(v2file); badV2Preset.sidecars[5].size = 209;
 ok(throws(() => readBackup(badV2Preset)), "backup V2: malformed preset-bank payload size is refused");
+const setV2Sidecar = (source, index, bytes) => {
+  const copy = structuredClone(source), entry = copy.sidecars[index];
+  entry.size = bytes.length; entry.crc = bkCrc(bytes);
+  entry.data = btoa(String.fromCharCode(...bytes));
+  return copy;
+};
+{
+  const bytes = new Uint8Array(117); bytes[0] = 128;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 0, bytes))),
+    "backup V2: non-7-bit P_MC values are refused");
+}
+{
+  const bytes = new Uint8Array(117); bytes[9] = 64;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 0, bytes))),
+    "backup V2: signed FOLD SYMMETRY outside -64..63 is refused");
+}
+{
+  const bytes = new Uint8Array(117); bytes[64] = 3;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 0, bytes))),
+    "backup V2: Private enum values outside their descriptor domain are refused");
+}
+{
+  const bytes = new Uint8Array(120); bytes[116] = 1;
+  bytes[117] = 7; bytes[118] = 102; bytes[119] = 0;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 0, bytes))),
+    "backup V2: Motion cannot target legacy E0-E7 or non-P_MC IDs");
+}
+{
+  const bytes = new Uint8Array(120); bytes[116] = 1;
+  bytes[117] = 7; bytes[118] = 103; bytes[119] = 128;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 0, bytes))),
+    "backup V2: Motion signed values below -64 are refused");
+}
+{
+  const bytes = new Uint8Array(123); bytes[116] = 2;
+  bytes[117] = 7; bytes[118] = 103; bytes[119] = 0;
+  bytes[120] = 7; bytes[121] = 231; bytes[122] = 1;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 0, bytes))),
+    "backup V2: duplicate Motion target on the same step is refused");
+}
+{
+  const bytes = new Uint8Array(210); bytes[2] = 1;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 5, bytes))),
+    "backup V2: absent preset slot cannot carry stale Private data");
+}
+{
+  const bytes = new Uint8Array(210); bytes[0] = 1; bytes[2] = 3;
+  ok(throws(() => readBackup(setV2Sidecar(v2file, 5, bytes))),
+    "backup V2: present preset slot must use valid Private values");
+}
 const hugeV2 = structuredClone(v2file); hugeV2.sidecars[0].size = 0x7fffffff;
 ok(throws(() => readBackup(hugeV2)), "backup V2: oversized Sidecar is rejected before Base64 decoding");
 const v2Target = device([]);
