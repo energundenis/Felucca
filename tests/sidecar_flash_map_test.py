@@ -47,6 +47,7 @@ check(a % sector == 0 and b % sector == 0 and a + sector <= b, "candidate A/B of
 check(xlo <= vbank_hi <= a and b + sector <= xhi, "candidate A/B fit after FM6 and before global storage")
 check(a >= 0xE5000 and b + sector <= 0xFC000, "candidate A/B avoid autosave and global storage")
 check(sector - 0x100 == 0xF00 and "0xF00..0xF07" in bsp, "reserve the full final 256 bytes against update-record scanning")
-check("FL_IN(off, n, ST_VBANK_LO, ST_VBANK_HI)" in storage_hw and "FL_XDATA1" not in storage_hw, "production storage guard still blocks candidate writes")
+guard_line = next((line for line in storage_hw.splitlines() if line.startswith("#define ST_OK")), "")
+check("FL_IN(off, n, ST_VBANK_LO, ST_VBANK_HI)" in guard_line and "FL_XDATA_OK" not in guard_line and "FL_XDATA1" not in guard_line, "production storage guard still blocks candidate writes")
 
 print("SIDECAR FLASH MAP SOURCE AUDIT: PASS — candidate only, no allocation or device writes")
