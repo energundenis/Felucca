@@ -114,10 +114,11 @@
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "pair-storage-adapter-simulated-nor"
+        "pair-storage-adapter-simulated-nor",
+        "sidecar-flash-map-source-audit"
       ],
       "command": null,
-      "blocker": "The Base adapter is bound to the existing Felucca A/B primitives and passes the simulated-NOR host test. The factory V15 image remains the immutable reference; no additional dump from the user is required for software development. A physical Sidecar A/B backend remains blocked until the candidate Flash region, loader/update-record exclusions, sector ownership and recovery behavior are independently qualified from authoritative source/build evidence. V15 is a firmware image, not a complete physical Flash snapshot, so it cannot by itself prove free sectors. Production save/load callsites must also be integrated and tested. No physical sector is allocated and no device write path is enabled."
+      "blocker": "The pinned BSP source audit now qualifies XDATA1 [0xE7000,0xFC000) as firmware-owned data space. FM6 owns [0xE7000,0xE8000); sectors 0xE8000 and 0xE9000 are candidate Sidecar A/B sectors before globals. The loader checks update-record markers at each sector +0xF00, so the backend must leave the final 256 bytes of each sector erased. Production storage_hw.c still rejects candidate writes. Pair commit remains blocked until the bounded production A/B backend, firmware build/link evidence, project/preset/autosave runtime wiring, FM6 staging arbitration, and exhaustive simulated-NOR acceptance are implemented. No physical sector is allocated and no device write path is enabled."
     },
     {
       "id": "pair-power-loss",
