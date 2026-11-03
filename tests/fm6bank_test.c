@@ -68,6 +68,7 @@ static uint32_t fl_jedec_ram(void) { return 0; }
 static void fl_plain_window_init(void) {}
 #define FL_FAR(fn) (fn)
 #include "../firmware/src/storage.c"
+#include "../firmware/src/energun_flash_arbiter.c"
 #include "../firmware/src/upreset.c"
 #include "../firmware/src/project.c"
 
@@ -186,6 +187,7 @@ static void reset(void)
     memset(&ui, 0, sizeof ui);
     memset(&motion, 0, sizeof motion);
     memset(&fvb_tx, 0, sizeof fvb_tx);
+    memset(&fvb_stage_arbiter, 0, sizeof fvb_stage_arbiter);
     host_tracks_init();
     fm6_init();
     for (k = 0; k < NTRK; k++) {
@@ -288,22 +290,22 @@ static int store_test(void)
     ok &= rep[0] == 1;
     ok &= bank_is(&a);
     bad += check("WRITE without BEGIN: rc 5; a voice twice, index 32, a short record, a short END: rc 1; the bank stays", ok);
-    /* an autosave between two requests takes the transfer's sector: the transfer ends, nothing else lost */
+    /* An FM6 transfer reserves the autosave staging copy; an abandoned lease expires. */
     request(ED_FM6B_BEGIN, arg, 0);
-    ok = rep[0] == 0;
+    ok = rep[0] == 0 && !autosave_quiet();
     memset(as_data, 'T', sizeof as_data);
-    st_save(OBJ_AUTOSAVE, as_data, sizeof as_data);      /* (into the copy BEGIN took: the older one) */
+    fm1_ms += FVB_STAGE_LEASE_MS;
+    ok &= autosave_quiet();                               /* the 30-second idle lease has expired */
     arg[0] = 1;
     request(ED_FM6B_WRITE, arg, sizeof arg);
     ok &= rep[1] == 5;
-    request(ED_FM6B_END, arg, 0);                         /* (a short END: 1) */
-    ok &= rep[0] == 1;
     {
         uint8_t e[15] = {0};
         request(ED_FM6B_END, e, sizeof e);
         ok &= rep[0] == 5;
     }
-    bad += check("an autosave between BEGIN and WRITE: WRITE / END answer 5; the bank and the new autosave kept",
+    ok &= st_save(OBJ_AUTOSAVE, as_data, sizeof as_data) == 0;
+    bad += check("FM6 staging blocks autosave; an abandoned 30-second lease expires and permits autosave",
                  ok && bank_is(&a) && st_load(OBJ_AUTOSAVE, got, sizeof got) == (int)sizeof as_data &&
                      !memcmp(got, as_data, sizeof as_data));
     /* the next bank: staged in the autosave's older copy again (A now), the new autosave (B) kept */
