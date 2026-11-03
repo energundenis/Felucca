@@ -178,7 +178,7 @@ def load_worker_dag() -> dict[str, list[str]]:
         if task_id in graph or any(dep not in ALLOWED_COMMANDS for dep in deps):
             raise RuntimeError(f"duplicate task or unknown DAG dependency: {task_id!r}")
         graph[task_id] = deps
-    if set(graph) != set(ALLOWED_COMMANDS) or not 1 <= payload.get("max_parallel_workers", 0) <= 3:
+    if set(graph) != {"cp1-persistence", "cp2-dsp-vca", "cp3-sequencer"} or not 1 <= payload.get("max_parallel_workers", 0) <= 3:
         raise RuntimeError("worker DAG must declare all lanes and a parallel limit from 1 to 3")
     remaining = {key: set(value) for key, value in graph.items()}
     while remaining:
