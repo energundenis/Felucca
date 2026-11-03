@@ -2,6 +2,7 @@
  * ENERGUN FM-1 CORE — user-preset bank Sidecar lifecycle, V1.
  */
 #include "energun_preset_lifecycle_v1.h"
+#include "energun_sidecar_v1.h"
 
 static int preset_args_valid(const energun_lifecycle_v1_t *lifecycle,
                              uint8_t bank)
