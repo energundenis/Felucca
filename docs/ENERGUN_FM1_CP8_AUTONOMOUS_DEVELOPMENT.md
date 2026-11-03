@@ -17,57 +17,46 @@ The machine-readable plan is `tests/cp8_autonomous_development_orchestrator.json
 
 | ID | Workstream | Initial status |
 |---|---|---:|
-| CP8.1 | Repository-wide CI concurrency coordination | 0% |
-| CP8.2 | Coding worker registry and capability model | 25% |
-| CP8.3 | Automatic task routing and assignment | 35% |
+| CP8.1 | Durable queue and trusted coordinator | 75% |
+| CP8.2 | Runtime Worker registry and capability model | 85% |
+| CP8.3 | DAG-gated automatic task routing and assignment | 80% |
 | CP8.4 | Isolated feature branches and workspaces | 0% |
 | CP8.5 | Bounded autonomous source-code changes | 0% |
 | CP8.6 | Automated validation and evidence collection | 0% |
 | CP8.7 | Automatic reviewable PR creation | 0% |
 | CP8.8 | Independent review and quality gate | 0% |
-| CP8.9 | Conflict prevention, idempotency and recovery | 0% |
+| CP8.9 | Conflict prevention, idempotency and recovery | 70% |
 
 Percentages are engineering estimates, not CI results.
 
-## CP8.1 — global lock not yet implemented
+## CP8.1 — durable queue and trusted coordinator (75%)
 
-A shared GitHub Actions concurrency-group prototype was tested by assigning the same group to both existing workflows. The experiment caused both the fast-regression and baseline runs to be cancelled because GitHub concurrency supports only one running and one pending run per group; a new pending run can replace the previous pending run.
+A dedicated `energun-ci-queue` branch now stores the shared `queue/ledger.json` record set. Trusted GitHub Actions enqueue jobs write exact-SHA requests using non-forced Git-ref CAS. CP1, CP2 and CP3 lane workers claim requests from this shared ledger; GitHub concurrency is lane-scoped scheduling, not the queue itself.
 
-The shared group was reverted. The workflows again use separate concurrency groups, so there is currently **no cross-workflow lock**.
+The queue is live and has processed real tasks. Remaining work: stress concurrent enqueue/claim writers, prove no request loss across a large contention run, reconcile the backlog, and harden long-running heartbeat/retention behavior. There is no separate global mutex; atomic ledger CAS protects each state transition.
 
-A correct implementation must provide:
+## CP8.2 — persistent runtime Worker registry (85%)
 
-- atomic lock acquisition across workflows;
-- owner identity (workflow, run ID, commit SHA);
-- heartbeat and expiry;
-- stale-lock recovery without stealing a live lock;
-- guaranteed release on success, failure and cancellation;
-- bounded waiting and clear timeout/failure reporting;
-- tests that start two independent workflows and prove mutual exclusion without dropping either run.
+The runtime registry is stored in the queue ledger. Each ephemeral GitHub Actions worker registers a unique identity, run ID, lane, capabilities and per-worker capacity. The ledger tracks available/busy/offline state and the active request. Real CP1/CP2/CP3 worker registrations have been observed.
 
-Do not mark CP8.1 complete until these behaviors are implemented and verified.
+The connected workers execute trusted repository-owned test/build scripts. No external AI coding agent is connected, and no arbitrary source-code generation is claimed.
 
-## CP8.1 — durable global CI queue design
+## CP8.3 — live DAG-gated task dispatch (80%)
 
-A proposed architecture is recorded in `docs/ADR_CP8_1_DURABLE_GLOBAL_CI_QUEUE.md`. It uses durable queue records as the source of truth and a single serialized coordinator as the consumer; GitHub Actions concurrency is only the consumer guard, not the queue. The design includes idempotency keys, exact-SHA evidence, lease expiry/recovery, periodic reconciliation and explicit supersession rules. This is a design proposal only: no queue consumer or cross-workflow lock is active, so CP8.1 remains 0%.
+The coordinator now:
+- loads and validates the worker-lane DAG, rejecting unknown nodes and cycles;
+- checks prerequisites before every claim;
+- enforces per-worker capacity and the global three-worker limit;
+- atomically claims an exact-SHA request through CAS;
+- fences older attempts and records exact-SHA evidence.
 
-## CP8.2 — worker registry schema (25%)
+The production CP1/CP2/CP3 lanes are independent. A parent/child dependency test proves that a dependent task waits until its prerequisite passes.
 
-Implemented `tests/cp8_worker_registry.json` with a capability catalog, explicit least-privilege policy, concurrency budget and an empty worker list. The dispatcher validates the schema and rejects unsafe permission settings.
+## CP8.9 — crash recovery and duplicate prevention (70%)
 
-No coding worker is connected or registered. Runtime enrollment, identity verification, credentials/permission provisioning and health reporting remain outstanding.
+The live system recovered a CP1 request after its owning GitHub Actions job was cancelled. A later worker reclaimed the same request with attempt count 2, recorded the previous owner, and completed the exact-SHA test successfully. The old worker identity was marked offline.
 
-## CP8.3 — deterministic dry-run task router (35%)
-
-Implemented:
-
-- `tests/cp8_task_catalog.json` — bounded task records, dependencies, priorities and allowed path prefixes;
-- `tests/run_cp8_dispatch_planner.py` — deterministic dry-run router;
-- `tests/test_cp8_dispatch_planner.py` — automated safety and routing tests.
-
-The planner checks capability match, dependency completion, allowed paths, active state and worker/global concurrency. It does not invoke a worker, create a branch, modify files or open a PR. Since the registry is intentionally empty, the current report must be `NO_WORKERS_REGISTERED`.
-
-Live task claims, persistent queueing, atomic assignment leases, retries and worker execution remain unimplemented. The fast-regression workflow now runs the CP8 planner tests and uploads its dry-run report.
+Unit tests cover two distinct workers competing for one task, same-run cross-lane ownership, dependency blocking and stale-owner fencing. Remaining work includes repeated recovery stress, long-running heartbeat qualification and full queue replay/load testing.
 
 ## CP8.2–CP8.9 — planned architecture
 
