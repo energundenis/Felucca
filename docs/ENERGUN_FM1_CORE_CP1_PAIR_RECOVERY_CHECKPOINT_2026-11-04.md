@@ -28,3 +28,16 @@ The test Sidecar sectors remain an isolated simulated backend. This checkpoint d
 - Confirm Fast Regression and Full Baseline for the exact HEAD.
 - Continue target-side Sidecar backend/map review before production pair ordering can be unblocked.
 - Wire and verify actual project/live and preset call sites before declaring CP1 recovery complete.
+
+## Exact-HEAD CI acceptance follow-up — 2026-11-04
+
+The host fault-injection acceptance requested above is now verified on exact branch/test HEAD 78cc46c39b5b7599c894a2a144cea0f649105beb:
+
+- Fast Regression: https://github.com/energundenis/Felucca/actions/runs/41734515051, run #445 — SUCCESS.
+- The strict sidecar_pair_transaction compile and executable test passed inside the fast workflow's CP1 queue. The log explicitly reports PASS for the Sidecar torn-write sweep, Base torn-write sweep, and the added Sidecar record/header byte-cut sweep.
+- The fast workflow reports all 24 focused test programs/suites passed. The CP1 queue itself correctly ends BLOCKED at the production pair-order/recovery gates; that is an intentional architecture gate, not a failing host test.
+- Full Baseline: https://github.com/energundenis/Felucca/actions/runs/41734515025, run #572 — SUCCESS. The unchanged Felucca firmware build, full host/web regression, and AC79 pi32v2 compile-only probes for VCA, Sidecar V1, payload codecs, Private cache/bridge, pair coordinator and lifecycle adapters completed successfully.
+
+This satisfies the previous checkpoint's exact-HEAD host-test and CI acceptance items. It does not close production recovery: no target Sidecar backend or approved physical Flash allocation exists, and the real project/live/autosave/preset call sites and runtime-cache restoration are not wired. The AC79 results are compile/code-generation evidence only; there is no target runtime or physical-device validation.
+
+PR #5 remains open and unmerged. Its base is the isolated validation branch validation/cp1-pair-recovery-20261104; do not merge it into the project branch until the separate target-backend, Flash/recovery and runtime-integration gates are reviewed.
