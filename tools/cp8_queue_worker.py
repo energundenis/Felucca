@@ -14,7 +14,7 @@ from cp8_ci_queue_store import (  # noqa: E402
     QueueStoreError,
 )
 from cp8_worker_runtime import (  # noqa: E402
-    claim_next_for_worker, finish_worker_task, register_worker, release_worker,
+    claim_next_for_worker, finish_worker_task, mark_worker_running, register_worker, release_worker,
 )
 
 ALLOWED_COMMANDS = {
@@ -194,7 +194,7 @@ def drain(lane: str) -> None:
         while processed < max_items:
             recover_owners = completed_owner_runs(store)
             record = claim_next_for_worker(store, worker_id, run_id, dag,
-                completed_owner_run_ids=recover_owners, lease_seconds=3600)
+                completed_owner_run_ids=recover_owners, lease_seconds=5400)
             if record is None:
                 print("queue_empty_or_waiting_dependency_or_capacity=true")
                 break
@@ -203,7 +203,7 @@ def drain(lane: str) -> None:
             if lanes != [lane]: raise RuntimeError(f"lane isolation violation: expected {[lane]}, got {lanes}")
             print(f"claimed request={request_id} sha={sha} lane={lane} attempt={record['attempts']}")
             try:
-                store.mark_running(request_id, run_id)
+                mark_worker_running(store, request_id, worker_id, run_id)
                 checkout_sha(sha)
                 command = ALLOWED_COMMANDS[lane]
                 child_env = os.environ.copy()
