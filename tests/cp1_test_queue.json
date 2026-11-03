@@ -104,7 +104,7 @@
         "pair-commit-order"
       ],
       "command": null,
-      "blocker": "Requires the real pair coordinator and deterministic simulated-NOR fault injection at Sidecar payload/header and Base erase/payload/header boundaries."
+      "blocker": "The coordinator core fault matrix and adapter-level simulated NOR tests now cover Sidecar erase/payload/header/readback failures, Base erase/payload/header failures, orphan handling and byte-cut samples. This remains blocked pending a broader exhaustive phase matrix, a qualified production Sidecar backend and hardware-independent final acceptance after the physical map gate."
     },
     {
       "id": "sidecar-integrity",
@@ -115,7 +115,7 @@
         "pair-power-loss"
       ],
       "command": null,
-      "blocker": "Production Sidecar reader/validator and frozen envelope are not implemented. Do not treat outer storage CRC alone as semantic validation."
+      "blocker": "Sidecar V1 envelope and semantic validation are implemented and host-tested. The numeric P_MC Motion-ID whitelist remains unfrozen, and no physical Sidecar A/B reader/backend is enabled. Keep this stage blocked until the whitelist and runtime serialization contract are frozen."
     },
     {
       "id": "pair-recovery-roundtrip",
@@ -126,7 +126,7 @@
         "sidecar-integrity"
       ],
       "command": null,
-      "blocker": "Production pair load/recovery and roundtrip paths are not implemented."
+      "blocker": "Pair-aware Base + Sidecar recovery and logical payload roundtrip are now implemented in the host-tested adapter. Runtime project/preset/autosave callsites and full private/Motion serialization are not yet wired; no load path may rewrite storage."
     },
     {
       "id": "archive-v2-restore",
