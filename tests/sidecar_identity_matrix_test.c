@@ -76,10 +76,13 @@ static int validate_copy(const identity_t *id, unsigned copy,
 
 static void preset_set(uint8_t *p, unsigned slot, uint8_t seed)
 {
+    static const uint8_t fixed[6] = { 2u, 1u, 1u, 1u, 3u, 2u };
     unsigned k;
     p[slot >> 3] |= (uint8_t)(1u << (slot & 7u));
-    for (k = 0; k < 13u; ++k)
-        p[2u + slot * 13u + k] = (uint8_t)((seed + k) & 0x7Fu);
+    for (k = 0; k < 13u; ++k) {
+        uint8_t value = k < 6u ? fixed[k] : seed;
+        p[2u + slot * 13u + k] = value;
+    }
 }
 
 static void preset_clear(uint8_t *p, unsigned slot)
