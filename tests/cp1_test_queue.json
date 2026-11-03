@@ -204,6 +204,18 @@
       "blocker": "Backend-neutral generation-bound pair load and simulated recovery are implemented and tested. Missing: production runtime pair restore, legacy FUN10 E0–E7 fallback/default handling, and restoration of live engine/runtime caches at actual project and preset load call sites."
     },
     {
+      "id": "archive-v2-offline-validation",
+      "title": "CP1.4.9 Archive V2 offline manifest validation",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "sidecar-payload-codec",
+        "sidecar-integrity"
+      ],
+      "command": "node web/test_backup.mjs",
+      "blocker": "Browser-side Archive V2 parser is validated offline only. This stage checks seven identity mappings, Base CRC association, typed payload lengths, malformed/oversized Sidecar rejection and the no-write restore gate. Firmware pair-aware capture/restore remains blocked."
+    },
+    {
       "id": "archive-v2-restore",
       "title": "Archive V2 pair-aware restore and destination rebinding",
       "kind": "executable-host-test",
