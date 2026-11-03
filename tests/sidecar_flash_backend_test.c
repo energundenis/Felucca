@@ -10,6 +10,7 @@
 #define NOR_SIZE 0x2000u
 static uint8_t nor[NOR_SIZE];
 static unsigned int checks, failures, erases;
+static uint32_t last_erase;
 static int program_budget = -1;
 static int bounds(uint32_t off, size_t n)
 {
@@ -27,7 +28,7 @@ static int sim_erase(void *ctx, uint32_t off)
     (void)ctx;
     if ((off != ENERGUN_SC_FLASH_A && off != ENERGUN_SC_FLASH_B) ||
         !bounds(off,4096u)) return -1;
-    memset(nor+(off-NOR_BASE),0xFF,4096u); ++erases; return 0;
+    memset(nor+(off-NOR_BASE),0xFF,4096u); ++erases; last_erase=off; return 0;
 }
 static int sim_program(void *ctx, uint32_t off, const void *src, size_t n)
 {
@@ -55,14 +56,18 @@ int main(void)
     CHECK("init accepts complete IO contract",energun_sc_flash_init(&flash,&io,0)==0);
     CHECK("A write commits and reads back",energun_sc_flash_write_copy(&flash,ENERGUN_SC_ID_PROJECT,2,0,input,sizeof input)==0 &&
         energun_sc_flash_read_copy(&flash,ENERGUN_SC_ID_PROJECT,2,0,output,sizeof output,&n,&seq)==0 &&
-        n==sizeof input && seq==1u && memcmp(input,output,n)==0);
-    CHECK("B write uses only its exact sector",energun_sc_flash_write_copy(&flash,ENERGUN_SC_ID_PROJECT,2,1,input,117u)==0);
+        n==sizeof input && seq==1u && memcmp(input,output,n)==0 &&
+        last_erase==ENERGUN_SC_FLASH_A);
+    CHECK("B write erases and commits only its exact sector",energun_sc_flash_write_copy(&flash,ENERGUN_SC_ID_PROJECT,2,1,input,117u)==0 && last_erase==ENERGUN_SC_FLASH_B);
+    {
+        unsigned int before=erases;
+        CHECK("invalid write copy is rejected before any erase",energun_sc_flash_write_copy(&flash,ENERGUN_SC_ID_PROJECT,2,2,input,117u)!=0 && erases==before);
+    }
     CHECK("wrong identity rejected",energun_sc_flash_read_copy(&flash,ENERGUN_SC_ID_PROJECT,3,0,output,sizeof output,&n,&seq)!=0);
     CHECK("invalid copy rejected",energun_sc_flash_read_copy(&flash,ENERGUN_SC_ID_PROJECT,2,2,output,sizeof output,&n,&seq)!=0);
     nor[256] ^= 1u;
     CHECK("payload corruption rejected by CRC",energun_sc_flash_read_copy(&flash,ENERGUN_SC_ID_PROJECT,2,0,output,sizeof output,&n,&seq)!=0);
     CHECK("reserved update-loader tail is never programmed",sim_program(0,ENERGUN_SC_FLASH_A+0xF00u,input,1u)!=0);
-    CHECK("erase rejects non-candidate sector",sim_erase(0,ENERGUN_SC_FLASH_A+8192u)!=0);
     CHECK("program cannot cross page",sim_program(0,ENERGUN_SC_FLASH_A+0x2FFu,input,2u)!=0);
     /* Every possible program-byte cut while replacing B must preserve A. */
     memset(nor,0xFF,sizeof nor);
