@@ -270,3 +270,63 @@ energun_pair_v1_status_t energun_pair_v1_load(
     *base_meta = loaded;
     return ENERGUN_PAIR_V1_OK;
 }
+
+/* Backward-compatible loader: Sidecar is an optional extension for legacy
+ * Base objects. Only absence/format failure permits deterministic defaults.
+ */
+energun_pair_v1_status_t energun_pair_v1_load_compat(
+    const energun_pair_v1_ops_t *ops, void *context,
+    energun_pair_v1_workspace_t *workspace,
+    uint32_t object, energun_sc_identity_kind_t kind, uint8_t index,
+    uint8_t *base_payload, size_t base_capacity,
+    size_t *base_length,
+    uint8_t *sidecar_payload, size_t sidecar_capacity,
+    size_t *sidecar_length,
+    uint16_t base_motion_count,
+    energun_pair_v1_base_meta_t *base_meta)
+{
+    energun_pair_v1_status_t status;
+    energun_pair_v1_base_meta_t selected, loaded;
+    size_t loaded_length = 0u;
+    int rc;
+
+    if (base_length != NULL) *base_length = 0u;
+    if (sidecar_length != NULL) *sidecar_length = 0u;
+    if (!pair_ops_valid(ops) || workspace == NULL || base_payload == NULL ||
+        base_length == NULL || sidecar_payload == NULL || sidecar_length == NULL ||
+        base_meta == NULL)
+        return ENERGUN_PAIR_V1_ERR_ARGUMENT;
+
+    status = energun_pair_v1_load(ops, context, workspace,
+        object, kind, index, base_payload, base_capacity, base_length,
+        sidecar_payload, sidecar_capacity, sidecar_length,
+        base_motion_count, base_meta);
+    if (status == ENERGUN_PAIR_V1_OK)
+        return ENERGUN_PAIR_V1_OK;
+    if (status != ENERGUN_PAIR_V1_ERR_NO_MATCH &&
+        status != ENERGUN_PAIR_V1_ERR_SIDECAR_FORMAT)
+        return status;
+
+    /* Distinguish a legacy Base with no extension from an erased/missing Base. */
+    rc = ops->base_current(context, object, &selected);
+    if (rc == 1)
+        return ENERGUN_PAIR_V1_ERR_NO_MATCH;
+    if (rc != 0 || selected.copy > 1u)
+        return ENERGUN_PAIR_V1_ERR_BASE_IO;
+    if (selected.payload_length > base_capacity)
+        return ENERGUN_PAIR_V1_ERR_CAPACITY;
+
+    rc = ops->base_load_current(context, object, base_payload,
+                                base_capacity, &loaded);
+    if (rc != 0 || loaded.copy != selected.copy ||
+        loaded.sequence != selected.sequence ||
+        loaded.payload_length != selected.payload_length ||
+        loaded.payload_crc32 != selected.payload_crc32)
+        return ENERGUN_PAIR_V1_ERR_BASE_VERIFY;
+
+    loaded_length = loaded.payload_length;
+    *base_length = loaded_length;
+    *sidecar_length = 0u; /* caller applies canonical Sidecar defaults */
+    *base_meta = loaded;
+    return ENERGUN_PAIR_V1_LEGACY_FALLBACK;
+}
