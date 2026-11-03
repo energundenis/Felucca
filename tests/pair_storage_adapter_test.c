@@ -199,12 +199,15 @@ int main(void)
 {
     energun_pair_storage_adapter_t adapter;
     energun_pair_txn_workspace_t workspace;
-    uint8_t old_base[16], orphan[16];
+    uint8_t old_base[16], orphan[16], probe[1] = {0u};
     unsigned int i;
     int ok;
 
     CHECK("adapter initializes against existing Base object",
           setup(&adapter) == 0);
+    CHECK("legacy Base load/save entrypoints remain linked",
+          st_save(OBJ_COUNT, probe, sizeof probe) != 0 &&
+          st_load(OBJ_COUNT, probe, sizeof probe) < 0);
     CHECK("first save commits Base A + Sidecar A",
           save_value(&adapter, &workspace, 10u) == ENERGUN_PAIR_OK &&
           recover_equals(&adapter, (uint8_t[16]){10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25}, 16u, 0u, 10u));
