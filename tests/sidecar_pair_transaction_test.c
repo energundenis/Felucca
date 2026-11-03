@@ -45,7 +45,10 @@ static int st_prog(uint32_t off, const void *src, uint32_t n)
 #include "../firmware/src/energun_sidecar_v1.c"
 #include "../firmware/src/energun_pair_v1.c"
 #include "../firmware/src/energun_sidecar_payload_v1.c"
+#include "../firmware/src/energun_private_v1.c"
+#include "../firmware/src/energun_private_payload_v1.c"
 #include "../firmware/src/energun_lifecycle_v1.c"
+#include "../firmware/src/energun_preset_lifecycle_v1.c"
 
 #define SC_TEST_TYPE 0x7Eu
 #define SC_TEST_PAYLOAD_OFF 256u
@@ -669,6 +672,129 @@ int main(void)
             ENERGUN_LIFECYCLE_V1_ERR_PAIR && got_base_len == 0u;
         lifecycle_guard_value = 0;
         bad += check("CP1.6 lifecycle adapter: save/rename/Save As/legacy/autosave guard/erase", lifecycle_ok);
+    }
+
+
+    /* CP1.7 preset-bank lifecycle: bank pair, slot preservation, defaults and restore. */
+    {
+        static energun_pair_v1_workspace_t preset_workspace;
+        static uint8_t preset_base_scratch[4096];
+        static uint8_t preset_sidecar_scratch[ENERGUN_PAIR_V1_RECORD_MAX];
+        static uint8_t preset_defaults[ENERGUN_SC_V1_PRESET_PAYLOAD];
+        static uint8_t private_defaults[ENERGUN_PRIVATE_V1_KEYS];
+        energun_lifecycle_v1_t preset_lifecycle;
+        energun_private_cache_v1_t private_cache;
+        energun_sc_preset_payload_v1_t bank_payload;
+        energun_pair_v1_base_meta_t meta;
+        uint8_t bank_base[64], changed_base[64], loaded_base[128];
+        size_t loaded_base_length = 0u;
+        uint8_t value = 0u;
+        int preset_ok = 1;
+        memset(&preset_lifecycle, 0, sizeof preset_lifecycle);
+        memset(preset_defaults, 0, sizeof preset_defaults);
+        memset(private_defaults, 0, sizeof private_defaults);
+        preset_lifecycle.ops = &pair_test_ops;
+        preset_lifecycle.workspace = &preset_workspace;
+        preset_lifecycle.base_scratch = preset_base_scratch;
+        preset_lifecycle.base_scratch_capacity = sizeof preset_base_scratch;
+        preset_lifecycle.sidecar_scratch = preset_sidecar_scratch;
+        preset_lifecycle.sidecar_scratch_capacity = sizeof preset_sidecar_scratch;
+        preset_lifecycle.canonical_sidecar_defaults = preset_defaults;
+        preset_lifecycle.canonical_sidecar_defaults_length = sizeof preset_defaults;
+        preset_lifecycle.base_motion_count = 0u;
+        preset_ok &= energun_private_v1_init(&private_cache, private_defaults) ==
+            ENERGUN_PRIVATE_V1_OK;
+        preset_ok &= energun_private_v1_set(&private_cache, 1u,
+            ENERGUN_PRIVATE_WAVE, 2u) == ENERGUN_PRIVATE_V1_OK;
+        preset_ok &= energun_private_v1_set(&private_cache, 1u,
+            ENERGUN_PRIVATE_FM_CHARACTER, 2u) == ENERGUN_PRIVATE_V1_OK;
+        preset_ok &= energun_private_v1_set(&private_cache, 2u,
+            ENERGUN_PRIVATE_FOLLOW, 1u) == ENERGUN_PRIVATE_V1_OK;
+
+        reset_media();
+        memset(&bank_payload, 0, sizeof bank_payload);
+        memset(bank_base, 0x33, sizeof bank_base);
+        preset_ok &= energun_preset_lifecycle_v1_save_bank(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, bank_base, sizeof bank_base, &bank_payload) ==
+            ENERGUN_LIFECYCLE_V1_OK;
+
+        memcpy(changed_base, bank_base, sizeof changed_base);
+        changed_base[0] = 0x44u;
+        preset_ok &= energun_preset_lifecycle_v1_capture_slot(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, 1u, 5u, changed_base, sizeof changed_base,
+            &private_cache) == ENERGUN_LIFECYCLE_V1_OK;
+        memcpy(changed_base, bank_base, sizeof changed_base);
+        changed_base[1] = 0x55u;
+        preset_ok &= energun_preset_lifecycle_v1_capture_slot(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, 2u, 6u, changed_base, sizeof changed_base,
+            &private_cache) == ENERGUN_LIFECYCLE_V1_OK;
+
+        memset(&bank_payload, 0, sizeof bank_payload);
+        preset_ok &= energun_preset_lifecycle_v1_load_bank(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, loaded_base, sizeof loaded_base,
+            &loaded_base_length, &bank_payload, &meta) ==
+            ENERGUN_LIFECYCLE_V1_OK && loaded_base_length == sizeof bank_base;
+        preset_ok &= (bank_payload.slot_bitmap[0] & (1u << 5)) != 0u &&
+            (bank_payload.slot_bitmap[0] & (1u << 6)) != 0u &&
+            bank_payload.private_values[5][ENERGUN_PRIVATE_WAVE] == 2u &&
+            bank_payload.private_values[5][ENERGUN_PRIVATE_FM_CHARACTER] == 2u &&
+            bank_payload.private_values[6][ENERGUN_PRIVATE_FOLLOW] == 1u;
+
+        preset_ok &= energun_private_v1_defaults(&private_cache, 3u,
+            private_defaults) == ENERGUN_PRIVATE_V1_OK;
+        preset_ok &= energun_preset_lifecycle_v1_restore_slot(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, 3u, 5u, loaded_base, sizeof loaded_base,
+            &loaded_base_length, &private_cache, private_defaults, &meta) ==
+            ENERGUN_LIFECYCLE_V1_OK;
+        preset_ok &= energun_private_v1_get(&private_cache, 3u,
+            ENERGUN_PRIVATE_WAVE, &value) == ENERGUN_PRIVATE_V1_OK && value == 2u;
+
+        memcpy(changed_base, bank_base, sizeof changed_base);
+        changed_base[2] = 0x66u;
+        preset_ok &= energun_preset_lifecycle_v1_erase_slot(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, 5u, changed_base, sizeof changed_base) ==
+            ENERGUN_LIFECYCLE_V1_OK;
+        memset(&bank_payload, 0, sizeof bank_payload);
+        preset_ok &= energun_preset_lifecycle_v1_load_bank(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, loaded_base, sizeof loaded_base,
+            &loaded_base_length, &bank_payload, &meta) ==
+            ENERGUN_LIFECYCLE_V1_OK &&
+            (bank_payload.slot_bitmap[0] & (1u << 5)) == 0u &&
+            (bank_payload.slot_bitmap[0] & (1u << 6)) != 0u &&
+            bank_payload.private_values[5][ENERGUN_PRIVATE_WAVE] == 0u &&
+            bank_payload.private_values[6][ENERGUN_PRIVATE_FOLLOW] == 1u;
+
+        preset_ok &= energun_preset_lifecycle_v1_restore_slot(&preset_lifecycle,
+            OBJ_UPRESET0, 0u, 3u, 5u, loaded_base, sizeof loaded_base,
+            &loaded_base_length, &private_cache, private_defaults, &meta) ==
+            ENERGUN_LIFECYCLE_V1_OK;
+        preset_ok &= energun_private_v1_get(&private_cache, 3u,
+            ENERGUN_PRIVATE_WAVE, &value) == ENERGUN_PRIVATE_V1_OK && value == 0u;
+
+        memcpy(changed_base, bank_base, sizeof changed_base);
+        changed_base[3] = 0x77u;
+        preset_ok &= energun_lifecycle_v1_copy_stored(&preset_lifecycle,
+            OBJ_UPRESET0, ENERGUN_SC_ID_PRESET_BANK, 0u,
+            OBJ_UPRESET0 + 1u, ENERGUN_SC_ID_PRESET_BANK, 1u,
+            changed_base, sizeof changed_base) == ENERGUN_LIFECYCLE_V1_OK;
+        memset(&bank_payload, 0, sizeof bank_payload);
+        preset_ok &= energun_preset_lifecycle_v1_load_bank(&preset_lifecycle,
+            OBJ_UPRESET0 + 1u, 1u, loaded_base, sizeof loaded_base,
+            &loaded_base_length, &bank_payload, &meta) ==
+            ENERGUN_LIFECYCLE_V1_OK &&
+            (bank_payload.slot_bitmap[0] & (1u << 6)) != 0u &&
+            bank_payload.private_values[6][ENERGUN_PRIVATE_FOLLOW] == 1u;
+
+        reset_media();
+        preset_ok &= st_save(OBJ_UPRESET0 + 1u, bank_base, sizeof bank_base) == 0;
+        memset(&bank_payload, 0xA5, sizeof bank_payload);
+        preset_ok &= energun_preset_lifecycle_v1_load_bank(&preset_lifecycle,
+            OBJ_UPRESET0 + 1u, 1u, loaded_base, sizeof loaded_base,
+            &loaded_base_length, &bank_payload, &meta) ==
+            ENERGUN_LIFECYCLE_V1_LEGACY_DEFAULTS &&
+            loaded_base_length == sizeof bank_base &&
+            bank_payload.slot_bitmap[0] == 0u && bank_payload.slot_bitmap[1] == 0u;
+        bad += check("CP1.7 preset lifecycle: bank pair, slot isolation, erase, rename, legacy defaults and restore", preset_ok);
     }
 
     printf("%s\n", bad ? "SIDECAR PAIR TEST FAILED" : "SIDECAR PAIR TEST PASSED");
