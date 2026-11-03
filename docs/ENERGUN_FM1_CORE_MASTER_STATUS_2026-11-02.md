@@ -1,9 +1,10 @@
 # ENERGUN FM-1 CORE — Master Status
-Date: 2026-11-02
+Date: 2026-11-03
 Canonical repository: `energundenis/Felucca`
-Canonical working branch: `energun-metal-core`
+Coordination / working branch: `energun-development-orchestrator`  
+Draft PR #4 target: `energun-metal-core`
 Documentation synchronization base HEAD: `069b43f1aac4a08aaf927fac92c2852526a03cf5`
-Latest code/test HEAD with confirmed fast-lane result: `277313eeda4bd3805ea0c910e3298633c041d03b`
+Latest code/test HEAD with confirmed CP1 + fast-lane result: `97de9b7abf893c18064fcde942c46f637b2c3e9a`
 
 ## Authority and percentage method
 This is the current status entry point. It supersedes stale checkbox/status wording in the original planning baseline and older checkpoint snapshots. The detailed source documents remain authoritative for technical scope and acceptance.
@@ -33,10 +34,10 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 | CP1.4.2 | 7-bit conversion and compatibility | **80%** | Standard Felucca 7-bit V1 encoding accepted. 30-control reference, 9,434 source-step boundaries, 100,001-point nearest-code sweeps, endpoint clamping and corrected bipolar mapping are documented/tested. Remaining: musical-resolution review, final per-control acceptance, base-compatible FUN10/preset strategy and exact-head compatibility evidence. |
 | CP1.4.3 | Private parameter access/runtime model | **45%** | Typed four-part cache, lifecycle and capability-probed editor protocol are designed. No production Private API/cache/editor implementation. |
 | CP1.4.4 | P_MC Motion Lock policy | **45%** | Explicit whitelist and shared 128-event-pool rules are designed. No production whitelist/merge/split implementation. |
-| CP1.4.5 | Sidecar schema and pair transaction | **70%** | V1 envelope/semantic validator, exact selected-Base metadata, explicit validated A/B copy reader and orphan-aware matching-copy selector are implemented and host-tested. Pair commit coordinator and power-loss transaction tests remain open. |
+| CP1.4.5 | Sidecar schema and pair transaction | **75%** | V1 envelope/semantic validator, exact selected-Base metadata, A/B selector, backend-independent pair transaction core and Felucca Base storage adapter are implemented and host-tested. A production Sidecar Flash backend and runtime save/load callsites remain open. |
 | CP1.4.6 | Sidecar logical capacity | **100%** | Capacity arithmetic verified: 501-byte project/live payload and 210-byte preset-bank payload before provisional envelope; no physical sector allocation. |
-| CP1.4.7 | CRC/integrity | **45%** | Outer storage CRC is validated independently for both A/B candidates; semantic inspection and exact Base sequence+payload-CRC matching determine membership. Pair recovery and power-loss integrity remain open. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
-| CP1.4.8 | Automated storage/fault regression | **50%** | Sidecar V1 format **38/38**, Base-generation binding **16/16**, Sidecar A/B selection **17/17** pass under strict host compilation and simulated NOR. Pair-commit, power-loss and full round-trip matrix remains open. |
+| CP1.4.7 | CRC/integrity | **50%** | Outer storage CRC, semantic validation and exact Base sequence+payload-CRC matching are covered; adapter fault injection preserves the old pair through every tested Base/Sidecar byte cut. Production backend and complete recovery matrix remain open. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
+| CP1.4.8 | Automated storage/fault regression | **55%** | Sidecar V1 **38/38**, Base binding **16/16**, A/B selection **17/17**, pair core **11/11**, adapter **18/18** pass. New exhaustive simulated-NOR sweeps cover 169 Sidecar and 48 Base programmed-byte cut positions with 0 failures. Production backend, full phase matrix and runtime roundtrip remain open. |
 | CP1.4.9 | Backup/Restore audit | **100% audit** | Source audit complete: archive V1 omits Sidecar; archive V2 needs pair-aware restore and destination-sequence rebinding. Implementation remains 0%. |
 | CP1.4.10 | Integration | **20%** | Integration dependencies and boundaries are documented; production Private/P_MC/Sidecar integration is not implemented. |
 | CP1.4.11 | Flash map, bootloader and recovery audit | **0%** | Physical allocation remains blocked pending a complete source/image map and recovery qualification. No sectors are selected or authorized. |
@@ -138,3 +139,16 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - Fast regression [41481399097](https://github.com/energundenis/Felucca/actions/runs/41481399097): **SUCCESS** on exact tested code HEAD `ae7d01399396c4e40b3eae24d2e0ebb9aebbcd9a`. All 21 focused tests passed; scheduler unit tests **5/5 PASS**, including a barrier-based proof that independent stages overlap; CP1 queue ran Sidecar format and Base binding concurrently, then A/B selection after both; Sidecar V1 **38/38**, Base binding **16/16**, A/B selection **17/17**. Queue correctly reports BLOCKED at Pair Commit Ordering because the production coordinator is not implemented.
 - Baseline build [41481399187](https://github.com/energundenis/Felucca/actions/runs/41481399187) for the same code HEAD was still running its host/web regression at this status update; no complete baseline PASS is claimed yet.
 - This automation change does not change CP0–CP7 completion percentages. No physical FM-1, Flash layout, object IDs, bootloader, OTA or recovery changes.
+
+
+## CP1 acceleration update — 2026-11-03
+
+- Coordination branch: `energun-development-orchestrator`; Draft PR #4 targets `energun-metal-core` and remains open/draft/unmerged.
+- Exact code/test HEAD: `97de9b7abf893c18064fcde942c46f637b2c3e9a`.
+- Change: expanded `tests/pair_storage_adapter_test.c` from sparse byte-cut samples to exhaustive programmed-byte interruption sweeps for the current simulated transaction fixture.
+- Sidecar sweep: **169/169 cut positions**, all returned the expected Sidecar commit failure and recovered the previous complete pair; 0 failures.
+- Base sweep: **48/48 cut positions**, all returned the expected Base commit failure and recovered the previous complete pair; 0 failures.
+- Existing adapter suite: **18/18 checks**. Pair transaction core: **11/11**. Sidecar V1: **38/38**. Base binding: **16/16**. A/B selection: **17/17**.
+- Exact-HEAD CP1 worker and CP8 qualification: [run 41640259969](https://github.com/energundenis/Felucca/actions/runs/41640259969) completed SUCCESS. Focused fast regression: [run 41640260005](https://github.com/energundenis/Felucca/actions/runs/41640260005) completed SUCCESS.
+- The CP1 queue correctly stops at `pair-commit-order`: physical Sidecar backend and production save/load callsites are not yet qualified. No physical sector is allocated, no Flash write is enabled, and no device was accessed.
+- This is a test-coverage improvement, not a claim that CP1 persistence is complete. CP1.4.2 musical-resolution/legacy-compatibility review, CP1.4.3 Private runtime implementation, CP1.4.4 Motion Lock implementation, CP1.4.9 archive V2 and CP1.4.11 source/Flash/recovery audit remain open.
