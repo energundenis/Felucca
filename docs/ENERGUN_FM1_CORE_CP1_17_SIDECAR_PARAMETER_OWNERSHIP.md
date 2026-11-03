@@ -63,23 +63,23 @@ The following order is the Sidecar V1 per-part byte order and the proposed appen
 
 Four independent banks exist, one per part. These controls are not P_COUNT entries and must not be placed in `track_t.p[]` or volatile `engine_t.mem`.
 
-| Sidecar index | Key | Type / valid encoded values | Runtime owner | Persistence owner |
+| Sidecar index | Key | Type / valid encoded values | V1 default | Runtime owner | Persistence owner |
 |---:|---|---|---|---|
-| 0 | WAVE | Enum: 0 SINE, 1 TRI, 2 SAW | Part Private cache / oscillator adapter | Project Sidecar; preset-bank Sidecar |
-| 1 | FOLLOW | Boolean: 0 OFF, 1 ON | Part Private cache / FOLLOW stage | Project Sidecar; preset-bank Sidecar |
-| 2 | METAL | Boolean: 0 OFF, 1 ON | Part Private cache / METAL stage | Project Sidecar; preset-bank Sidecar |
-| 3 | MODULATION | Enum: 0 FM, 1 AM | Part Private cache / modulation router | Project Sidecar; preset-bank Sidecar |
-| 4 | MOD OSC WAVE | Enum: 0 SINE, 1 TRIANGLE, 2 SAW, 3 SQUARE | Part Private cache / modulation oscillator | Project Sidecar; preset-bank Sidecar |
-| 5 | FM CHARACTER | Enum: 0 SMOOTH, 1 CLASSIC, 2 METALLIC | Part Private cache / FM stage | Project Sidecar; preset-bank Sidecar |
-| 6 | COMPLEX MODULE VOLUME | Unsigned 7-bit: 0..127 | Part Private cache / Complex module | Project Sidecar; preset-bank Sidecar |
-| 7 | FOLD MODE | Enum: 0 SOFT, 1 CLASSIC, 2 HARD | Part Private cache / wavefolder | Project Sidecar; preset-bank Sidecar |
-| 8 | LPG MODULE VOLUME | Unsigned 7-bit: 0..127 | Part Private cache / LPG | Project Sidecar; preset-bank Sidecar |
-| 9 | ATTACK | Unsigned 7-bit canonical time code | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
-| 10 | DECAY | Unsigned 7-bit canonical time code | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
-| 11 | SUSTAIN | Unsigned 7-bit canonical level code | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
-| 12 | RELEASE | Unsigned 7-bit canonical time code | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
+| 0 | WAVE | Enum: 0 SINE, 1 TRI, 2 SAW | SINE (0) | Part Private cache / oscillator adapter | Project Sidecar; preset-bank Sidecar |
+| 1 | FOLLOW | Boolean: 0 OFF, 1 ON | ON (1) | Part Private cache / FOLLOW stage | Project Sidecar; preset-bank Sidecar |
+| 2 | METAL | Boolean: 0 OFF, 1 ON | ON (1) | Part Private cache / METAL stage | Project Sidecar; preset-bank Sidecar |
+| 3 | MODULATION | Enum: 0 FM, 1 AM | FM (0) | Part Private cache / modulation router | Project Sidecar; preset-bank Sidecar |
+| 4 | MOD OSC WAVE | Enum: 0 SINE, 1 TRIANGLE, 2 SAW, 3 SQUARE | SINE (0) | Part Private cache / modulation oscillator | Project Sidecar; preset-bank Sidecar |
+| 5 | FM CHARACTER | Enum: 0 SMOOTH, 1 CLASSIC, 2 METALLIC | METALLIC (2) | Part Private cache / FM stage | Project Sidecar; preset-bank Sidecar |
+| 6 | COMPLEX MODULE VOLUME | Unsigned 7-bit: 0..127 | 1.00 (127) | Part Private cache / Complex module | Project Sidecar; preset-bank Sidecar |
+| 7 | FOLD MODE | Enum: 0 SOFT, 1 CLASSIC, 2 HARD | CLASSIC (1) | Part Private cache / wavefolder | Project Sidecar; preset-bank Sidecar |
+| 8 | LPG MODULE VOLUME | Unsigned 7-bit: 0..127 | 1.00 (127) | Part Private cache / LPG | Project Sidecar; preset-bank Sidecar |
+| 9 | ATTACK | Unsigned 7-bit canonical time code | 0.010 s (canonical code) | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
+| 10 | DECAY | Unsigned 7-bit canonical time code | 0.30 s (canonical code) | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
+| 11 | SUSTAIN | Unsigned 7-bit canonical level code | 0.00 (canonical code) | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
+| 12 | RELEASE | Unsigned 7-bit canonical time code | 0.20 s (canonical code) | Part Private cache / amplitude envelope | Project Sidecar; preset-bank Sidecar |
 
-**Open default decision:** the v98 source object and HTML selector disagree on the initial FM CHARACTER selection (source object ordinal 2 vs markup-selected ordinal 1). Sidecar V1 validates all three ordinals but intentionally does not choose the runtime default. Do not silently pick one; resolve it in the Private descriptor/default table before CP1.17 is frozen.
+**FM CHARACTER default is resolved:** CP1.13 source verification establishes the effective V98 audio-engine startup value as METALLIC (2). The HTML's pre-audio CLASSIC selection is a markup/runtime initialization mismatch; audio initialization synchronizes the selector to the JavaScript parameter object. Preserve METALLIC (2) as the V1 default and retain all three response modes. The complete Private V1 defaults in this table follow the frozen logical map: WAVE=SINE, FOLLOW=ON, METAL=ON, MODULATION=FM, MOD OSC WAVE=SINE, FM CHARACTER=METALLIC, COMPLEX MODULE VOLUME=1, FOLD MODE=CLASSIC, LPG MODULE VOLUME=1, ATTACK=0.010 s, DECAY=0.30 s, SUSTAIN=0, RELEASE=0.20 s. Continuous time/level values are encoded through the accepted canonical 7-bit descriptor mappings.
 
 Missing, unsupported or invalid Sidecar data must not block loading the legacy base object. The Private cache applies deterministic V1 defaults, and the complete extension record is accepted or rejected atomically.
 
@@ -147,7 +147,7 @@ The final row is an ownership boundary, not a proposal to add sequencer data to 
 - [x] Sidecar V1 envelope and payload field layout frozen for host implementation.
 - [x] Sidecar host format, Base binding and A/B selection suites recorded as passing in the prior exact-head evidence.
 - [ ] Freeze numeric P_MC IDs 103–118 and E0–E7 IDs 119–126 after descriptor/migration review.
-- [ ] Resolve FM CHARACTER default parity and publish the complete 13-key Private default table.
+- [x] Resolve FM CHARACTER default parity from CP1.13 and publish the complete 13-key Private default table.
 - [ ] Implement and test the exact P_MC Motion whitelist 103–118 against every allowed and denied parameter.
 - [ ] Complete real storage pair-transaction fault-injection tests and verify all power-cut states against actual Felucca storage.
 - [ ] Confirm all project, autosave, preset-bank save/rename/erase paths use the coordinator.
