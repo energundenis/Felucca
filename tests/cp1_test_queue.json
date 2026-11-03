@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. The backend-neutral coordinator is host-tested across all seven identities, including pair power-loss, Rename rebind and Save As destination isolation. Production lifecycle integration remains a separate blocked gate.",
+  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. One coordinator harness covers all seven identities, Rename rebind, Save As isolation and byte-level power-loss injection. Production lifecycle integration remains a separate blocked gate.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -113,7 +113,6 @@
       "depends_on": [
         "sidecar-ab-selection",
         "pair-transaction-harness",
-        "pair-power-loss",
         "sidecar-identity-matrix",
         "fm6-staging-reservation"
       ],
@@ -121,26 +120,15 @@
       "blocker": "The backend-neutral coordinator is implemented and host-tested. Production pair ordering remains blocked on the approved target Sidecar storage adapter, runtime integration and the full-device Flash/recovery gate; no physical address is authorized."
     },
     {
-      "id": "pair-power-loss",
-      "title": "Power-loss injection across every pair-commit phase",
-      "kind": "executable-host-test",
-      "state": "ready",
-      "depends_on": [
-        "pair-transaction-harness"
-      ],
-      "command": "sh tests/run_sidecar_pair_transaction_test.sh",
-      "blocker": "Coordinator host acceptance injects torn writes at every Sidecar and Base payload/header byte, verifies old-pair retention after failed Base commit and failed erase, retries around an orphan, checks tombstone isolation/reuse, and tests fallback after newest Base corruption. Simulated NOR only."
-    },
-    {
       "id": "sidecar-integrity",
       "title": "Sidecar CRC, schema and semantic integrity",
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "pair-power-loss"
+        "pair-transaction-harness"
       ],
       "command": null,
-      "blocker": "Production Sidecar reader/validator and frozen envelope are not implemented. Do not treat outer storage CRC alone as semantic validation."
+      "blocker": "Sidecar V1 envelope, CRC, schema and semantic value/motion validator are implemented and host-tested. Remaining work is the production Sidecar A/B reader/backend and integration of validation into real project/preset load paths; P_MC numeric-ID whitelist remains a separate CP1.4.4 gate."
     },
     {
       "id": "pair-recovery-roundtrip",
@@ -151,7 +139,7 @@
         "sidecar-integrity"
       ],
       "command": null,
-      "blocker": "Production pair load/recovery and roundtrip paths are not implemented."
+      "blocker": "Backend-neutral generation-bound pair load and simulated recovery are implemented and tested. Missing: production runtime pair restore, legacy FUN10 E0–E7 fallback/default handling, and restoration of live engine/runtime caches at actual project and preset load call sites."
     },
     {
       "id": "archive-v2-restore",
@@ -173,7 +161,7 @@
         "archive-v2-restore"
       ],
       "command": null,
-      "blocker": "An explicit FM6 staging reservation/ownership contract and Sidecar autosave deferral implementation are not present."
+      "blocker": "Base-only FM6 inactive-autosave-copy reservation and autosave deferral are implemented and host-tested. Missing: Sidecar-aware autosave pair transaction coordination with the FM6 staging reservation and final runtime integration."
     },
     {
       "id": "cp1-full-host-regression",
