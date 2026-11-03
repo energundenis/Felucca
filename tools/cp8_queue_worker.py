@@ -13,6 +13,9 @@ from cp8_ci_queue_store import (  # noqa: E402
     DEFAULT_BRANCH, GitHubGitDataClient, GitRefCASQueueStore, QueueCASConflict,
     QueueStoreError,
 )
+from cp8_worker_runtime import (  # noqa: E402
+    claim_next_for_worker, finish_worker_task, register_worker, release_worker,
+)
 
 ALLOWED_COMMANDS = {
     "fast-regression": ["sh", "tests/run_metal_core_fast.sh"],
@@ -147,60 +150,84 @@ def completed_owner_runs(store) -> set[int]:
     return completed
 
 
+def load_worker_dag() -> dict[str, list[str]]:
+    import json
+    path = ROOT / "tests" / "cp8_worker_dag.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    tasks = payload.get("tasks")
+    if payload.get("schema_version") != 1 or not isinstance(tasks, list):
+        raise RuntimeError("worker DAG schema is invalid")
+    graph = {}
+    for item in tasks:
+        task_id = item.get("task_id")
+        deps = item.get("depends_on")
+        if task_id not in ALLOWED_COMMANDS or not isinstance(deps, list):
+            raise RuntimeError(f"invalid worker DAG task: {task_id!r}")
+        if task_id in graph or any(dep not in ALLOWED_COMMANDS for dep in deps):
+            raise RuntimeError(f"duplicate task or unknown DAG dependency: {task_id!r}")
+        graph[task_id] = deps
+    if set(graph) != set(ALLOWED_COMMANDS) or not 1 <= payload.get("max_parallel_workers", 0) <= 3:
+        raise RuntimeError("worker DAG must declare all lanes and a parallel limit from 1 to 3")
+    remaining = {key: set(value) for key, value in graph.items()}
+    while remaining:
+        ready = [key for key, deps in remaining.items() if not deps]
+        if not ready:
+            raise RuntimeError(f"worker DAG contains a cycle: {sorted(remaining)}")
+        for key in ready: del remaining[key]
+        for deps in remaining.values(): deps.difference_update(ready)
+    return graph
+
+
 def drain(lane: str) -> None:
     store, _ = make_store()
     run_id = int(env("GITHUB_RUN_ID"))
-    run_url = (
-        f"{env('GITHUB_SERVER_URL')}/{env('GITHUB_REPOSITORY')}/actions/runs/{run_id}"
-    )
-    if lane not in ALLOWED_COMMANDS:
-        raise RuntimeError(f"lane is not allow-listed: {lane}")
+    run_url = f"{env('GITHUB_SERVER_URL')}/{env('GITHUB_REPOSITORY')}/actions/runs/{run_id}"
+    if lane not in ALLOWED_COMMANDS: raise RuntimeError(f"lane is not allow-listed: {lane}")
     max_items = int(os.environ.get("CP8_MAX_ITEMS_PER_RUN", "2"))
+    dag = load_worker_dag()
+    worker_id = f"cp8-{lane}-run-{run_id}"
+    register_worker(store, worker_id, run_id, lane, ["test-automation", lane], max_concurrency=1)
     lane_runner_source = (ROOT / "tools" / "cp8_worker_lanes.py").read_text(encoding="utf-8")
-    lane_runner_path = Path("/tmp/energun_cp8_worker_lanes.py")
-    lane_runner_path.write_text(lane_runner_source, encoding="utf-8")
+    Path("/tmp/energun_cp8_worker_lanes.py").write_text(lane_runner_source, encoding="utf-8")
     processed = 0
-    while processed < max_items:
-        recover_owners = completed_owner_runs(store)
-        record = store.claim_next(
-            f"cp8-{lane}-worker", run_id, lease_seconds=3600, required_lane=lane,
-            recover_owner_run_ids=recover_owners,
-        )
-        if record is None:
-            print("queue_empty=true")
-            break
-        request_id = record["request_id"]
-        sha = record["commit_sha"]
-        lanes = record["requested_lanes"]
-        if lanes != [lane]:
-            raise RuntimeError(f"lane isolation violation: expected {[lane]}, got {lanes}")
-        print(f"claimed request={request_id} sha={sha} lane={lane}")
-        try:
-            store.mark_running(request_id, run_id)
-            checkout_sha(sha)
-            # Keep the coordinator-approved harness outside the tested checkout.
-            command = ALLOWED_COMMANDS[lane]
-            child_env = os.environ.copy()
-            child_env["CP8_WORKSPACE"] = str(ROOT)
-            print(f"RUN lane={lane} command={' '.join(command)}")
-            subprocess.run(command, cwd=ROOT, env=child_env, check=True)
-            store.finish(
-                request_id, run_id, "passed",
-                "All allow-listed queue lanes passed.",
-                evidence=[run_url], tested_sha=sha,
-            )
-            print(f"PASS request={request_id} sha={sha}")
-        except Exception as exc:
-            store.finish(
-                request_id, run_id, "failed",
-                f"{type(exc).__name__}: {str(exc)[:350]}",
-                now=None,
-            )
-            print(f"FAIL request={request_id}: {type(exc).__name__}: {exc}")
-            raise
-        processed += 1
+    try:
+        while processed < max_items:
+            recover_owners = completed_owner_runs(store)
+            record = claim_next_for_worker(store, worker_id, run_id, dag,
+                completed_owner_run_ids=recover_owners, lease_seconds=3600)
+            if record is None:
+                print("queue_empty_or_waiting_dependency_or_capacity=true")
+                break
+            request_id, sha = record["request_id"], record["commit_sha"]
+            lanes = record["requested_lanes"]
+            if lanes != [lane]: raise RuntimeError(f"lane isolation violation: expected {[lane]}, got {lanes}")
+            print(f"claimed request={request_id} sha={sha} lane={lane} attempt={record['attempts']}")
+            try:
+                store.mark_running(request_id, run_id)
+                checkout_sha(sha)
+                command = ALLOWED_COMMANDS[lane]
+                child_env = os.environ.copy()
+                child_env["CP8_WORKSPACE"] = str(ROOT)
+                print(f"RUN lane={lane} command={' '.join(command)}")
+                subprocess.run(command, cwd=ROOT, env=child_env, check=True)
+                finish_worker_task(store, request_id, worker_id, run_id, "passed",
+                    "Allow-listed lane passed on the exact requested SHA.",
+                    evidence=[run_url], tested_sha=sha)
+                print(f"PASS request={request_id} sha={sha}")
+            except Exception as exc:
+                try:
+                    finish_worker_task(store, request_id, worker_id, run_id, "failed",
+                        f"{type(exc).__name__}: {str(exc)[:350]}")
+                except QueueStoreError as finish_error:
+                    print(f"WARNING: task result could not be committed: {finish_error}", flush=True)
+                print(f"FAIL request={request_id}: {type(exc).__name__}: {exc}")
+                raise
+            processed += 1
+    finally:
+        try: release_worker(store, worker_id, run_id)
+        except QueueStoreError as exc:
+            print(f"WORKER_RETAINED_FOR_RECOVERY={exc}", flush=True)
     print(f"processed_requests={processed}")
-
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "enqueue":
