@@ -134,3 +134,18 @@ Follow-up on 2026-11-03:
 The Rename/Save As tests are coordinator-level host semantics, not tests of production `project.c` or `upreset.c` call sites. Runtime state codecs, Base legacy fallback, production target Sidecar backend and actual lifecycle integration remain open. The new lifecycle-test and documentation commits were created after the verified `a595435` run; their CI result is pending.
 
 No changes to `main`, V15, factory firmware, physical Flash allocation, storage whitelist, loader or OTA. No device was flashed.
+
+
+## 10. Typed Sidecar payload codec layer
+
+Follow-up on 2026-11-03:
+
+- Added `energun_sidecar_payload_v1.h/.c` with explicit typed project/live and preset-bank payload structures and byte codecs.
+- Project/live codec explicitly serializes four parts × 16 P_MC bytes, four parts × 13 Private bytes, a Motion count and 0–128 three-byte Motion events. Maximum encoded payload is exactly 501 bytes.
+- Preset-bank codec explicitly serializes the 2-byte slot bitmap plus 16 × 13 Private bytes. Encoded payload is exactly 210 bytes.
+- Encoding/decoding uses explicit field copies; it does not serialize C struct padding or assume adjacent struct members are byte-packed. Decode rejects malformed lengths/counts and clears unused Motion tail bytes.
+- Semantic P_MC, Private, Motion and slot-bitmap validation remains centralized in `energun_sidecar_v1.c`; the typed codec does not weaken or duplicate those rules.
+- Added strict host acceptance `tests/energun_sidecar_payload_v1_test.c` and runner `tests/run_sidecar_payload_v1_test.sh`. The dependency queue now runs this stage after Sidecar format validation and before the pair transaction harness.
+- Fast regression count increased from 23 to 24; exact-HEAD CI is pending for the latest codec and lifecycle commits.
+
+This is a serialization building block, not a runtime snapshot adapter. It does not yet capture live engine state, bind FUN10 E0–E7 migration, implement legacy Base fallback, or connect project/autosave/preset production call sites. No target Flash backend or physical address was introduced.
