@@ -265,7 +265,7 @@ int main(void)
         sidecar_fail_after = -1;
         if (!recover_equals(&adapter,
                 (uint8_t[16]){60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75},
-                16u, 0u)) {
+                16u, 0u, 60u)) {
             ok = 0; break;
         }
     }
