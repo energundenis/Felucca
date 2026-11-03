@@ -31,6 +31,11 @@ class QueueCASConflict(QueueStoreError):
     pass
 
 
+class QueueRefNotFound(QueueStoreError):
+    """The requested Git ref does not exist; other API errors are not absence."""
+    pass
+
+
 class GitHubGitDataClient:
     """Minimal Git Database API client. Requires a trusted token with contents:write."""
 
@@ -66,6 +71,8 @@ class GitHubGitDataClient:
             detail = exc.read().decode("utf-8", errors="replace")[:500]
             if exc.code in {409, 422}:
                 raise QueueCASConflict(f"Git ref update conflict ({exc.code}): {detail}") from exc
+            if exc.code == 404 and method == "GET" and path.startswith("/git/ref/heads/"):
+                raise QueueRefNotFound(f"Git ref not found: {path}") from exc
             raise QueueStoreError(f"GitHub API request failed ({exc.code}): {detail}") from exc
         except urllib.error.URLError as exc:
             raise QueueStoreError(f"GitHub API connection failed: {exc.reason}") from exc
