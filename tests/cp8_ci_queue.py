@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 SCHEMA_VERSION = 1
-ALLOWED_LANES = frozenset({"fast-regression", "baseline-build"})
+ALLOWED_LANES = frozenset({"fast-regression", "baseline-build", "cp1-persistence", "cp2-dsp-vca", "cp3-sequencer"})
 ALLOWED_EVENTS = frozenset({"push", "pull_request", "workflow_dispatch", "schedule", "reconcile"})
 ALLOWED_STATES = frozenset({
     "queued", "claimed", "running", "passed", "blocked", "failed", "superseded"
