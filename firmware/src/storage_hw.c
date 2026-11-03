@@ -115,3 +115,7 @@ int energun_sidecar_flash_hw_init(void)
 {
     return energun_sc_flash_init(&scf_hw_instance, &scf_hw_io, 0);
 }
+energun_sc_flash_t *energun_sidecar_flash_hw_context(void)
+{
+    return &scf_hw_instance;
+}
