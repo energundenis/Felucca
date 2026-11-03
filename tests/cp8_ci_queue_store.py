@@ -220,9 +220,9 @@ class GitRefCASQueueStore:
                     candidates.append(item)
                 elif state in {"claimed", "running"}:
                     lease = item.get("claim", {}).get("lease_expires_at")
-                    owner_run_id = item.get("claim", {}).get("owner_run_id")
+                    candidate_owner_run_id = item.get("claim", {}).get("owner_run_id")
                     lease_expired = bool(lease and _parse_iso(lease) <= current)
-                    owner_finished = owner_run_id in (recover_owner_run_ids or set())
+                    owner_finished = candidate_owner_run_id in (recover_owner_run_ids or set())
                     if lease_expired or owner_finished:
                         candidates.append(item)
             if not candidates:
