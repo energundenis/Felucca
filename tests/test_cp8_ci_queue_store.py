@@ -109,6 +109,18 @@ class CP8QueueStoreTests(unittest.TestCase):
         self.store.claim_next("coordinator", 100, now=NOW + timedelta(seconds=1))
         self.assertIsNone(self.store.claim_next("coordinator", 101, now=NOW + timedelta(seconds=2)))
 
+    def test_completed_owner_claim_is_recovered_before_lease_expiry(self):
+        request = self.store.enqueue("energundenis/Felucca", ["cp1-persistence"], "refs/heads/orphan",
+                                     SHA, "push", now=NOW)["record"]
+        self.store.claim_next("cp1-worker", 100, now=NOW + timedelta(seconds=1),
+                              required_lane="cp1-persistence")
+        recovered = self.store.claim_next("cp1-worker", 101, now=NOW + timedelta(seconds=2),
+                                          required_lane="cp1-persistence",
+                                          recover_owner_run_ids={100})
+        self.assertEqual(recovered["request_id"], request["request_id"])
+        self.assertEqual(recovered["attempts"], 2)
+        self.assertEqual(recovered["claim"]["owner_run_id"], 101)
+
     def test_expired_lease_is_recovered_by_new_owner(self):
         request = self.store.enqueue("energundenis/Felucca", ["fast-regression"], "refs/heads/feature",
                                      SHA, "push", now=NOW)["record"]
