@@ -199,6 +199,8 @@ static int st_save_to(uint32_t obj, const void *src, uint32_t len, int to)
     seq = cur < 0 ? 0u : h.seq;
     if (to < 0)
         to = cur == 0 ? 1 : 0;                        /* write the other copy */
+    if (st_reservation.active && st_reservation.obj == obj && st_reservation.copy == (uint8_t)to)
+        return -8;                                  /* another writer owns this exact sector */
     base = st_sector(obj, (uint32_t)to);
     for (off = 0; off < len; off++)
         st_buf[off] = ((const uint8_t *)src)[off];    /* the driver wants RAM sources */
@@ -226,6 +228,49 @@ static int st_save_to(uint32_t obj, const void *src, uint32_t len, int to)
             return -7;
     }
     return 0;
+}
+
+/* A long-lived writer may reserve the inactive copy of an object. This is a main-context
+ * ownership gate, not an interrupt lock: st_save_to() refuses that exact sector until
+ * its owner releases it. FM6 Voice Bank uses it while staging in OBJ_AUTOSAVE's older copy.
+ */
+enum { ST_RES_FM6_VBANK = 1u };
+static struct {
+    uint32_t obj;
+    uint8_t copy, owner, active;
+} st_reservation;
+
+static int st_reserve(uint32_t obj, uint32_t copy, uint8_t owner)
+{
+    st_hdr_t h;
+    int current;
+    if (obj >= OBJ_COUNT || copy > 1u || !owner || st_reservation.active)
+        return -1;
+    current = st_current(obj, &h);
+    if (current == (int)copy)
+        return -1;                              /* never reserve the selected live copy */
+    st_reservation.obj = obj;
+    st_reservation.copy = (uint8_t)copy;
+    st_reservation.owner = owner;
+    st_reservation.active = 1u;
+    return 0;
+}
+
+static int st_reserved_by(uint32_t obj, uint32_t copy, uint8_t owner)
+{
+    return st_reservation.active && st_reservation.obj == obj && st_reservation.copy == copy &&
+           st_reservation.owner == owner;
+}
+
+static int st_object_reserved(uint32_t obj)
+{
+    return st_reservation.active && st_reservation.obj == obj;
+}
+
+static void st_release(uint32_t obj, uint32_t copy, uint8_t owner)
+{
+    if (st_reserved_by(obj, copy, owner))
+        st_reservation.active = 0u;
 }
 
 static int st_save(uint32_t obj, const void *src, uint32_t len) { return st_save_to(obj, src, len, -1); }
