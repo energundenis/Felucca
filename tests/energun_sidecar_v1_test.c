@@ -136,7 +136,7 @@ static void test_motion_payload(void)
     for (i = 0; i < 128u; ++i) {
         uint8_t *event = payload + MOTION_OFF + i * 3u;
         event[0] = (uint8_t)i;
-        event[1] = 1u;
+        event[1] = 103u;
         event[2] = 0u;
     }
     check("maximum 128 Sidecar events encode to 501-byte payload",
@@ -151,21 +151,51 @@ static void test_motion_payload(void)
           ENC_PROJECT(record, payload, MOTION_OFF, 129u) == ENERGUN_SC_ERR_MOTION_COUNT);
     payload[MOTION_COUNT_OFF] = 2u;
     payload[MOTION_OFF + 0u] = 7u;
-    payload[MOTION_OFF + 1u] = 3u;
+    payload[MOTION_OFF + 1u] = 103u;
     payload[MOTION_OFF + 2u] = 0u;
     payload[MOTION_OFF + 3u] = 7u;
-    payload[MOTION_OFF + 4u] = 0x83u;
+    payload[MOTION_OFF + 4u] = 0xE7u;
     payload[MOTION_OFF + 5u] = 1u;
     check("duplicate place/parameter rejected even when lock bit differs",
           ENC_PROJECT(record, payload, MOTION_OFF + 6u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
     payload[MOTION_COUNT_OFF] = 1u;
     payload[MOTION_OFF] = 0u;
-    payload[MOTION_OFF + 1u] = 1u;
+    payload[MOTION_OFF + 1u] = 103u;
     payload[MOTION_OFF + 2u] = 0xBFu;
     check("motion value below -64 rejected",
           ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
     payload[MOTION_OFF + 2u] = 0x80u;
     check("motion value below signed storage range rejected",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
+}
+
+static void test_motion_pmc_whitelist(void)
+{
+    uint8_t payload[ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD];
+    uint8_t record[ENERGUN_SC_V1_MAX_RECORD];
+    size_t n = 0u;
+    make_project(payload);
+    payload[MOTION_COUNT_OFF] = 1u;
+    payload[MOTION_OFF] = 0u;
+    payload[MOTION_OFF + 2u] = 0u;
+
+    payload[MOTION_OFF + 1u] = 103u;
+    check("P_MC Motion first frozen ID 103 accepted",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
+    payload[MOTION_OFF + 1u] = 118u;
+    check("P_MC Motion last frozen ID 118 accepted",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
+    payload[MOTION_OFF + 1u] = 0xE7u;
+    check("P_MC Motion Lock bit is retained above whitelisted ID 103",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
+    payload[MOTION_OFF + 1u] = 102u;
+    check("Motion ID below P_MC range rejected (common legacy parameter)",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
+    payload[MOTION_OFF + 1u] = 119u;
+    check("E0 Motion ID rejected from Sidecar (stays in Base FUN10)",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
+    payload[MOTION_OFF + 1u] = 127u;
+    check("unallocated logical Motion ID 127 rejected",
           ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
 }
 
@@ -246,6 +276,7 @@ int main(void)
     test_pmc_ranges();
     test_private_types();
     test_motion_payload();
+    test_motion_pmc_whitelist();
     test_preset_bank();
     test_envelope_rejection_and_atomic_encode();
     printf("CP1.4.5 Sidecar V1: %u checks, %u failures\n", checks, failures);
