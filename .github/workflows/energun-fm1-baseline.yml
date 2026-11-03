@@ -307,6 +307,26 @@ jobs:
             echo "The backend-neutral Base + Sidecar V1 transaction coordinator, including legacy Base-only fallback, compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware and has no target Flash backend or runtime call sites."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Compile project lifecycle adapter with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wextra -Wno-unused-function -Ifirmware/src \
+            -c firmware/src/energun_lifecycle_v1.c \
+            -o build/metal-core-vca-target/lifecycle_v1.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/lifecycle_v1.o \
+            > build/metal-core-vca-target/lifecycle_v1.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/lifecycle_v1.o \
+            > build/metal-core-vca-target/lifecycle_v1.symbols
+          grep -q "energun_lifecycle_v1_save" build/metal-core-vca-target/lifecycle_v1.symbols
+          grep -q "energun_lifecycle_v1_autosave" build/metal-core-vca-target/lifecycle_v1.symbols
+          {
+            echo "## Project lifecycle adapter AC79 compile-only probe"
+            echo "Project/live pair lifecycle orchestration compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware and does not authorize a target Flash backend."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run Felucca host and web regression tests
         run: tests/run_tests.sh
 
