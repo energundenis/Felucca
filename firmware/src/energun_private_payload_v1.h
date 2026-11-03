@@ -7,8 +7,11 @@
 #include "energun_private_v1.h"
 #include "energun_sidecar_payload_v1.h"
 
-/* Project/live bridge: all four parts are validated before either side is
- * changed. A restored project becomes clean runtime state.
+/* Project/live bridge: all four parts are snapshotted before output is changed;
+ * all four valuesets are validated before cache replacement. A restored project
+ * becomes clean runtime state and advances each initialized part generation.
+ * Call from the serialized main/UI context: the cache has no internal lock and
+ * concurrent mutation between per-part snapshots is not supported.
  */
 energun_private_status_v1_t energun_private_payload_v1_project_capture(
     const energun_private_cache_v1_t *cache,
@@ -20,7 +23,9 @@ energun_private_status_v1_t energun_private_payload_v1_project_restore(
 
 /* Preset bridge: slot is 0..15 within one of the two independent banks.
  * Capture changes only that slot and its bitmap bit. Restore applies that
- * slot to the selected runtime part, or canonical defaults if it is absent.
+ * slot to the selected runtime part, or canonical defaults if it is absent;
+ * a successful restore advances that part's generation and clears its dirty
+ * mask. Call from the serialized main/UI context (no internal cache lock).
  */
 energun_private_status_v1_t energun_private_payload_v1_preset_capture(
     const energun_private_cache_v1_t *cache, uint8_t part, uint8_t slot,
