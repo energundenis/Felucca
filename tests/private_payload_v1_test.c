@@ -39,6 +39,17 @@ int main(void)
         for (key = 0; key < ENERGUN_PRIVATE_V1_KEYS; ++key)
             CHECK(project.private_values[part][key] == source.part[part].value[key]);
 
+    /* Capture is all-or-nothing: a bad final part must not publish a partial project. */
+    {
+        energun_private_cache_v1_t invalid = source;
+        energun_sc_project_payload_v1_t untouched, expected;
+        invalid.part[ENERGUN_PRIVATE_V1_PARTS - 1u].valid = 0u;
+        memset(&untouched, 0x6Cu, sizeof untouched);
+        expected = untouched;
+        CHECK(energun_private_payload_v1_project_capture(&invalid, &untouched) != ENERGUN_PRIVATE_V1_OK);
+        CHECK(memcmp(&untouched, &expected, sizeof untouched) == 0);
+    }
+
     CHECK(energun_private_v1_init(&restored, defaults) == ENERGUN_PRIVATE_V1_OK);
     CHECK(energun_private_payload_v1_project_restore(&restored, &project, defaults) == ENERGUN_PRIVATE_V1_OK);
     for (part = 0; part < ENERGUN_PRIVATE_V1_PARTS; ++part) {
@@ -46,6 +57,15 @@ int main(void)
         CHECK(restored.part[part].generation == 1u);
         for (key = 0; key < ENERGUN_PRIVATE_V1_KEYS; ++key)
             CHECK(restored.part[part].value[key] == source.part[part].value[key]);
+    }
+
+    /* Restores advance each part's generation and acknowledge it cleanly. */
+    for (part = 0; part < ENERGUN_PRIVATE_V1_PARTS; ++part)
+        restored.part[part].generation = 10u + part;
+    CHECK(energun_private_payload_v1_project_restore(&restored, &project, defaults) == ENERGUN_PRIVATE_V1_OK);
+    for (part = 0; part < ENERGUN_PRIVATE_V1_PARTS; ++part) {
+        CHECK(restored.part[part].generation == 11u + part);
+        CHECK(restored.part[part].dirty_mask == 0u);
     }
 
     before = restored;
@@ -65,7 +85,11 @@ int main(void)
         CHECK(preset.private_values[6][key] == source.part[2].value[key]);
         CHECK(preset.private_values[5][key] == 0x5Au);
     }
-    CHECK(energun_private_payload_v1_preset_restore(&restored, 0u, 6u, &preset, defaults) == ENERGUN_PRIVATE_V1_OK);
+    {
+        uint32_t old_generation = restored.part[0].generation;
+        CHECK(energun_private_payload_v1_preset_restore(&restored, 0u, 6u, &preset, defaults) == ENERGUN_PRIVATE_V1_OK);
+        CHECK(restored.part[0].generation == old_generation + 1u);
+    }
     CHECK(restored.part[0].dirty_mask == 0u);
     for (key = 0; key < ENERGUN_PRIVATE_V1_KEYS; ++key)
         CHECK(restored.part[0].value[key] == source.part[2].value[key]);
