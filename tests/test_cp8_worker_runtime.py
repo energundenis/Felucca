@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from cp8_ci_queue_store import GitRefCASQueueStore, QueueCASConflict, QueueStoreError
 from cp8_worker_runtime import (
-    claim_next_for_worker, finish_worker_task, register_worker, release_worker,
+    claim_next_for_worker, finish_worker_task, mark_worker_running, register_worker, release_worker,
 )
 
 SHA = "a" * 40
@@ -117,6 +117,16 @@ class WorkerRuntimeTests(unittest.TestCase):
         for thread in threads: thread.start()
         for thread in threads: thread.join()
         self.assertEqual(sum(c is not None for c in claims), 1)
+
+    def test_same_actions_run_cannot_cross_mark_another_lane_running(self):
+        cp1 = self.worker("cp1-persistence", 601)
+        cp2 = self.worker("cp2-dsp-vca", 601)
+        claim = claim_next_for_worker(self.store, cp1, 601, {}, now=NOW + timedelta(seconds=1))
+        with self.assertRaisesRegex(QueueStoreError, "another worker"):
+            mark_worker_running(self.store, claim["request_id"], cp2, 601,
+                                now=NOW + timedelta(seconds=2))
+        mark_worker_running(self.store, claim["request_id"], cp1, 601,
+                            now=NOW + timedelta(seconds=2))
 
     def test_pass_requires_exact_sha_and_only_one_terminal_result(self):
         worker_id = self.worker("cp1-persistence", 501)
