@@ -51,6 +51,42 @@ const dev = device(objs);
 const file = await captureBackup(dev.request, "TEST");
 ok(file.objects.length === BACKUP_IDS.length && file.objects[0].size === 3388 && file.objects[3].size === 0, "backup: capture lists every object, empty ones as 0");
 ok(readBackup(JSON.stringify(file)).objects[2].bytes.every((v, i) => v === objs[2][1][i]), "backup: capture -> file -> bytes round trip");
+
+/* Archive V2 is validated offline only until firmware pair PUT exists. */
+const v2Identities = [
+  ["project", 0, 2], ["project", 1, 3], ["project", 2, 4],
+  ["project", 3, 5], ["live", 0, 0], ["preset_bank", 0, 6],
+  ["preset_bank", 1, 7],
+];
+const v2file = {
+  ...file, version: 2,
+  sidecars: v2Identities.map(([kind, index, base_id]) => {
+    const bytes = new Uint8Array(kind === "preset_bank" ? 210 : 117);
+    const base = file.objects.find((o) => o.id === base_id);
+    const data = btoa(String.fromCharCode(...bytes));
+    return { kind, index, base_id, base_crc32: base.crc, schema: 1,
+      size: bytes.length, crc: bkCrc(bytes), data };
+  }),
+};
+const parsedV2 = readBackup(v2file);
+ok(parsedV2.sidecars.length === 7 && parsedV2.sidecars[4].kind === "live" &&
+   parsedV2.sidecars[6].bytes.length === 210, "backup V2: exact seven Sidecar identities and typed payload sizes validate");
+const badV2Order = structuredClone(v2file); badV2Order.sidecars[1].index = 0;
+ok(throws(() => readBackup(badV2Order)), "backup V2: duplicate or out-of-order identity is refused");
+const badV2Base = structuredClone(v2file); badV2Base.sidecars[0].base_crc32 ^= 1;
+ok(throws(() => readBackup(badV2Base)), "backup V2: Sidecar bound to another Base CRC is refused");
+const badV2Motion = structuredClone(v2file); {
+  const bytes = new Uint8Array(117); bytes[116] = 1;
+  badV2Motion.sidecars[0] = { ...badV2Motion.sidecars[0], size: 117,
+    crc: bkCrc(bytes), data: btoa(String.fromCharCode(...bytes)) };
+}
+ok(throws(() => readBackup(badV2Motion)), "backup V2: malformed Motion payload length is refused");
+const badV2Preset = structuredClone(v2file); badV2Preset.sidecars[5].size = 209;
+ok(throws(() => readBackup(badV2Preset)), "backup V2: malformed preset-bank payload size is refused");
+const v2Target = device([]);
+ok(await athrows(() => restoreBackup(v2Target.request, v2file)) && v2Target.log.length === 0,
+  "backup V2: restore is blocked before device writes until pair-aware firmware protocol exists");
+
 ok(await athrows(() => captureBackup(device(objs.map(([i, v]) => [i, v.slice()]), { changeOnGet: 2 }).request, "TEST")), "backup: a device that changes during capture fails the capture");
 
 const bad = JSON.parse(JSON.stringify(file)); bad.objects[2].crc ^= 1;
