@@ -80,3 +80,21 @@ The matrix exercises all seven logical identities independently: Project 0–3, 
 Scope limit: this is a serializer/identity/slot-semantics host test. It does not yet exercise seven independent Base object histories through the pair coordinator, does not implement FM6 staging ownership, and is not production runtime integration.
 
 Verification status at this commit: **CI pending**. Do not report the new matrix or the updated 23-test fast regression as passed until GitHub Actions logs show the exact updated branch head executing them.
+
+## 7. FM6 staging ownership gate and seven-identity pair-history follow-up
+
+Branch follow-up on 2026-11-03:
+
+- Added a main-context storage reservation for the inactive `OBJ_AUTOSAVE` A/B copy. `st_save_to()` rejects writes targeting the reserved copy before erase; FM6 Voice Bank owns the reservation while staging.
+- FM6 releases the reservation after the staged bank has been copied to `FVB_HOME` and verified. A committed staged copy remains reserved if home recovery fails, so an ordinary autosave cannot erase the recovery source. Volatile ownership is reset by reboot; `fvb_boot()` can then recover the committed stage.
+- `autosave_poll()` explicitly defers while `OBJ_AUTOSAVE` is reserved. `autosave_hold()` remains only a delay policy, not a lock.
+- Added a host acceptance assertion that an autosave write is rejected before erase during FM6 staging, the bank transfer completes, and autosave writes resume after verified release.
+- Extended `tests/sidecar_pair_transaction_test.c` to exercise independent Base A/B histories for all seven logical identities: Project 0–3, Live Autosave and Preset Bank 0–1. Each identity commits two generations and reads back its exact matching Base + Sidecar pair; cross-identity loads are rejected. Sidecar sectors remain isolated in a test-only backend.
+- Updated the CP1 queue description to reflect the expanded seven-identity pair-history coverage.
+
+### Verification boundary
+
+The FM6 staging reservation acceptance passed in the Fast Regression workflow before this seven-identity harness extension. On that same verified head, the target baseline build compiled the unmodified Felucca firmware, ENERGUN VCA and Sidecar V1 with the AC79 target compiler; its full host/web regression step was still running at the last check. The newly extended seven-identity harness and its queue/documentation updates are committed after that verified head, so their CI result is **pending** and must not be inferred from the earlier run.
+
+The reservation changes are production firmware source changes in `storage.c`, `fm6_vbank.c` and `project.c`, but are not physical-device validation. No Flash sector map, whitelist, Sidecar target address, loader, OTA or factory image was changed. No device was flashed. The production Base + Sidecar coordinator and target Sidecar backend remain unimplemented; CP1.6/CP1.7 lifecycle integration is not closed.
+
