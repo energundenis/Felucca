@@ -25,6 +25,10 @@ int main(void)
 
     CHECK(energun_private_v1_set(&cache, 0u, ENERGUN_PRIVATE_FOLLOW, 0u) == ENERGUN_PRIVATE_V1_OK);
     CHECK(cache.part[0].dirty_mask == (1u << ENERGUN_PRIVATE_FOLLOW));
+    generation = cache.part[0].generation;
+    CHECK(energun_private_v1_set(&cache, 0u, ENERGUN_PRIVATE_FOLLOW, 0u) == ENERGUN_PRIVATE_V1_OK);
+    CHECK(cache.part[0].generation == generation);
+    CHECK(cache.part[0].dirty_mask == (1u << ENERGUN_PRIVATE_FOLLOW));
     CHECK(cache.part[1].value[ENERGUN_PRIVATE_FOLLOW] == 1u);
     CHECK(cache.part[0].generation == 1u && cache.part[1].generation == 0u);
 
@@ -42,6 +46,14 @@ int main(void)
     CHECK(cache.part[0].value[ENERGUN_PRIVATE_MODULATION] == 0u);
 
     snap.value[ENERGUN_PRIVATE_MODULATION] = 1u;
+    {
+        energun_private_part_v1_t invalid = snap;
+        invalid.valid = 0u;
+        CHECK(energun_private_v1_replace(&cache, 0u, &invalid, generation) == ENERGUN_PRIVATE_V1_ERR_SCHEMA);
+        CHECK(cache.part[0].value[ENERGUN_PRIVATE_METAL] == 1u);
+    }
+    CHECK(energun_private_v1_replace(&cache, 0u, &snap, generation + 1u) == ENERGUN_PRIVATE_V1_ERR_STALE);
+    CHECK(cache.part[0].value[ENERGUN_PRIVATE_METAL] == 1u);
     CHECK(energun_private_v1_replace(&cache, 0u, &snap, generation) == ENERGUN_PRIVATE_V1_OK);
     CHECK(cache.part[0].value[ENERGUN_PRIVATE_METAL] == 0u);
     CHECK(cache.part[0].value[ENERGUN_PRIVATE_MODULATION] == 1u);
