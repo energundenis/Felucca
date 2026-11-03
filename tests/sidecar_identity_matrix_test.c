@@ -80,7 +80,7 @@ static void preset_set(uint8_t *p, unsigned slot, uint8_t seed)
     unsigned k;
     p[slot >> 3] |= (uint8_t)(1u << (slot & 7u));
     for (k = 0; k < 13u; ++k) {
-        uint8_t value = k < 6u ? fixed[k] : seed;
+        uint8_t value = k < 6u ? fixed[k] : (k == 7u ? 2u : seed);
         p[2u + slot * 13u + k] = value;
     }
 }
