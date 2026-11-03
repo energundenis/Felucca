@@ -117,6 +117,10 @@ static void test_motion_split_merge(void)
     check("Base Motion rejects P_MC ID leakage",
           energun_project_merge_motion(base, nb, sidecar, ns, merged, &nm) == ENERGUN_PROJECT_MAP_ERR_ID);
     base[0].param = 2u;
+    input[0].param = 127u;
+    check("P_COUNT sentinel is rejected as a Motion parameter ID",
+          energun_project_split_motion(input, 4u, base, &nb, sidecar, &ns) == ENERGUN_PROJECT_MAP_ERR_ID);
+    input[0].param = 2u;
     input[1].param = 0x80u | 103u;
     input[2].param = 0x80u | 103u;
     input[2].place = input[1].place;
