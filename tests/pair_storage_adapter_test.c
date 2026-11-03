@@ -16,6 +16,7 @@
 
 static uint8_t nor[NOR_SIZE];
 static int base_erase_failure;
+static int base_fail_after = -1;
 static int sidecar_fault_stage;
 static int sidecar_fail_after = -1;
 static unsigned int checks, failures;
@@ -80,7 +81,7 @@ static int st_erase(uint32_t off)
 }
 static int st_prog(uint32_t off, const void *source, uint32_t length)
 {
-    return sim_program(off, source, length, 0);
+    return sim_program(off, source, length, &base_fail_after);
 }
 #include "../firmware/src/storage.c"
 #include "../firmware/src/energun_sidecar_v1.c"
@@ -187,6 +188,7 @@ static int setup(energun_pair_storage_adapter_t *adapter)
 {
     memset(nor, 0xFF, sizeof nor);
     base_erase_failure = 0;
+    base_fail_after = -1;
     sidecar_fault_stage = SC_FAULT_NONE;
     sidecar_fail_after = -1;
     return energun_pair_storage_adapter_init(adapter, &sc_test_ops, 0,
@@ -226,9 +228,21 @@ int main(void)
           save_value(&adapter, &workspace, 30u) == ENERGUN_PAIR_OK &&
           recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
 
+    sidecar_fault_stage = SC_FAULT_ERASE;
+    CHECK("Sidecar erase failure preserves previous complete pair",
+          save_value(&adapter, &workspace, 40u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
     sidecar_fault_stage = SC_FAULT_PAYLOAD;
     CHECK("Sidecar payload failure preserves previous complete pair",
-          save_value(&adapter, &workspace, 40u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
+          save_value(&adapter, &workspace, 41u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+    sidecar_fault_stage = SC_FAULT_HEADER;
+    CHECK("Sidecar header failure preserves previous complete pair",
+          save_value(&adapter, &workspace, 42u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+    sidecar_fault_stage = SC_FAULT_READBACK;
+    CHECK("Sidecar readback failure preserves previous complete pair",
+          save_value(&adapter, &workspace, 43u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
           recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
     sidecar_fault_stage = SC_FAULT_NONE;
 
@@ -237,6 +251,29 @@ int main(void)
           save_value(&adapter, &workspace, 50u) == ENERGUN_PAIR_ERR_BASE_COMMIT &&
           recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
     base_erase_failure = 0;
+
+    /* Sidecar is now a committed orphan in B. Base A + Sidecar A remains the
+     * current complete pair. Inject Base payload and header cuts separately.
+     */
+    ok = 1;
+    {
+        static const int cuts[] = {0, 8, 16, 20, 31, 47};
+        unsigned int k;
+        for (k = 0; k < sizeof cuts / sizeof cuts[0]; ++k) {
+            base_fail_after = cuts[k];
+            if (save_value(&adapter, &workspace, (uint8_t)(80u + k)) !=
+                    ENERGUN_PAIR_ERR_BASE_COMMIT ||
+                !recover_equals(&adapter,
+                    (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45},
+                    16u, 3u, 30u)) {
+                ok = 0;
+                break;
+            }
+            base_fail_after = -1;
+        }
+    }
+    base_fail_after = -1;
+    CHECK("Base payload/header byte cuts preserve previous complete pair", ok);
 
     /* Verify NOR page boundaries and 1->0 programming are enforced. */
     {
