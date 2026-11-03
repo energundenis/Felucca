@@ -103,8 +103,11 @@ static int energun_pair_plan_base(
         adapter->newest_base_sequence = current.sequence;
         target->sequence = current.sequence + 1u;
     } else {
+        /* Felucca st_save_to() starts the first committed object at seq 1:
+         * its local prior-sequence seed is zero, then the header stores +1.
+         */
         adapter->newest_base_sequence = 0u;
-        target->sequence = 0u;
+        target->sequence = 1u;
     }
 
     protected_copy = energun_pair_find_protected_pair(adapter, base, valid);
