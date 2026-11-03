@@ -125,6 +125,28 @@ def checkout_sha(sha: str) -> None:
     subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=ROOT, check=True)
 
 
+def completed_owner_runs(store) -> set[int]:
+    """Return owners whose Actions runs have ended; reclaim only after GitHub confirms."""
+    head = store.client.read_ref(store.branch)
+    ledger = store.client.read_ledger_at(head)
+    owners = {
+        item.get("claim", {}).get("owner_run_id")
+        for item in ledger.get("records", [])
+        if item.get("state") in {"claimed", "running"}
+    }
+    completed: set[int] = set()
+    for owner in owners:
+        if not isinstance(owner, int):
+            continue
+        try:
+            run = store.client.request("GET", f"/actions/runs/{owner}")
+            if run.get("status") == "completed":
+                completed.add(owner)
+        except QueueStoreError as exc:
+            print(f"WARNING: unable to verify owner run {owner}: {exc}", flush=True)
+    return completed
+
+
 def drain(lane: str) -> None:
     store, _ = make_store()
     run_id = int(env("GITHUB_RUN_ID"))
@@ -139,7 +161,11 @@ def drain(lane: str) -> None:
     lane_runner_path.write_text(lane_runner_source, encoding="utf-8")
     processed = 0
     while processed < max_items:
-        record = store.claim_next(f"cp8-{lane}-worker", run_id, lease_seconds=3600, required_lane=lane)
+        recover_owners = completed_owner_runs(store)
+        record = store.claim_next(
+            f"cp8-{lane}-worker", run_id, lease_seconds=3600, required_lane=lane,
+            recover_owner_run_ids=recover_owners,
+        )
         if record is None:
             print("queue_empty=true")
             break
