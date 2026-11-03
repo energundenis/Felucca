@@ -113,6 +113,7 @@ static __attribute__((noinline)) int c1_wait(void) { return fm1_cpu1_wait(); }  
 #if FELUCCA_FLASH
 #include "fm1_flash.h"
 #include "storage_hw.c"
+#include "energun_flash_arbiter.c"
 #include "storage.c"
 #include "energun_sidecar_v1.c"       /* Base + Sidecar envelope validation */
 #include "energun_pair_txn.c"          /* header-last pair transaction core */
