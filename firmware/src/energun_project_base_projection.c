@@ -32,7 +32,8 @@ static int value_valid(int8_t value)
 static int base_id_valid(uint8_t id)
 {
     return id < ENERGUN_PROJECT_PMC_FIRST_ID ||
-           id >= ENERGUN_PROJECT_ENGINE_FIRST_ID;
+           (id >= ENERGUN_PROJECT_ENGINE_FIRST_ID &&
+            id < ENERGUN_PROJECT_RUNTIME_NP);
 }
 
 energun_project_map_status_t energun_project_pack_base_params(
