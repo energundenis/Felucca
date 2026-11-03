@@ -302,6 +302,35 @@ int main(void)
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 2u && copy == target && !memcmp(loaded_base, base2, sizeof base2));
 
+    /* Lifecycle semantics: rename rebinds the same extension to a new Base
+       generation; Save As creates an independent destination identity. */
+    {
+        uint8_t renamed_base[64], saved_as_base[64], got_base[128], got_sc[SC_TEST_MAX_RECORD];
+        uint32_t got_seq = 0u;
+        int lifecycle_ok = 1;
+        memcpy(renamed_base, base2, sizeof renamed_base);
+        renamed_base[0] = 0x7Au; /* project name/header change; sound extension is unchanged */
+        lifecycle_ok &= coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            renamed_base, sizeof renamed_base, payload, 117u, NULL) == 0;
+        lifecycle_ok &= coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            got_base, sizeof got_base, got_sc, sizeof got_sc, &got_seq, NULL) == 0 &&
+            got_seq == 3u && !memcmp(got_base, renamed_base, sizeof renamed_base) &&
+            !memcmp(got_sc, payload, 117u);
+
+        memcpy(saved_as_base, renamed_base, sizeof saved_as_base);
+        saved_as_base[1] = 0x6Bu;
+        lifecycle_ok &= coordinator_commit_test(OBJ_PROJECT0 + 1u, ENERGUN_SC_ID_PROJECT, 1u,
+            saved_as_base, sizeof saved_as_base, payload, 117u, NULL) == 0;
+        lifecycle_ok &= coordinator_load_test(OBJ_PROJECT0 + 1u, ENERGUN_SC_ID_PROJECT, 1u,
+            got_base, sizeof got_base, got_sc, sizeof got_sc, &got_seq, NULL) == 0 &&
+            got_seq == 1u && !memcmp(got_base, saved_as_base, sizeof saved_as_base) &&
+            !memcmp(got_sc, payload, 117u);
+        lifecycle_ok &= coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+            got_base, sizeof got_base, got_sc, sizeof got_sc, &got_seq, NULL) == 0 &&
+            got_seq == 3u && !memcmp(got_base, renamed_base, sizeof renamed_base);
+        bad += check("lifecycle: Rename preserves extension; Save As isolates destination", lifecycle_ok);
+    }
+
     /* Seven identities exercise the reusable coordinator, not a test-local ordering model. */
     {
         static const struct {
