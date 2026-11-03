@@ -165,6 +165,46 @@ energun_pair_v1_status_t energun_pair_v1_commit(
     return ENERGUN_PAIR_V1_OK;
 }
 
+energun_pair_v1_status_t energun_pair_v1_erase(
+    const energun_pair_v1_ops_t *ops, void *context,
+    uint32_t object)
+{
+    static const uint8_t empty_payload = 0u;
+    energun_pair_v1_base_meta_t current, committed;
+    uint8_t target;
+    uint32_t next_sequence;
+    int rc;
+
+    if (ops == NULL || ops->base_current == NULL || ops->base_write_copy == NULL)
+        return ENERGUN_PAIR_V1_ERR_ARGUMENT;
+
+    rc = ops->base_current(context, object, &current);
+    if (rc < 0)
+        return ENERGUN_PAIR_V1_ERR_BASE_IO;
+    if (rc == 1) {
+        current.copy = 1u;
+        current.sequence = 0u;
+        target = 0u;
+    } else if (rc == 0 && current.copy <= 1u) {
+        target = (uint8_t)(1u - current.copy);
+    } else {
+        return ENERGUN_PAIR_V1_ERR_BASE_IO;
+    }
+
+    next_sequence = current.sequence + 1u;
+    rc = ops->base_write_copy(context, object, target, &empty_payload, 0u);
+    if (rc != 0)
+        return ENERGUN_PAIR_V1_ERR_BASE_COMMIT;
+
+    rc = ops->base_current(context, object, &committed);
+    if (rc != 0 || committed.copy != target ||
+        committed.sequence != next_sequence ||
+        committed.payload_length != 0u || committed.payload_crc32 != 0u)
+        return ENERGUN_PAIR_V1_ERR_BASE_VERIFY;
+
+    return ENERGUN_PAIR_V1_OK;
+}
+
 energun_pair_v1_status_t energun_pair_v1_load(
     const energun_pair_v1_ops_t *ops, void *context,
     energun_pair_v1_workspace_t *workspace,
