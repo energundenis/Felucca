@@ -187,6 +187,12 @@ static int st_load(uint32_t obj, void *dst, uint32_t max)
     return (int)meta.payload_length;
 }
 
+enum { ST_RES_FM6_VBANK = 1u };
+static struct {
+    uint32_t obj;
+    uint8_t copy, owner, active;
+} st_reservation;
+
 /* save into copy `to` (0 A, 1 B; -1: the one that is not the current copy, as st_save) */
 static int st_save_to(uint32_t obj, const void *src, uint32_t len, int to)
 {
@@ -234,12 +240,6 @@ static int st_save_to(uint32_t obj, const void *src, uint32_t len, int to)
  * ownership gate, not an interrupt lock: st_save_to() refuses that exact sector until
  * its owner releases it. FM6 Voice Bank uses it while staging in OBJ_AUTOSAVE's older copy.
  */
-enum { ST_RES_FM6_VBANK = 1u };
-static struct {
-    uint32_t obj;
-    uint8_t copy, owner, active;
-} st_reservation;
-
 static int st_reserve(uint32_t obj, uint32_t copy, uint8_t owner)
 {
     st_hdr_t h;
