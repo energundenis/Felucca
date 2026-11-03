@@ -200,16 +200,20 @@ class GitRefCASQueueStore:
         return self._transact(mutate)
 
     def claim_next(self, owner_workflow: str, owner_run_id: int, now: datetime | None = None,
-                   lease_seconds: int = 900) -> dict[str, Any] | None:
+                   lease_seconds: int = 900, required_lane: str | None = None) -> dict[str, Any] | None:
         current = now or datetime.now(timezone.utc)
         if lease_seconds < 30:
             raise ValueError("lease_seconds must be at least 30")
+        if required_lane is not None and required_lane not in {"fast-regression", "baseline-build", "cp1-persistence", "cp2-dsp-vca", "cp3-sequencer"}:
+            raise ValueError("required_lane is unsupported")
         timestamp = _iso(current)
         expiry = _iso(current + timedelta(seconds=lease_seconds))
 
         def mutate(ledger: dict[str, Any]) -> dict[str, Any] | None:
             candidates = []
             for item in ledger["records"]:
+                if required_lane is not None and required_lane not in item.get("requested_lanes", []):
+                    continue
                 state = item.get("state")
                 if state == "queued":
                     candidates.append(item)
