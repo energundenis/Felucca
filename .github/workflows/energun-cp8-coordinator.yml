@@ -1,4 +1,4 @@
-name: ENERGUN CP8 trusted queue coordinator
+name: ENERGUN CP8 trusted parallel queue workers
 
 on:
   push:
@@ -8,15 +8,14 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
-# This workflow deliberately does not run for pull_request events. Its write
-# token is available only to trusted pushes/manual dispatches on this branch.
+# Trusted branch only. No pull_request write-token execution.
 permissions:
   contents: write
 
 jobs:
   enqueue:
-    name: Queue trusted source revision
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: Enqueue CP1 CP2 CP3 exact-SHA tasks
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -28,22 +27,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: Enqueue exact source SHA
+      - name: Enqueue independent lane requests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 tools/cp8_queue_worker.py enqueue
 
-  coordinator:
-    name: CP8 single queue consumer
+  cp1-worker:
+    name: Queue Worker CP1 — persistence
     needs: enqueue
     if: always() && (needs.enqueue.result == 'success' || needs.enqueue.result == 'skipped')
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 35
     concurrency:
-      group: energun-cp8-global-queue-consumer
+      group: energun-cp8-worker-cp1
       cancel-in-progress: false
     steps:
-      - name: Checkout coordinator source
+      - name: Checkout coordinator tools
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -52,10 +51,64 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: Install test dependencies
+      - name: Install build dependencies
         run: python -m pip install Pillow fonttools
-      - name: Drain durable queue (allow-listed lanes only)
+      - name: Claim and execute CP1 lane tasks
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CP8_MAX_ITEMS_PER_RUN: "4"
-        run: python3 tools/cp8_queue_worker.py drain
+          CP8_MAX_ITEMS_PER_RUN: "2"
+        run: python3 tools/cp8_queue_worker.py drain cp1-persistence
+
+  cp2-worker:
+    name: Queue Worker CP2 — DSP/VCA
+    needs: enqueue
+    if: always() && (needs.enqueue.result == 'success' || needs.enqueue.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    concurrency:
+      group: energun-cp8-worker-cp2
+      cancel-in-progress: false
+    steps:
+      - name: Checkout coordinator tools
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install build dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Claim and execute CP2 lane tasks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CP8_MAX_ITEMS_PER_RUN: "2"
+        run: python3 tools/cp8_queue_worker.py drain cp2-dsp-vca
+
+  cp3-worker:
+    name: Queue Worker CP3 — sequencer
+    needs: enqueue
+    if: always() && (needs.enqueue.result == 'success' || needs.enqueue.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    concurrency:
+      group: energun-cp8-worker-cp3
+      cancel-in-progress: false
+    steps:
+      - name: Checkout coordinator tools
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install build dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Claim and execute CP3 lane tasks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CP8_MAX_ITEMS_PER_RUN: "2"
+        run: python3 tools/cp8_queue_worker.py drain cp3-sequencer
