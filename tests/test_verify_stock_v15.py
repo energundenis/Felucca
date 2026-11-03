@@ -2,6 +2,7 @@
 """Unit tests for the stock V15 reference verifier."""
 
 from pathlib import Path
+import hashlib
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -18,24 +19,16 @@ class StockV15VerifierTests(unittest.TestCase):
         )
 
     def test_accepts_exact_fingerprint(self):
+        fixture = b"test fixture"
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "FM-1.fwsc"
-            path.write_bytes(b"test fixture")
-            with patch.object(
-                verify_stock_v15, "EXPECTED_SIZE", len(b"test fixture")
-            ), patch.object(
+            path.write_bytes(fixture)
+            with patch.object(verify_stock_v15, "EXPECTED_SIZE", len(fixture)), patch.object(
                 verify_stock_v15,
                 "EXPECTED_SHA256",
-                "d5579c46dfcc7a3b2c2e2c2e2f5b3c5c7a7d3c4e5f6a7b8c9d0e1f2a3b4c5d6e",
+                hashlib.sha256(fixture).hexdigest(),
             ):
-                # Use the actual fixture digest so this test verifies the pass path.
-                import hashlib
-                with patch.object(
-                    verify_stock_v15,
-                    "EXPECTED_SHA256",
-                    hashlib.sha256(b"test fixture").hexdigest(),
-                ):
-                    ok, _ = verify_stock_v15.verify(path)
+                ok, _ = verify_stock_v15.verify(path)
             self.assertTrue(ok)
 
     def test_rejects_wrong_size(self):
