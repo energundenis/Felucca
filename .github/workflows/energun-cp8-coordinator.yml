@@ -11,6 +11,7 @@ on:
 # Trusted branch only. No pull_request write-token execution.
 permissions:
   contents: write
+  actions: read
 
 jobs:
   enqueue:
