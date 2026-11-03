@@ -303,25 +303,33 @@ int main(void)
     /* Sidecar is now a committed orphan in B. Base A + Sidecar A remains the
      * current complete pair. Inject Base payload and header cuts separately.
      */
+    /* Every programmed Base byte is a cut point: Sidecar staging may
+     * complete, but no partial Base commit may hide the previous pair.
+     * The fixture writes 16 payload bytes followed by a 32-byte header.
+     */
     ok = 1;
-    {
-        static const int cuts[] = {0, 8, 16, 20, 31, 47};
-        unsigned int k;
-        for (k = 0; k < sizeof cuts / sizeof cuts[0]; ++k) {
-            base_fail_after = cuts[k];
-            if (save_value(&adapter, &workspace, (uint8_t)(80u + k)) !=
-                    ENERGUN_PAIR_ERR_BASE_COMMIT ||
+    for (i = 0; i < 48u; ++i) {
+        if (setup(&adapter) != 0 ||
+            save_value(&adapter, &workspace, 30u) != ENERGUN_PAIR_OK) {
+            ok = 0;
+            break;
+        }
+        base_fail_after = (int)i;
+        {
+            int result = save_value(&adapter, &workspace, (uint8_t)(80u + i));
+            base_fail_after = -1;
+            if (result != ENERGUN_PAIR_ERR_BASE_COMMIT ||
                 !recover_equals(&adapter,
                     (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45},
-                    16u, 4u, 30u)) {
+                    16u, 1u, 30u)) {
                 ok = 0;
                 break;
             }
-            base_fail_after = -1;
         }
     }
     base_fail_after = -1;
-    CHECK("Base payload/header byte cuts preserve previous complete pair", ok);
+    printf("Base byte-cut sweep: 48 cut positions, %s\\n", ok ? "0 failures" : "failure");
+    CHECK("every Base payload/header byte cut preserves previous complete pair", ok);
 
     /* Verify NOR page boundaries and 1->0 programming are enforced. */
     {
@@ -340,21 +348,26 @@ int main(void)
      * trial starts from a valid old pair and must recover it unchanged.
      */
     ok = 1;
-    for (i = 0; i < 169u; i += 13u) {
-        setup(&adapter);
-        if (save_value(&adapter, &workspace, 60u) != ENERGUN_PAIR_OK) {
-            ok = 0; break;
+    for (i = 0; i < 169u; ++i) {
+        int result;
+        if (setup(&adapter) != 0 ||
+            save_value(&adapter, &workspace, 60u) != ENERGUN_PAIR_OK) {
+            ok = 0;
+            break;
         }
         sidecar_fail_after = (int)i;
-        (void)save_value(&adapter, &workspace, 70u);
+        result = save_value(&adapter, &workspace, 70u);
         sidecar_fail_after = -1;
-        if (!recover_equals(&adapter,
+        if (result != ENERGUN_PAIR_ERR_SIDECAR_COMMIT ||
+            !recover_equals(&adapter,
                 (uint8_t[16]){60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75},
                 16u, 1u, 60u)) {
-            ok = 0; break;
+            ok = 0;
+            break;
         }
     }
-    CHECK("byte-cut sweep across Sidecar payload/header preserves old pair", ok);
+    printf("Sidecar byte-cut sweep: 169 cut positions, %s\\n", ok ? "0 failures" : "failure");
+    CHECK("every Sidecar payload/header byte cut preserves old pair", ok);
 
     printf("PAIR STORAGE ADAPTER: %u checks, %u failures\\n", checks, failures);
     return failures != 0u;
