@@ -8,8 +8,8 @@
 
 static unsigned int checks, failures;
 #define CHECK(label, expression) do { \
-    ++checks; if (!(expression)) { ++failures; printf("FAIL: %s\\n", label); } \
-    else printf("PASS: %s\\n", label); \
+    ++checks; if (!(expression)) { ++failures; printf("FAIL: %s\n", label); } \
+    else printf("PASS: %s\n", label); \
 } while (0)
 
 int main(void)
@@ -51,6 +51,6 @@ int main(void)
         energun_flash_arbiter_acquire(&arbiter, ENERGUN_FLASH_OWNER_FM6_STAGE,
             0u, 0u) != 0);
 
-    printf("FLASH ARBITER: %u checks, %u failures\\n", checks, failures);
+    printf("FLASH ARBITER: %u checks, %u failures\n", checks, failures);
     return failures != 0u;
 }
