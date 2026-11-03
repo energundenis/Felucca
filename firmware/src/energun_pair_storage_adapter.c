@@ -352,16 +352,20 @@ int energun_pair_storage_adapter_load(
                 base_motion_count, &selected_view) != ENERGUN_SC_OK ||
             selected_view.payload_length > sidecar_maximum)
             return -1;
-        memcpy(sidecar_destination, selected_view.payload,
-               selected_view.payload_length);
         *sidecar_length = selected_view.payload_length;
     }
 
     if (st_read_copy_meta(adapter->base_object, (uint32_t)best,
             destination, maximum, &loaded) != 0 ||
         loaded.sequence != base[best].sequence ||
-        loaded.payload_crc != base[best].payload_crc32)
+        loaded.payload_crc != base[best].payload_crc32) {
+        *sidecar_length = 0u;
         return -1;
+    }
+    /* st_read_copy_meta uses st_buf, not scratch_record, so the validated
+     * Sidecar view remains stable until both halves are ready for the caller.
+     */
+    memcpy(sidecar_destination, selected_view.payload, *sidecar_length);
     metadata->copy = (uint8_t)best;
     metadata->sequence = loaded.sequence;
     metadata->payload_length = loaded.payload_length;
