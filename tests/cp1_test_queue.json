@@ -69,8 +69,8 @@
         "fm6-staging-baseline"
       ],
       "command": "sh tests/run_sidecar_v1_test.sh",
-      "blocker": "Sidecar V1 envelope and identity/length/value/motion validation are implemented and covered by the focused host acceptance suite. P_MC numeric-ID whitelist validation remains a later CP1.4.4 gate because IDs are intentionally not assigned.",
-      "enable_when": "V1 format implementation and strict host acceptance suite committed together."
+      "blocker": "Sidecar V1 envelope and semantic validation are implemented. Motion ownership is frozen: the event parameter byte carries a logical P_MC index 0..15 in its low seven bits and the existing lock flag in bit 7; Private and MCX are excluded. The focused test now rejects index 16+ with or without the lock flag. Stable global P_* IDs remain a separate CP1.4.2/CP1.4.4 compatibility gate.",
+      "enable_when": "V1 format implementation, logical P_MC Motion whitelist and strict host acceptance suite are committed together."
     },
     {
       "id": "base-generation-binding",
@@ -145,7 +145,7 @@
         "fm6-staging-arbitration-host"
       ],
       "command": null,
-      "blocker": "The bounded A/B backend, FM6 staging arbitration and AC79 compile-only probes are implemented. Pair commit remains blocked on frozen Sidecar payload/parameter ownership, production project/preset/autosave/rename/erase callsites, full target firmware link evidence and exhaustive backend power-cut acceptance. Candidate sectors remain protected; no physical device write has been performed. Candidate sectors remain protected by the bounded transport; no physical device write has been performed."
+      "blocker": "The Sidecar V1 logical payload/ownership is now frozen (16 P_MC × 4 tracks, 13 Private × 4 tracks, P_MC Motion only; MCX deferred). Remaining blockers are production project/preset/autosave/rename/erase callsites, complete target firmware link evidence and exhaustive backend power-cut acceptance. Candidate sectors remain protected; no physical device write has been performed."
     },
     {
       "id": "pair-power-loss",
@@ -167,7 +167,7 @@
         "pair-power-loss"
       ],
       "command": null,
-      "blocker": "Sidecar V1 envelope and semantic validation are implemented and host-tested. The numeric P_MC Motion-ID whitelist remains unfrozen, and no physical Sidecar A/B reader/backend is enabled. Keep this stage blocked until the whitelist and runtime serialization contract are frozen."
+      "blocker": "Sidecar V1 envelope and semantic validation are implemented and host-tested. Logical P_MC Motion indices 0..15 are now frozen and enforced; stable global P_* numeric IDs and runtime project serialization/merge are not yet assigned or wired. Keep physical backend use disabled."
     },
     {
       "id": "pair-recovery-roundtrip",
