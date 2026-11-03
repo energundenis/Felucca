@@ -126,7 +126,14 @@ def checkout_sha(sha: str) -> None:
 
 
 def completed_owner_workers(store) -> set[tuple[str, int]]:
-    """Find completed lane jobs, even while sibling jobs in the run are active."""
+    """Find completed lane jobs when an Actions API client is available.
+
+    Git-transport queue mode deliberately avoids the REST API quota. In that
+    mode, abandoned claims are recovered by their bounded lease expiry.
+    """
+    if not hasattr(store.client, "request"):
+        print("owner_completion_lookup=disabled; recovery=lease-expiry", flush=True)
+        return set()
     head = store.client.read_ref(store.branch)
     ledger = store.client.read_ledger_at(head)
     owners = {
