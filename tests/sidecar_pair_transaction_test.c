@@ -686,7 +686,7 @@ int main(void)
         energun_private_cache_v1_t private_cache;
         energun_sc_preset_payload_v1_t bank_payload;
         energun_pair_v1_base_meta_t meta;
-        uint8_t bank_base[64], changed_base[64], loaded_base[128];
+        uint8_t bank_base[64], changed_base[64], loaded_base[3080u];
         size_t loaded_base_length = 0u;
         uint8_t value = 0u;
         int preset_ok = 1;
