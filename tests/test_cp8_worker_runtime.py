@@ -105,15 +105,18 @@ class WorkerRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(QueueStoreError, "not available"):
             claim_next_for_worker(self.store, old, 301, {}, now=NOW + timedelta(seconds=4))
 
-    def test_duplicate_worker_registration_and_task_claim_are_exclusive(self):
-        worker_id = self.worker("cp1-persistence", 401)
+    def test_two_distinct_workers_cannot_claim_the_same_task(self):
+        workers = [self.worker("cp1-persistence", 401),
+                   self.worker("cp1-persistence", 402)]
         claims = []
         barrier = threading.Barrier(2)
-        def claim(run):
+        def claim(index):
             barrier.wait()
-            claims.append(claim_next_for_worker(self.store, worker_id, 401, {},
-                                                now=NOW + timedelta(seconds=1)))
-        threads = [threading.Thread(target=claim, args=(1,)), threading.Thread(target=claim, args=(2,))]
+            claims.append(claim_next_for_worker(
+                self.store, workers[index], 401 + index, {},
+                now=NOW + timedelta(seconds=1)))
+        threads = [threading.Thread(target=claim, args=(0,)),
+                   threading.Thread(target=claim, args=(1,))]
         for thread in threads: thread.start()
         for thread in threads: thread.join()
         self.assertEqual(sum(c is not None for c in claims), 1)
