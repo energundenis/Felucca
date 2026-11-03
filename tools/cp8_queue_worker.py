@@ -134,6 +134,7 @@ def drain(lane: str) -> None:
     if lane not in ALLOWED_COMMANDS:
         raise RuntimeError(f"lane is not allow-listed: {lane}")
     max_items = int(os.environ.get("CP8_MAX_ITEMS_PER_RUN", "2"))
+    lane_runner_source = (ROOT / "tools" / "cp8_worker_lanes.py").read_text(encoding="utf-8")
     processed = 0
     while processed < max_items:
         record = store.claim_next(f"cp8-{lane}-worker", run_id, lease_seconds=3600, required_lane=lane)
@@ -149,6 +150,11 @@ def drain(lane: str) -> None:
         try:
             store.mark_running(request_id, run_id)
             checkout_sha(sha)
+            # Run the coordinator-approved lane harness even for older source SHAs
+            # that predate its introduction; firmware/tests still come from exact SHA.
+            lane_runner = ROOT / "tools" / "cp8_worker_lanes.py"
+            lane_runner.parent.mkdir(parents=True, exist_ok=True)
+            lane_runner.write_text(lane_runner_source, encoding="utf-8")
             command = ALLOWED_COMMANDS[lane]
             print(f"RUN lane={lane} command={' '.join(command)}")
             subprocess.run(command, cwd=ROOT, check=True)
