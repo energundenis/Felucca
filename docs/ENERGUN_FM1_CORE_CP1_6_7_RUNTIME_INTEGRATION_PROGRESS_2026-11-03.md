@@ -112,9 +112,25 @@ New follow-up on 2026-11-03:
 
 ### Scope and verification
 
-This is a backend-neutral transaction coordinator implementation and host acceptance, **not** production FM-1 runtime integration. It is not included in the Felucca main translation unit; the target baseline workflow is being extended with a pi32v2 compile-only probe. No Sidecar Flash sectors or object IDs have been assigned, no storage whitelist or loader/OTA/factory code has changed, and no device was flashed.
+This is a backend-neutral transaction coordinator implementation and host acceptance, **not** production FM-1 runtime integration. It is not included in the Felucca main translation unit; the target baseline workflow now includes a pi32v2 compile-only probe. No Sidecar Flash sectors or object IDs have been assigned, no storage whitelist or loader/OTA/factory code has changed, and no device was flashed.
 
 The new coordinator and expanded transaction/fault tests are committed after the previously verified HEAD `7c0a884ee46c1c9b93064d701a3574c6c27db773`. Their new CI run must complete on the exact new HEAD before these changes are marked verified.
 
 Coordinator follow-up: added `energun_pair_v1_erase()`. It commits a zero-length Base tombstone to the inactive Base copy and verifies the new generation. Existing Sidecar records are left physically untouched but become non-matching orphans; the next save creates a fresh generation-bound Sidecar. Host tests cover failed erase preserving the old pair, successful erase hiding stale Sidecar data, and subsequent slot reuse. This avoids an unsafe in-place Sidecar erase and does not require any new physical Flash allocation.
 
+
+
+## 9. Pair coordinator verification and lifecycle call-site mapping
+
+Follow-up on 2026-11-03:
+
+- Fixed the coordinator CRC32 lookup table to exactly match Felucca `storage.c` (the prior table had two incorrect nibble entries).
+- Fast Regression on commit `a595435632498455cdd478bbeb5b75c4983c55cd` completed **SUCCESS** (Run `41694376373`). The focused host regression and dependency-aware CP1 queue steps both completed successfully. The coordinator AC79 compile probe is separately tracked by the baseline workflow.
+- Baseline Build on the same commit `a595435632498455cdd478bbeb5b75c4983c55cd` compiled the unmodified Felucca firmware, ENERGUN VCA, Sidecar V1 and the pair coordinator with the AC79 target compiler. The full host/web regression step was still running at the last check; do not claim the complete baseline workflow is green until the final job conclusion is verified.
+- Extended `tests/sidecar_pair_transaction_test.c` with lifecycle-semantic coverage: Rename changes the Base generation while preserving the exact Sidecar logical payload; Save As commits a separate destination identity and leaves the source pair intact.
+- Added `docs/ENERGUN_FM1_CORE_CP1_6_7_LIFECYCLE_CALLSITE_MAP_2026-11-03.md`, mapping project Save/Save As/Rename/Erase/Load, boot scan, Live Autosave and user-preset bank boot/save/overwrite/rename/delete/load to their current Base-only call sites and required pair wrappers.
+- Updated the CP1 queue description and pair coordinator stage to include lifecycle-semantic coverage.
+
+The Rename/Save As tests are coordinator-level host semantics, not tests of production `project.c` or `upreset.c` call sites. Runtime state codecs, Base legacy fallback, production target Sidecar backend and actual lifecycle integration remain open. The new lifecycle-test and documentation commits were created after the verified `a595435` run; their CI result is pending.
+
+No changes to `main`, V15, factory firmware, physical Flash allocation, storage whitelist, loader or OTA. No device was flashed.
