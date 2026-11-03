@@ -114,6 +114,9 @@ static __attribute__((noinline)) int c1_wait(void) { return fm1_cpu1_wait(); }  
 #include "fm1_flash.h"
 #include "storage_hw.c"
 #include "storage.c"
+#include "energun_sidecar_v1.c"       /* Base + Sidecar envelope validation */
+#include "energun_pair_txn.c"          /* header-last pair transaction core */
+#include "energun_pair_storage_adapter.c" /* existing Felucca A/B Base binding; Sidecar backend injected */
 #endif
 #include "upreset.c"             /* user presets (RAM mirror; flash with FELUCCA_FLASH) */
 #include "project.c"

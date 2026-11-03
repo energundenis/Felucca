@@ -61,15 +61,39 @@
       "enable_when": "Real explicit A/B copy reader, selector and simulated-NOR acceptance test committed together."
     },
     {
+      "id": "pair-transaction-core",
+      "title": "Backend-independent pair transaction coordinator core",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "sidecar-ab-selection"
+      ],
+      "command": "sh tests/run_pair_txn_test.sh",
+      "blocker": "Coordinator core and simulated host fault-injection suite implemented. Production storage adapter, physical Sidecar map and callsite integration remain separate gates.",
+      "enable_when": "Core API, Sidecar-first ordering and simulated A/B fault-injection acceptance committed together."
+    },
+    {
+      "id": "pair-storage-adapter-simulated-nor",
+      "title": "Felucca Base adapter + Sidecar callback integration on simulated NOR",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "pair-transaction-core"
+      ],
+      "command": "sh tests/run_pair_storage_adapter_test.sh",
+      "blocker": "Pair-aware Base target selection, Sidecar callback contract, exact-pair recovery and NOR fault-injection host tests are implemented. The physical Sidecar backend and runtime callsite wiring remain separate gates.",
+      "enable_when": "The adapter is bound to st_read_copy_meta/st_save_to and the host test models NOR erase/program/page semantics and interrupted pair commits."
+    },
+    {
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "sidecar-ab-selection"
+        "pair-storage-adapter-simulated-nor"
       ],
       "command": null,
-      "blocker": "Production pair transaction coordinator is not implemented. Test preservation of the old matching pair when staging or Base commit fails."
+      "blocker": "The Base adapter is bound to the existing Felucca A/B primitives and passes the simulated-NOR host test. The factory V15 image remains the immutable reference; no additional dump from the user is required for software development. A physical Sidecar A/B backend remains blocked until the candidate Flash region, loader/update-record exclusions, sector ownership and recovery behavior are independently qualified from authoritative source/build evidence. V15 is a firmware image, not a complete physical Flash snapshot, so it cannot by itself prove free sectors. Production save/load callsites must also be integrated and tested. No physical sector is allocated and no device write path is enabled."
     },
     {
       "id": "pair-power-loss",
@@ -80,7 +104,7 @@
         "pair-commit-order"
       ],
       "command": null,
-      "blocker": "Requires the real pair coordinator and deterministic simulated-NOR fault injection at Sidecar payload/header and Base erase/payload/header boundaries."
+      "blocker": "The coordinator core fault matrix and adapter-level simulated NOR tests now cover Sidecar erase/payload/header/readback failures, Base erase/payload/header failures, orphan handling and byte-cut samples. This remains blocked pending a broader exhaustive phase matrix, a qualified production Sidecar backend and hardware-independent final acceptance after the physical map gate."
     },
     {
       "id": "sidecar-integrity",
@@ -91,7 +115,7 @@
         "pair-power-loss"
       ],
       "command": null,
-      "blocker": "Production Sidecar reader/validator and frozen envelope are not implemented. Do not treat outer storage CRC alone as semantic validation."
+      "blocker": "Sidecar V1 envelope and semantic validation are implemented and host-tested. The numeric P_MC Motion-ID whitelist remains unfrozen, and no physical Sidecar A/B reader/backend is enabled. Keep this stage blocked until the whitelist and runtime serialization contract are frozen."
     },
     {
       "id": "pair-recovery-roundtrip",
@@ -102,7 +126,7 @@
         "sidecar-integrity"
       ],
       "command": null,
-      "blocker": "Production pair load/recovery and roundtrip paths are not implemented."
+      "blocker": "Pair-aware Base + Sidecar recovery and logical payload roundtrip are now implemented in the host-tested adapter. Runtime project/preset/autosave callsites and full private/Motion serialization are not yet wired; no load path may rewrite storage."
     },
     {
       "id": "archive-v2-restore",

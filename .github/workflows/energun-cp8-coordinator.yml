@@ -1,0 +1,143 @@
+name: ENERGUN CP8 trusted parallel queue workers
+
+on:
+  push:
+    branches:
+      - energun-development-orchestrator
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+# Trusted branch only. No pull_request write-token execution.
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  enqueue:
+    name: Enqueue CP1 CP2 CP3 exact-SHA tasks
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Enqueue independent lane requests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/cp8_queue_worker.py enqueue
+
+  cp1-worker:
+    name: Queue Worker CP1 — persistence
+    needs: enqueue
+    if: always() && (needs.enqueue.result == 'success' || needs.enqueue.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: energun-cp8-worker-cp1
+      cancel-in-progress: false
+    steps:
+      - name: Checkout coordinator tools
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install build dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Claim and execute CP1 lane tasks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CP8_MAX_ITEMS_PER_RUN: "8"
+        run: python3 tools/cp8_queue_worker.py drain cp1-persistence
+      - name: Upload CP1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp1-queue-${{ github.run_id }}
+          path: |
+            build/cp8-cp1/
+            build/cp1-test-queue/
+            build/metal-core-fast/results.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp2-worker:
+    name: Queue Worker CP2 — DSP/VCA
+    needs: enqueue
+    if: always() && (needs.enqueue.result == 'success' || needs.enqueue.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: energun-cp8-worker-cp2
+      cancel-in-progress: false
+    steps:
+      - name: Checkout coordinator tools
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install build dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Claim and execute CP2 lane tasks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CP8_MAX_ITEMS_PER_RUN: "8"
+        run: python3 tools/cp8_queue_worker.py drain cp2-dsp-vca
+      - name: Upload CP2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp2-queue-${{ github.run_id }}
+          path: build/metal-core-fast/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp3-worker:
+    name: Queue Worker CP3 — sequencer
+    needs: enqueue
+    if: always() && (needs.enqueue.result == 'success' || needs.enqueue.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: energun-cp8-worker-cp3
+      cancel-in-progress: false
+    steps:
+      - name: Checkout coordinator tools
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install build dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Claim and execute CP3 lane tasks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CP8_MAX_ITEMS_PER_RUN: "8"
+        run: python3 tools/cp8_queue_worker.py drain cp3-sequencer
+      - name: Upload CP3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp3-queue-${{ github.run_id }}
+          path: build/cp8-cp3/
+          if-no-files-found: ignore
+          retention-days: 14

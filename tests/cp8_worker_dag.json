@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "max_parallel_workers": 3,
+  "tasks": [
+    {"task_id": "cp1-persistence", "depends_on": []},
+    {"task_id": "cp2-dsp-vca", "depends_on": []},
+    {"task_id": "cp3-sequencer", "depends_on": []}
+  ]
+}

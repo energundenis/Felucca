@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "catalog_id": "ENERGUN-FM1-CP8-TASK-CATALOG",
+  "completed_task_ids": [],
+  "tasks": [
+    {
+      "task_id": "cp8.1-global-ci-lock",
+      "checkpoint": "CP8.1",
+      "title": "Implement durable cross-workflow CI lease",
+      "required_capabilities": [
+        "ci-infrastructure",
+        "test-automation"
+      ],
+      "depends_on": [],
+      "state": "ready",
+      "priority": 100,
+      "allowed_paths": [
+        ".github/workflows/",
+        "tests/",
+        "docs/"
+      ]
+    },
+    {
+      "task_id": "cp8.2-worker-registry-runtime",
+      "checkpoint": "CP8.2",
+      "title": "Implement worker registration and capability validation",
+      "required_capabilities": [
+        "ci-infrastructure",
+        "test-automation"
+      ],
+      "depends_on": [],
+      "state": "ready",
+      "priority": 90,
+      "allowed_paths": [
+        "tests/",
+        "docs/"
+      ]
+    },
+    {
+      "task_id": "cp8.3-task-dispatch-runtime",
+      "checkpoint": "CP8.3",
+      "title": "Implement durable task dispatch and assignment audit",
+      "required_capabilities": [
+        "ci-infrastructure",
+        "test-automation"
+      ],
+      "depends_on": [
+        "cp8.2-worker-registry-runtime"
+      ],
+      "state": "ready",
+      "priority": 80,
+      "allowed_paths": [
+        "tests/",
+        "docs/"
+      ]
+    }
+  ]
+}

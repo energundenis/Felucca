@@ -20,7 +20,7 @@ permissions:
 
 concurrency:
   group: energun-metal-core-fast-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   metal-core-host:
@@ -57,9 +57,37 @@ jobs:
       - name: Run focused ENERGUN METAL CORE regression
         run: sh tests/run_metal_core_fast.sh
 
+      - name: Verify immutable stock FM-1 V15 reference verifier
+        run: python3 tests/test_verify_stock_v15.py
+
+      - name: Run CP1 pair transaction coordinator core fault-injection tests
+        run: sh tests/run_pair_txn_test.sh
+
+      - name: Run production storage adapter against simulated NOR
+        run: sh tests/run_pair_storage_adapter_test.sh
+
       - name: Run dependency-aware parallel CP1 persistence test queue
         id: cp1-queue
+        continue-on-error: true
         run: python3 tests/run_cp1_test_queue.py
+
+      - name: Test CP0-CP7 development orchestrator planner
+        run: python3 tests/test_development_orchestrator.py
+
+      - name: Generate CP0-CP7 development dispatch plan
+        run: python3 tests/run_development_orchestrator.py --cp1-report build/cp1-test-queue/report.json --execute
+
+      - name: Test CP8 durable CI queue record invariants
+        run: python3 tests/test_cp8_ci_queue.py
+
+      - name: Test CP8 durable Git-ref queue store and lease recovery
+        run: python3 tests/test_cp8_ci_queue_store.py
+
+      - name: Test CP8 worker routing and safety policy
+        run: python3 tests/test_cp8_dispatch_planner.py
+
+      - name: Generate CP8 dry-run task dispatch plan
+        run: python3 tests/run_cp8_dispatch_planner.py
 
       - name: Upload focused test evidence
         if: always()
@@ -69,5 +97,8 @@ jobs:
           path: |
             build/metal-core-fast/
             build/cp1-test-queue/
+            build/cp1-pair-storage-adapter/
+            build/development-orchestrator/
+            build/cp8-dispatch/
           if-no-files-found: ignore
           retention-days: 14

@@ -1,0 +1,283 @@
+name: ENERGUN FM-1 CP8 parallel worker pilot
+
+on:
+  push:
+    branches:
+      - energun-development-orchestrator
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches:
+      - energun-metal-core
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# This scopes duplicate pilot runs for the same ref only. It is NOT a durable
+# cross-workflow queue or a global lock; CP8.1 coordinator work remains open.
+concurrency:
+  group: energun-cp8-worker-pilot-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    name: Detect affected workstreams
+    runs-on: ubuntu-latest
+    outputs:
+      cp1: ${{ steps.paths.outputs.cp1 }}
+      cp2: ${{ steps.paths.outputs.cp2 }}
+      cp3: ${{ steps.paths.outputs.cp3 }}
+      cp8_queue: ${{ steps.paths.outputs.cp8_queue }}
+    steps:
+      - name: Checkout exact triggering commit and history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: paths
+        env:
+          BEFORE_SHA: ${{ github.event.before || github.event.pull_request.base.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] || [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            printf 'cp1=true\ncp2=true\ncp3=true\ncp8_queue=true\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" > /tmp/changed-paths.txt
+          python3 - <<'PY'
+          from pathlib import PurePosixPath
+          import os
+          paths = [line.strip() for line in open("/tmp/changed-paths.txt", encoding="utf-8") if line.strip()]
+          cp1 = cp2 = cp3 = cp8_queue = False
+          known = False
+          for path in paths:
+              name = PurePosixPath(path).name
+              if path.startswith("docs/") or name.endswith(".md"):
+                  known = True
+                  continue
+              if path.startswith(("tests/cp8_ci_queue", "tests/test_cp8_ci_queue", "tests/cp8_worker_runtime", "tests/test_cp8_worker_runtime")) or path in {"tests/cp8_worker_dag.json", "tests/cp8_worker_registry.json", ".github/workflows/energun-cp8-parallel-worker-pilot.yml"}:
+                  cp8_queue = True
+                  known = True
+                  continue
+              if path.startswith(("firmware/hal/", "firmware/bsp/")) or path == ".gitmodules" or path == "tools/build.py":
+                  cp1 = cp2 = cp3 = True
+                  known = True
+                  continue
+              if path.startswith("firmware/src/") and any(token in name for token in ("storage", "sidecar", "pair_txn", "fm6bank")):
+                  cp1 = True
+                  known = True
+                  continue
+              if path.startswith("tests/") and (name in {"storage_test.c", "fm6bank_test.c"} or name.startswith(("pair_txn", "pair_storage", "cp1_"))):
+                  cp1 = True
+                  known = True
+                  continue
+              if path.startswith(("firmware/src/", "tests/")) and (name.startswith(("eng_metal", "metal_core", "metalcore")) or name == "run_metal_core_fast.sh"):
+                  cp2 = True
+                  known = True
+                  continue
+              if path.startswith(("firmware/src/", "tests/")) and name.startswith(("chord", "ratchet", "step15", "seq", "swing", "sequencer")):
+                  cp3 = True
+                  known = True
+                  continue
+              if path.startswith(".github/workflows/"):
+                  cp8_queue = True
+                  known = True
+                  continue
+              cp1 = cp2 = cp3 = True
+          if paths and not known:
+              cp1 = cp2 = cp3 = True
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              for key, value in (("cp1", cp1), ("cp2", cp2), ("cp3", cp3), ("cp8_queue", cp8_queue)):
+                  out.write("{}={}\n".format(key, "true" if value else "false"))
+          PY
+
+  cp1-persistence:
+    name: Worker CP1 — persistence
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cp1 == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install header-generation dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Generate firmware headers
+        run: python3 -c 'import runpy; runpy.run_path("tools/build.py")["generate"]()'
+      - name: Run Base storage and FM6 staging baselines
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-fast
+          : > build/metal-core-fast/results.txt
+          cc -O2 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o build/metal-core-fast/storage tests/storage_test.c -lm
+          build/metal-core-fast/storage
+          echo 'PASS: storage' >> build/metal-core-fast/results.txt
+          cc -O2 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o build/metal-core-fast/fm6bank tests/fm6bank_test.c -lm
+          build/metal-core-fast/fm6bank
+          echo 'PASS: fm6bank' >> build/metal-core-fast/results.txt
+      - name: Run pair transaction fault-injection suite
+        run: sh tests/run_pair_txn_test.sh
+      - name: Run production adapter against simulated NOR
+        run: sh tests/run_pair_storage_adapter_test.sh
+      - name: Run dependency-aware CP1 persistence queue
+        run: python3 tests/run_cp1_test_queue.py
+      - name: Upload CP1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp1-${{ github.sha }}
+          path: |
+            build/cp1-test-queue/
+            build/metal-core-fast/results.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp2-dsp-vca:
+    name: Worker CP2 — DSP and VCA
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cp2 == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install header-generation dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Run focused DSP/VCA and voice-engine host regression
+        run: sh tests/run_metal_core_fast.sh
+      - name: Upload CP2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp2-${{ github.sha }}
+          path: build/metal-core-fast/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp3-sequencer:
+    name: Worker CP3 — sequencer
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cp3 == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install header-generation dependencies
+        run: python -m pip install Pillow fonttools
+      - name: Generate firmware headers
+        run: python3 -c 'import runpy; runpy.run_path("tools/build.py")["generate"]()'
+      - name: Compile sequencer host tests
+        run: |
+          set -euo pipefail
+          mkdir -p build/cp8-cp3
+          for test in chord ratchet step15 seq155 swing; do
+            cc -O1 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o "build/cp8-cp3/${test}_test" "tests/${test}_test.c" -lm
+          done
+      - name: Run sequencer host tests
+        run: |
+          set -euo pipefail
+          for test in chord ratchet step15 seq155 swing; do
+            echo "== CP3 ${test}"
+            "build/cp8-cp3/${test}_test"
+          done
+      - name: Upload CP3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-cp3-${{ github.sha }}
+          path: build/cp8-cp3/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp8-queue-qualification:
+    name: Worker CP8.1 — queue qualification
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cp8_queue == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Validate durable queue ledger and CAS store
+        run: python3 -m unittest discover -s tests -p 'test_cp8_*.py' -v
+      - name: Upload queue worker evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp8-queue-${{ github.sha }}
+          path: |
+            tests/test_cp8_ci_queue*.py
+            tests/cp8_ci_queue*.py
+          if-no-files-found: ignore
+          retention-days: 14
+
+  pilot-summary:
+    name: CP8 worker pilot summary
+    if: always()
+    needs:
+      - detect-changes
+      - cp1-persistence
+      - cp2-dsp-vca
+      - cp3-sequencer
+      - cp8-queue-qualification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report exact-SHA lane results
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          CP1_RESULT: ${{ needs.cp1-persistence.result }}
+          CP2_RESULT: ${{ needs.cp2-dsp-vca.result }}
+          CP3_RESULT: ${{ needs.cp3-sequencer.result }}
+          CP8_QUEUE_RESULT: ${{ needs.cp8-queue-qualification.result }}
+        run: |
+          {
+            echo '## CP8 parallel worker pilot'
+            echo
+            echo "Commit: \`${SOURCE_SHA}\`"
+            echo
+            echo '| Worker | Result |'
+            echo '|---|---|'
+            echo "| CP1 Persistence | ${CP1_RESULT} |"
+            echo "| CP2 DSP/VCA | ${CP2_RESULT} |"
+            echo "| CP3 Sequencer | ${CP3_RESULT} |"
+            echo "| CP8.1 Queue qualification | ${CP8_QUEUE_RESULT} |"
+            echo
+            echo 'Only workstreams affected by changed source paths are scheduled; unchanged lanes are skipped.'
+            echo 'CP8 queue qualification covers durable queue/CAS, persistent worker registry, DAG-gated claims, lease recovery and fencing. The three lane workers execute independently through the shared ledger.'
+            echo 'Host-only tests; no physical FM-1, Flash write, firmware install or flashing.'
+          } >> "$GITHUB_STEP_SUMMARY"
