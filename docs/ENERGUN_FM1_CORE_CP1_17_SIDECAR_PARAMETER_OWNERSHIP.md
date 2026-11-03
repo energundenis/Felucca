@@ -164,8 +164,35 @@ The parameter inventory, logical IDs, ownership and persistence boundaries are n
 - The common parameter IDs are owned by the shared parameter model, not by the DSP implementation or Sequencer.
 - The 13 Private keys are owned by the per-part Private cache and accessed by typed key, not by fake common parameter IDs.
 - Sequencer pattern data remains under the existing Felucca project/preset serializer until its source inventory proves otherwise.
-- Numeric ID freeze must precede production Motion whitelist registration and any change to `P_COUNT`.
+- Numeric IDs, owners and persistence boundaries for the inventory-only CP2/CP3 scope are frozen by this document. Production descriptor registration and Motion whitelist code must use this exact map and remain separately tested.
 
 ## 12. Non-goals
 
 No production firmware source or parameter descriptor is changed by this document. No storage object ID, OBJ_COUNT, physical Flash address, sector reservation, bootloader/OTA range, factory image or physical FM-1 state is changed. No branch is merged and no PR is auto-merged.
+
+
+## 13. Current project/preset runtime source state — 2026-11-03
+
+This section records the current production call paths on `energun-metal-core`; it is an audit, not an integration claim.
+
+### CP1.6 project paths
+
+- Save / Save As: `project_save_as()` → `project_capture()` → `proj_pack()` → `st_save(OBJ_PROJECT0 + slot, ...)`. The current path commits only the base FUN10 object.
+- Load: `project_load()` → `st_load()` → `proj_import()` → `project_restore_runtime()`. The current path restores only the base project.
+- Rename: `project_rename()` repacks and commits the base project directly through `st_save()`.
+- Erase: `project_erase()` commits an empty base object through `st_save()`; it has no Sidecar tombstone.
+- Live autosave: `autosave_poll()` captures/packs the base and commits `OBJ_AUTOSAVE` directly; `autosave_boot()` loads only that base object.
+
+### CP1.7 preset paths
+
+- Save/overwrite/delete: `up_store_cat()` / editor delete → `up_put()` → `st_save(OBJ_UPRESET0 + bank, ...)`.
+- Rename/category update: `up_rename_cat()` → `up_put()` → base-bank `st_save()`.
+- Preset load reads the existing base-bank mirror and applies its parameter record; there is no Private Sidecar restore.
+- FM6 patch data remains a separate `upf_store()` operation after the preset-bank commit. The Sidecar must not claim cross-object atomicity with that FM6 patch object.
+
+### Integration status and safety gate
+
+- None of the listed project/autosave/preset call paths currently commits or loads a Sidecar pair.
+- The working branch has no production Sidecar object registration, approved physical sector mapping or completed pair-transaction coordinator.
+- Therefore CP1.6 and CP1.7 production runtime integration are **not started**. The next safe implementation step is a host-tested pair coordinator against the real `storage.c` and simulated NOR, while keeping the production Sidecar backend unallocated. Production Flash wiring remains blocked until CP1.4.11 verifies the full map, bootloader/OTA/recovery ranges and restore route.
+- Do not claim CP1.6 or CP1.7 complete from the frozen schema, Sidecar format tests or source-path audit alone.
