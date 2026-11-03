@@ -69,7 +69,7 @@
         "sidecar-ab-selection"
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
-      "blocker": "The reusable energun_pair_v1 coordinator now owns Sidecar-first/Base-second commit ordering, readback validation, exact generation binding and pair load. Its host adapter runs against the real storage.c with a separate test-only Sidecar backend; no target Flash backend or runtime call sites are connected."
+      "blocker": "The reusable energun_pair_v1 coordinator implements Sidecar-first/Base-second commit ordering, readback validation, exact generation binding, pair load and Base tombstone erase. Host adapters use real storage.c with a separate test-only Sidecar backend; no target Flash backend or runtime call sites are connected."
     },
     {
       "id": "sidecar-identity-matrix",
@@ -117,7 +117,7 @@
         "pair-transaction-harness"
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
-      "blocker": "The coordinator host harness injects torn writes at every Sidecar payload/header byte and Base payload/header byte, verifies old-pair retention after failed Base commit, retries around an orphan, and tests fallback after newest Base corruption. Simulated NOR only."
+      "blocker": "Coordinator host acceptance injects torn writes at every Sidecar and Base payload/header byte, verifies old-pair retention after failed Base commit and failed erase, retries around an orphan, checks tombstone isolation/reuse, and tests fallback after newest Base corruption. Simulated NOR only."
     },
     {
       "id": "sidecar-integrity",
