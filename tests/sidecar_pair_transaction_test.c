@@ -44,6 +44,7 @@ static int st_prog(uint32_t off, const void *src, uint32_t n)
 #include "../firmware/src/storage.c"
 #include "../firmware/src/energun_sidecar_v1.c"
 #include "../firmware/src/energun_pair_v1.c"
+#include "../firmware/src/energun_sidecar_payload_v1.c"
 #include "../firmware/src/energun_lifecycle_v1.c"
 
 #define SC_TEST_TYPE 0x7Eu
@@ -585,6 +586,24 @@ int main(void)
         lifecycle.write_guard = lifecycle_test_guard;
         lifecycle.base_motion_count = 0u;
 
+        {
+            energun_sc_project_payload_v1_t typed, typed_loaded;
+            memset(&typed, 0, sizeof typed);
+            memset(&typed_loaded, 0xA5, sizeof typed_loaded);
+            typed.p_mc[0][0] = 1u;
+            typed.private_values[3][5] = 2u;
+            lifecycle_ok &= energun_lifecycle_v1_save_project(&lifecycle,
+                OBJ_PROJECT0 + 3u, 3u, base1, sizeof base1, &typed) ==
+                ENERGUN_LIFECYCLE_V1_OK;
+            lifecycle_ok &= energun_lifecycle_v1_load_project(&lifecycle,
+                OBJ_PROJECT0 + 3u, 3u, got_base, sizeof got_base, &got_base_len,
+                &typed_loaded, &meta) == ENERGUN_LIFECYCLE_V1_OK &&
+                typed_loaded.p_mc[0][0] == 1u &&
+                typed_loaded.private_values[3][5] == 2u &&
+                typed_loaded.motion_count == 0u &&
+                got_base_len == sizeof base1 && !memcmp(got_base, base1, sizeof base1);
+        }
+
         reset_media();
         lifecycle_ok &= energun_lifecycle_v1_save(&lifecycle, OBJ_PROJECT0,
             ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u) ==
@@ -625,6 +644,13 @@ int main(void)
             !memcmp(got_sidecar, canonical_defaults, sizeof canonical_defaults);
 
         lifecycle_guard_value = 1;
+        {
+            energun_sc_project_payload_v1_t typed_live;
+            memset(&typed_live, 0, sizeof typed_live);
+            lifecycle_ok &= energun_lifecycle_v1_save_live(&lifecycle,
+                OBJ_AUTOSAVE, base1, sizeof base1, &typed_live) ==
+                ENERGUN_LIFECYCLE_V1_ERR_GUARD;
+        }
         lifecycle_ok &= energun_lifecycle_v1_autosave(&lifecycle, OBJ_AUTOSAVE,
             base1, sizeof base1, payload, 117u) == ENERGUN_LIFECYCLE_V1_ERR_GUARD;
         /* FM6 reservation is scoped to the autosave copy; project saves remain usable. */
