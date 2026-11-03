@@ -1,9 +1,9 @@
 # ENERGUN FM-1 CORE — Master Status
-Date: 2026-11-02
+Date: 2026-11-03
 Canonical repository: `energundenis/Felucca`
 Canonical working branch: `energun-metal-core`
-Documentation synchronization base HEAD: `35d1c2feb5df95e3b6ffeaffbff9ee03a0765a10`
-Latest code/test HEAD with confirmed fast-lane result: `35d1c2feb5df95e3b6ffeaffbff9ee03a0765a10`
+Documentation synchronization base HEAD: `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`
+Latest code/test HEAD with confirmed fast-lane result: `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`
 
 ## Authority and percentage method
 This is the current status entry point. It supersedes stale checkbox/status wording in the original planning baseline and older checkpoint snapshots. The detailed source documents remain authoritative for technical scope and acceptance.
@@ -15,7 +15,7 @@ Percentages are planning estimates based on evidence against each phase's accept
 | Checkpoint | Scope | Completion | Evidence / remaining acceptance |
 |---|---|---:|---|
 | CP0 | Repository, source, dependencies, baseline build and CI audit | **100%** | Pinned submodules, unmodified Felucca build and baseline host/web regression are established. ENERGUN-specific target runtime/resource qualification remains outside CP0. |
-| CP1 | METAL CORE specification, parameter model, access and persistence architecture | **70%** | Signal map, 37-control inventory, 8/16/13 logical map and multiple source audits are documented. Stable IDs, conversion acceptance, Private API, Sidecar ABI/transactions, CRC, archive V2 and Flash/recovery gates remain open. |
+| CP1 | METAL CORE specification, parameter model, access and persistence architecture | **75%** | 8/16/13 and Sidecar schema are frozen; Sidecar codec, A/B selector, backend-neutral pair coordinator, fault harness, Motion whitelist and host-tested four-part Private cache exist. Production storage backend, project/preset runtime hooks, archive V2 and physical recovery qualification remain open. |
 | CP2 | Isolated DSP primitives | **65%** | Oscillator/LPG math and envelope host tests exist; DSP Stage 1–7 artifacts exist on a separate branch. They are not a complete production engine and do not establish AC79 runtime cost/audio qualification. |
 | CP3 | Felucca lifecycle and METAL CORE engine integration | **40%** | Real host dispatcher/sequencer and VCA-only real-track integration tests exist. Production callback/registration, complete DSP graph, full resource accounting and full integration remain open. |
 | CP4 | FM-1 UI, controls, display and settings | **0%** | No production METAL CORE UI pages/control mapping have passed the checkpoint acceptance criteria. |
@@ -23,7 +23,7 @@ Percentages are planning estimates based on evidence against each phase's accept
 | CP6 | Optimization, regression and release qualification | **30%** | Automated host regression and baseline build workflows exist. METAL CORE target CPU/RAM, full graph stress, long-run audio and release-level qualification remain open. |
 | CP7 | Packaging and physical FM-1 validation | **0%** | No installable METAL CORE release candidate or physical-device validation is established. No device write is authorized. |
 
-Indicative overall planning progress using equal weighting for the eight CP phases: **40%**. This is a coarse project-management indicator, not a claim that 40% of firmware code is implemented.
+Indicative overall planning progress using equal weighting for the eight CP phases: **41%**. This is a coarse project-management indicator, not a claim that 40% of firmware code is implemented.
 
 ## CP1.4 — parameter access and persistence sub-checkpoints
 
@@ -31,17 +31,17 @@ Indicative overall planning progress using equal weighting for the eight CP phas
 |---|---|---:|---|
 | CP1.4.1 | Logical parameter inventory | **100%** | Frozen logical map: 8 Engine EDIT + 16 P_MC + 13 Private per part; four independent Private banks. Host inventory contract test passes in the 18-program fast lane. Numeric IDs and firmware descriptors are deliberately not assigned. |
 | CP1.4.2 | 7-bit conversion and compatibility | **80%** | Standard Felucca 7-bit V1 encoding accepted. 30-control reference, 9,434 source-step boundaries, 100,001-point nearest-code sweeps, endpoint clamping and corrected bipolar mapping are documented/tested. Remaining: musical-resolution review, final per-control acceptance, base-compatible FUN10/preset strategy and exact-head compatibility evidence. |
-| CP1.4.3 | Private parameter access/runtime model | **45%** | Typed four-part cache, lifecycle and capability-probed editor protocol are designed. No production Private API/cache/editor implementation. |
-| CP1.4.4 | P_MC Motion Lock policy | **45%** | Explicit whitelist and shared 128-event-pool rules are designed. No production whitelist/merge/split implementation. |
-| CP1.4.5 | Sidecar schema and pair transaction | **70%** | V1 envelope/semantic validator, exact selected-Base metadata, explicit validated A/B copy reader and orphan-aware matching-copy selector are implemented and host-tested. Pair commit coordinator and power-loss transaction tests remain open. |
+| CP1.4.3 | Private parameter access/runtime model | **55%** | New typed four-part Private runtime cache provides validated get/set, defaults fallback, atomic snapshot replacement, dirty tracking and generation-safe persistence acknowledgement; strict host acceptance passes 28/28. Production integration, canonical defaults owner, editor protocol and UI remain open. |
+| CP1.4.4 | P_MC Motion Lock policy | **80%** | Sidecar V1 validator enforces exactly IDs 103–118, masks Motion Lock for comparison and retains the flag; boundary and denied-ID tests pass. Production `motion_param()` integration, runtime merge/split and lifecycle tests remain open. |
+| CP1.4.5 | Sidecar schema and pair transaction | **90%** | V1 envelope/semantic validator, exact Base metadata, validated A/B reader/selector, backend-neutral pair coordinator and seven-identity torn-write/retry/fallback harness are implemented and host-tested. Target Sidecar backend and production lifecycle hooks remain open. |
 | CP1.4.6 | Sidecar logical capacity | **100%** | Capacity arithmetic verified: 501-byte project/live payload and 210-byte preset-bank payload before provisional envelope; no physical sector allocation. |
-| CP1.4.7 | CRC/integrity | **45%** | Outer storage CRC is validated independently for both A/B candidates; semantic inspection and exact Base sequence+payload-CRC matching determine membership. Pair recovery and power-loss integrity remain open. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
-| CP1.4.8 | Automated storage/fault regression | **50%** | Sidecar V1 format **38/38**, Base-generation binding **16/16**, Sidecar A/B selection **17/17** pass under strict host compilation and simulated NOR. Pair-commit, power-loss and full round-trip matrix remains open. |
+| CP1.4.7 | CRC/integrity | **80%** | Outer storage CRC, Sidecar semantic validation, exact Base binding, A/B fallback and host power-loss recovery are covered. Target-backend readback and production lifecycle recovery remain open. [Integrity audit](ENERGUN_FM1_CORE_CP1_4_7_SIDECAR_INTEGRITY_AUDIT.md). |
+| CP1.4.8 | Automated storage/fault regression | **85%** | Sidecar V1 **38/38**, Base-generation binding **16/16**, A/B selection **17/17**, Private runtime cache **28/28**, and seven-identity pair/torn-write harness pass under strict host/simulated NOR. Production backend and runtime call-site fault matrix remain open. |
 | CP1.4.9 | Backup/Restore audit | **100% audit** | Source audit complete: archive V1 omits Sidecar; archive V2 needs pair-aware restore and destination-sequence rebinding. Implementation remains 0%. |
 | CP1.4.10 | Integration | **20%** | Integration dependencies and boundaries are documented; production Private/P_MC/Sidecar integration is not implemented. |
 | CP1.4.11 | Flash map, bootloader and recovery audit | **70% (source audit)** | V15 accepted as authoritative; source-derived ownership map, loader scan windows, OTA/FM6 staging and current allowlist audited. Read-only rescue/recovery procedure, final sector policy and physical safety qualification remain open; no sectors are selected or authorized. |
 
-CP1.4 percentages distinguish completion of an audit/design deliverable from implementation. In particular, CP1.4.6 and the CP1.4.9 source audit are complete only within their stated scopes; neither authorizes Flash allocation or archive V2 implementation.
+CP1.4 percentages distinguish completion of an audit/design deliverable from implementation. CP1.4.6 and the CP1.4.9 source audit are complete only within their stated scopes; neither authorizes Flash allocation or archive V2 implementation. CP1.4.11 source analysis uses the user's accepted authoritative V15 reference; its remaining gate is physical safety/recovery qualification, not proof of V15 fidelity or a generic requirement for another dump.
 
 ## Current CI evidence
 
@@ -154,3 +154,12 @@ After CP1, continue CP3 production engine integration and CP4/CP5 UI/sequencer i
 - Preserve V15 and factory firmware unchanged. All ENERGUN work remains additive and must preserve the agreed compatibility and recovery boundaries.
 - This acceptance removes the prior *provenance/fidelity uncertainty* about the V15 reference. It does not itself grant permission to write physical Flash, allocate sectors, alter the bootloader, or flash the device. Such changes still require a concrete address-level ownership map, collision analysis against all V15 users (including loader scan ranges and FM6 staging), and a verified recovery route.
 - Continue the CP1.4.11 audit using V15 as the accepted source of truth. Do not report the absence of a separately uploaded 1 MiB dump as a blocker to source-level analysis. If a particular operation requires raw binary bytes or a reproducible image hash, identify that narrow requirement separately rather than questioning V15's accepted authority.
+
+
+## CP1 accelerated implementation update — 2026-11-03
+
+- Added `firmware/src/energun_private_v1.h/.c`: a separate typed four-part Private runtime cache. It is not stored in `track_t.p[]` or `engine_t.mem`; it provides validated key domains, defaults fallback, snapshots, atomic compare-and-replace, dirty masks and generation-safe persistence acknowledgement. Canonical V1 defaults are supplied by the descriptor owner; this module does not invent them.
+- Added strict host acceptance `tests/energun_private_v1_test.c` / `tests/run_private_v1_test.sh`; **28 checks, 0 failures**.
+- Added `private-runtime-cache` as an independent CP1 queue stage. It ran in parallel with Sidecar format and Base-generation binding under the queue's three-worker limit.
+- Fast Regression [41704249158](https://github.com/energundenis/Felucca/actions/runs/41704249158): **SUCCESS** on exact code/test HEAD `351d82fee5ed16a8b4f4179fb4851c6d09853ea2`; all 24 focused regression tests passed and Private runtime cache passed 28/28. The CP1 queue correctly remains **BLOCKED** at production Pair Commit Ordering because the target Sidecar backend and project/preset runtime call sites are not integrated.
+- This cache is a host-tested runtime primitive, not completed production CP1.6/CP1.7 integration. No stable IDs, editor commands/pages, target Sidecar address, Flash whitelist, archive V1, loader, OTA, factory firmware or physical device were changed.
