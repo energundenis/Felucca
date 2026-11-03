@@ -36,15 +36,13 @@ energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_erase_slot(
     uint8_t slot,
     const uint8_t *new_base_bank, size_t new_base_bank_length);
 
-/* Restore only the selected slot into the selected runtime part. An absent
- * slot applies canonical Private defaults through the atomic Private bridge.
+/* Apply a decoded slot only after the caller has accepted/deserialized the
+ * matching Base record. An absent slot applies canonical defaults atomically.
  */
-energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_restore_slot(
-    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t bank,
-    uint8_t part, uint8_t slot,
-    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_apply_slot(
+    const energun_sc_preset_payload_v1_t *sidecar,
     energun_private_cache_v1_t *private_cache,
-    const uint8_t defaults[ENERGUN_PRIVATE_V1_KEYS],
-    energun_pair_v1_base_meta_t *base_meta);
+    uint8_t part, uint8_t slot,
+    const uint8_t defaults[ENERGUN_PRIVATE_V1_KEYS]);
 
 #endif
