@@ -19,8 +19,8 @@ int main(void)
 
     CHECK("FM6 staging lease acquired", energun_flash_arbiter_acquire(
         &arbiter, ENERGUN_FLASH_OWNER_FM6_STAGE, 100u, 1000u) == 0);
-    CHECK("autosave is blocked while FM6 owns staging", !energun_flash_arbiter_acquire(
-        &arbiter, ENERGUN_FLASH_OWNER_AUTOSAVE, 200u, 100u));
+    CHECK("autosave is blocked while FM6 owns staging", energun_flash_arbiter_acquire(
+        &arbiter, ENERGUN_FLASH_OWNER_AUTOSAVE, 200u, 100u) != 0);
     CHECK("FM6 lease is reported held before expiry", energun_flash_arbiter_held(
         &arbiter, ENERGUN_FLASH_OWNER_FM6_STAGE, 500u));
     CHECK("FM6 activity renews the lease", energun_flash_arbiter_renew(
