@@ -351,6 +351,7 @@ static int cut_test(void)
     for (n = 0; n < total; n++) {
         memcpy(nor + 0xE5000u, pre, sizeof pre);
         memset(&fvb_tx, 0, sizeof fvb_tx);
+        memset(&st_reservation, 0, sizeof st_reservation); /* simulated reboot clears volatile ownership */
         fvb_boot();
         dead = 0;
         cut_bytes = (long)n;
@@ -370,6 +371,7 @@ static int cut_test(void)
     for (e = 0; e < 2u; e++) {                            /* BEGIN's erase, the copy's erase */
         memcpy(nor + 0xE5000u, pre, sizeof pre);
         memset(&fvb_tx, 0, sizeof fvb_tx);
+        memset(&st_reservation, 0, sizeof st_reservation); /* simulated reboot clears volatile ownership */
         fvb_boot();
         dead = 0;
         cut_erase = (long)e;
