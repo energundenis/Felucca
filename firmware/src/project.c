@@ -1337,7 +1337,7 @@ static uint32_t autosave_sig(void)
 static int autosave_quiet(void)
 {
     uint32_t k, i;
-    if (transport_busy() || fm1_in.notes || fm1_in.buttons)
+    if (transport_busy() || fm1_in.notes || fm1_in.buttons || fvb_busy())
         return 0;
     for (k = 0; k < NTRK; k++)
         for (i = 0; i < NVOICE; i++)
