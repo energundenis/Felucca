@@ -170,7 +170,13 @@ class GitCliQueueClient:
 
     def read_ref(self, branch: str) -> str:
         ref = f"refs/heads/{branch}"
-        self._git("fetch", "--no-tags", self.remote, f"+{ref}:refs/remotes/{self.remote}/{branch}")
+        fetched = self._git("fetch", "--no-tags", self.remote,
+                            f"+{ref}:refs/remotes/{self.remote}/{branch}", check=False)
+        if fetched.returncode:
+            detail = fetched.stderr.strip()
+            if "couldn't find remote ref" in detail.lower() or "no such ref" in detail.lower():
+                raise QueueRefNotFound(f"Git queue ref not found: {branch}")
+            raise QueueStoreError(f"unable to fetch queue ref: {detail[:400]}")
         result = self._git("rev-parse", f"refs/remotes/{self.remote}/{branch}")
         sha = result.stdout.strip()
         if len(sha) != 40:
