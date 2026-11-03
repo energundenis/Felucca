@@ -2,7 +2,7 @@
 
 Date: 2026-11-03  
 Branch: `energun-metal-core`  
-Status: **WORKING INVENTORY / ID ALLOCATION PROPOSAL — no firmware ABI or Flash allocation changed**
+Status: **LOGICAL SCHEMA FROZEN — runtime/storage integration remains gated; no firmware ABI or Flash allocation changed**
 
 ## 1. Scope
 
@@ -29,7 +29,7 @@ These eight controls are engine-owned EDIT parameters. They are not Sidecar Priv
 
 ## 3. Common P_MC inventory — 16 controls
 
-The following order is the Sidecar V1 per-part byte order and the proposed append-before-E0 logical ID order.
+The following order is the Sidecar V1 per-part byte order and the frozen append-before-E0 logical ID order.
 
 | Proposed ID | Index | Control | Source range | Default | Type / stored code |
 |---:|---:|---|---:|---:|---|
@@ -50,12 +50,14 @@ The following order is the Sidecar V1 per-part byte order and the proposed appen
 | 117 | 14 | WAVEFOLDER MODULE VOLUME | 0–1 | 1 | Continuous, 0..127 |
 | 118 | 15 | WEST COAST VOLUME | 0–1 | 1 | Continuous, 0..127 |
 
-### ID proposal and compatibility
+### Frozen logical ID allocation and compatibility
 
-- Proposed P_MC IDs: 103–118.
-- Proposed E0–E7 IDs after insertion: 119–126.
-- Proposed runtime P_COUNT: 127; this remains below the 128-ID Motion Lock bit boundary.
-- This mapping is an inventory proposal, not yet a production descriptor/ABI change. It must be frozen together with the final descriptor table and Motion whitelist before source IDs are assigned.
+- P_MC IDs are frozen as 103–118 in the table above.
+- E0–E7 IDs are frozen as 119–126 in the previously accepted order.
+- Runtime P_COUNT is 127; this remains below the 128-ID Motion Lock bit boundary. ID 127 is not allocated; MCX0–MCX6 remain outside this namespace.
+- These are now the canonical logical IDs for CP2/CP3 inventory, descriptor ownership and Motion policy. Production descriptor registration and changes to P_COUNT remain separate implementation work; no source ABI was changed by this document.
+- Legacy project FUN10 remains at np=111. The import adapter must migrate the legacy final eight IDs 103–110 to the new E0–E7 IDs 119–126; P_MC values 103–118 are loaded from the matching Sidecar. The save adapter must compact the eight E values back into the legacy final-eight base positions and must not serialize P_MC into FUN10.
+- User-preset base records may store np=127 in their 144-byte parameter area. Older firmware's final-eight migration threshold is 119, so it preserves E0–E7 at 119–126 and ignores the inserted P_MC values at 103–118.
 - Project FUN10 base compatibility remains at the factory-compatible count (111): the project adapter must preserve the legacy common values and compact E0–E7 into the final eight base positions. P_MC is restored from the matching Sidecar.
 - User-preset base records have 144 parameter bytes and can carry P_COUNT=127 while preserving the final-eight E0–E7 migration rule; old firmware compatibility fixtures remain mandatory.
 
@@ -85,8 +87,8 @@ Missing, unsupported or invalid Sidecar data must not block loading the legacy b
 
 ## 5. Motion ownership and eligibility
 
-- P_MC continuous controls are the only proposed new Motion Lock members.
-- Proposed whitelist, in the same order as P_MC: IDs 103–118.
+- P_MC continuous controls are the only new V1 Motion Lock members.
+- Frozen logical whitelist: exactly IDs 103–118, corresponding one-to-one with the 16 P_MC rows above.
 - E0–E7 retain their existing engine Motion behavior, subject to existing descriptor validation.
 - Private controls, booleans, enums and MCX0–MCX6 are excluded from V1 Motion Lock.
 - FOLD SYMMETRY uses signed -64..63; other P_MC controls use canonical 0..127 values. Motion and parameter editing must share the same descriptor conversion.
@@ -94,7 +96,7 @@ Missing, unsupported or invalid Sidecar data must not block loading the legacy b
 - Duplicate (track, step, parameter) keys are rejected or updated according to the existing Motion replacement rule; malformed or over-capacity Sidecar data is rejected as a whole.
 - P_MC Motion belongs in the project/live Sidecar payload. User-preset banks do not carry Motion.
 
-The numeric whitelist is a proposal pending stable ID freeze and implementation tests; the current Sidecar V1 validator deliberately does not enforce numeric P_MC IDs.
+The logical whitelist membership and IDs are frozen here. Production `motion_param()` whitelist code, capture/restore mapping and allowed/denied regression tests remain implementation gates; the current Sidecar V1 validator deliberately does not enforce numeric P_MC IDs.
 
 ## 6. Persistence ownership matrix
 
@@ -144,18 +146,18 @@ The final row is an ownership boundary, not a proposal to add sequencer data to 
 ## 10. CP1.17 closure gates
 
 - [x] Logical 8/16/13 membership reconciled against the accepted E0–E7 order.
-- [x] Sidecar V1 envelope and payload field layout frozen for host implementation.
+- [x] Sidecar V1 envelope, payload field order, identity kinds and logical payload lengths frozen.
 - [x] Sidecar host format, Base binding and A/B selection suites recorded as passing in the prior exact-head evidence.
-- [ ] Freeze numeric P_MC IDs 103–118 and E0–E7 IDs 119–126 after descriptor/migration review.
-- [x] Resolve FM CHARACTER default parity from CP1.13 and publish the complete 13-key Private default table.
-- [ ] Implement and test the exact P_MC Motion whitelist 103–118 against every allowed and denied parameter.
-- [ ] Complete real storage pair-transaction fault-injection tests and verify all power-cut states against actual Felucca storage.
-- [ ] Confirm all project, autosave, preset-bank save/rename/erase paths use the coordinator.
-- [ ] Review AC79 RAM/stack impact and target build integration.
+- [x] Freeze logical P_MC IDs 103–118 and E0–E7 IDs 119–126; P_COUNT=127, with legacy project/preset migration rules recorded above.
+- [x] Resolve FM CHARACTER default parity from CP1.13 and publish all 13 Private V1 defaults.
+- [x] Freeze Motion ownership: P_MC 103–118 only for new V1 locks; Private and MCX excluded; E0–E7 retain existing descriptor path; one shared 128-event pool.
+- [x] Freeze project/live and preset-bank Sidecar ownership and CP1.6/CP1.7 persistence boundaries.
+
+**CP1.17 LOGICAL SIDECAR SCHEMA: CLOSED.** Production Motion whitelist code/tests, pair transaction fault injection, project/preset call-site integration and AC79 RAM/stack qualification remain in CP1.6/CP1.7 implementation gates. This closure does not authorize storage object IDs, Flash sectors or physical writes.
 
 ## 11. CP2 / CP3 inventory-only scope
 
-The current task closes only the parameter inventory, identity proposal, ownership and persistence boundaries. It does not close DSP implementation, production engine registration, sequencer integration or target audio qualification.
+The parameter inventory, logical IDs, ownership and persistence boundaries are now frozen. This does not close DSP implementation, production engine registration, sequencer integration or target audio qualification.
 
 - CP2 owns the METAL CORE DSP parameter descriptors and transient DSP state; transient DSP state is not project/preset data.
 - CP3 owns the host note/voice lifecycle, sequencer event dispatch and the mapping from sequencer events to the existing parameter/Motion contracts.
