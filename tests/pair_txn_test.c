@@ -8,7 +8,8 @@
 #define BASE_CAP 32u
 #define RECORD_CAP ENERGUN_SC_V1_MAX_RECORD
 
-typedef enum { FAULT_NONE, FAULT_SIDECAR_BEFORE_COMMIT, FAULT_BASE_ERASE,
+typedef enum { FAULT_NONE, FAULT_SIDECAR_ERASE, FAULT_SIDECAR_PAYLOAD,
+    FAULT_SIDECAR_HEADER, FAULT_SIDECAR_READBACK, FAULT_BASE_ERASE,
     FAULT_BASE_PAYLOAD, FAULT_BASE_HEADER, FAULT_VERIFY } fault_t;
 typedef struct {
     uint8_t base[2][BASE_CAP];
@@ -72,11 +73,16 @@ static int write_sidecar(void *ctx, energun_sc_identity_kind_t kind,
 {
     model_t *m = ctx; (void)kind; (void)index;
     ++m->sidecar_writes; m->last_sidecar_copy = copy;
-    if (m->fault == FAULT_SIDECAR_BEFORE_COMMIT || copy > 1u ||
-        length > RECORD_CAP) return -1;
+    if (copy > 1u || length > RECORD_CAP ||
+        m->fault == FAULT_SIDECAR_ERASE) return -1;
+    m->sidecar_valid[copy] = 0u; /* erase invalidates only the inactive copy */
+    m->sidecar_len[copy] = 0u;
+    if (m->fault == FAULT_SIDECAR_PAYLOAD) return -1;
     memcpy(m->sidecar[copy], record, length);
     m->sidecar_len[copy] = length;
+    if (m->fault == FAULT_SIDECAR_HEADER) return -1;
     m->sidecar_valid[copy] = 1u; /* outer header-last commit */
+    if (m->fault == FAULT_SIDECAR_READBACK) return -1;
     return 0;
 }
 static int write_base(void *ctx, uint32_t obj, const uint8_t *payload,
@@ -151,10 +157,22 @@ int main(void)
     CHECK("successful transaction commits new Base + matching Sidecar",
         save_new(&m, &w) == ENERGUN_PAIR_OK && m.base_seq[1] == 6u &&
         m.sidecar_valid[1] && old_pair_intact(&m));
-    memset(&m, 0, sizeof m); seed_old_pair(&m); m.fault = FAULT_SIDECAR_BEFORE_COMMIT;
-    CHECK("Sidecar staging failure leaves old pair and skips Base write",
+    memset(&m, 0, sizeof m); seed_old_pair(&m); m.fault = FAULT_SIDECAR_ERASE;
+    CHECK("Sidecar erase failure leaves old pair and skips Base write",
         save_new(&m, &w) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
         old_pair_intact(&m) && m.base_writes == 0u);
+    memset(&m, 0, sizeof m); seed_old_pair(&m); m.fault = FAULT_SIDECAR_PAYLOAD;
+    CHECK("Sidecar payload failure leaves old pair and skips Base write",
+        save_new(&m, &w) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
+        old_pair_intact(&m) && m.base_writes == 0u);
+    memset(&m, 0, sizeof m); seed_old_pair(&m); m.fault = FAULT_SIDECAR_HEADER;
+    CHECK("Sidecar header failure leaves old pair and skips Base write",
+        save_new(&m, &w) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
+        old_pair_intact(&m) && m.base_writes == 0u);
+    memset(&m, 0, sizeof m); seed_old_pair(&m); m.fault = FAULT_SIDECAR_READBACK;
+    CHECK("Sidecar readback failure after commit leaves new orphan and old pair",
+        save_new(&m, &w) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
+        old_pair_intact(&m) && m.sidecar_valid[1] && m.base_writes == 0u);
     memset(&m, 0, sizeof m); seed_old_pair(&m); m.fault = FAULT_BASE_ERASE;
     CHECK("Base erase failure leaves old pair; staged Sidecar is orphaned",
         save_new(&m, &w) == ENERGUN_PAIR_ERR_BASE_COMMIT &&
