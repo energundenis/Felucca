@@ -17,12 +17,18 @@ def cp1() -> None:
     run(["python3", "-c", 'import runpy; runpy.run_path("tools/build.py")["generate"]()'])
     out = ROOT / "build" / "cp8-cp1"
     out.mkdir(parents=True, exist_ok=True)
+    evidence_dir = ROOT / "build" / "metal-core-fast"
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    evidence_file = evidence_dir / "results.txt"
+    evidence_file.write_text("", encoding="utf-8")
     include = ["-Ibuild/gen", "-Ifirmware/hal", "-Ifirmware/bsp/chip",
                "-Ifirmware/bsp/boards/fm1", "-Ifirmware/src"]
     for name, source in (("storage", "tests/storage_test.c"),
                          ("fm6bank", "tests/fm6bank_test.c")):
         run(["cc", "-O2", "-w", *include, "-o", str(out / name), source, "-lm"])
         run([str(out / name)])
+        with evidence_file.open("a", encoding="utf-8") as evidence:
+            evidence.write(f"PASS: {name}\\n")
     run(["sh", "tests/run_pair_txn_test.sh"])
     run(["sh", "tests/run_pair_storage_adapter_test.sh"])
     run(["python3", "tests/run_cp1_test_queue.py"])
