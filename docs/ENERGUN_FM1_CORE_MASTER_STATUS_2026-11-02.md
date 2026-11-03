@@ -3,7 +3,7 @@ Date: 2026-11-02
 Canonical repository: `energundenis/Felucca`
 Canonical working branch: `energun-metal-core`
 Documentation synchronization base HEAD: `069b43f1aac4a08aaf927fac92c2852526a03cf5`
-Latest code/test HEAD with confirmed fast-lane result: `277313eeda4bd3805ea0c910e3298633c041d03b`
+Latest code/test HEAD with confirmed fast-lane result: `ae7d01399396c4e40b3eae24d2e0ebb9aebbcd9a`
 
 ## Authority and percentage method
 This is the current status entry point. It supersedes stale checkbox/status wording in the original planning baseline and older checkpoint snapshots. The detailed source documents remain authoritative for technical scope and acceptance.
@@ -50,7 +50,8 @@ CP1.4 percentages distinguish completion of an audit/design deliverable from imp
 - Isolated DSP branch documentation-resync commit `7b47c18556e94b60d66c40f2676fac4d91c4d2af`: branch `metal-core-dsp-stage1-osc` is ahead 89 / behind 0 against `energun-metal-core`. Latest stage workflow [41430073973](https://github.com/energundenis/Felucca/actions/runs/41430073973) completed SUCCESS, including the real `engines.c` syntax-only check and OSC/FM/feedback host tests at 44.1 and 96 kHz. The branch remains isolated and unregistered.
 
 - Fast regression [41478848470](https://github.com/energundenis/Felucca/actions/runs/41478848470): **SUCCESS**, 21/21 existing focused regression programs/suites; Sidecar V1 format **38/38**, Base-generation binding **16/16**, Sidecar A/B selection **17/17**. Sequential CP1 queue passes through Sidecar A/B selection and stops at Pair Commit Ordering because the production pair coordinator is not implemented. Exact tested code HEAD `277313eeda4bd3805ea0c910e3298633c041d03b`.
-- Full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732): **IN PROGRESS at last inspection** on the same code HEAD. Build and AC79 VCA compile-only probe had passed; Felucca host/web regression was still running. Do not report this run as successful until GitHub records completed SUCCESS.
+- Full baseline [41417141732](https://github.com/energundenis/Felucca/actions/runs/41417141732): **SUCCESS** on code HEAD `7ec54a19bb1e18992c1dbc3603deba60015d411f`. This is historical evidence on a different code HEAD, not a substitute for the later exact-head run below.
+- Full baseline [41481399187](https://github.com/energundenis/Felucca/actions/runs/41481399187): **SUCCESS** on exact code HEAD `ae7d01399396c4e40b3eae24d2e0ebb9aebbcd9a`. The unmodified Felucca firmware build, AC79 VCA/Sidecar compile-only probes and complete host/web regression all passed. This does not link/register the METAL CORE engine or prove target runtime/audio behavior.
 - Previous full baseline [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166): SUCCESS on older code HEAD `33327eb312a36b83b3751560d899c577147125e4`; useful historical evidence, not a replacement for exact-head CI.
 - CP3.1 VCA real-pool run [41410200181](https://github.com/energundenis/Felucca/actions/runs/41410200181): SUCCESS, 17/17 on its exact older code HEAD. It remains a scoped historical result, not full engine qualification.
 
@@ -136,5 +137,5 @@ Documentation-only commits after the tested code HEAD do not change the tested f
 - Sidecar format/semantic validation and Base-generation binding are now independent sibling stages after Storage A/B + FM6 staging evidence; Sidecar A/B selection joins both before proceeding.
 - Added scheduler acceptance tests for actual overlap, dependency join, independent-branch continuation, failure propagation and cycle detection.
 - Fast regression [41481399097](https://github.com/energundenis/Felucca/actions/runs/41481399097): **SUCCESS** on exact tested code HEAD `ae7d01399396c4e40b3eae24d2e0ebb9aebbcd9a`. All 21 focused tests passed; scheduler unit tests **5/5 PASS**, including a barrier-based proof that independent stages overlap; CP1 queue ran Sidecar format and Base binding concurrently, then A/B selection after both; Sidecar V1 **38/38**, Base binding **16/16**, A/B selection **17/17**. Queue correctly reports BLOCKED at Pair Commit Ordering because the production coordinator is not implemented.
-- Baseline build [41481399187](https://github.com/energundenis/Felucca/actions/runs/41481399187) for the same code HEAD was still running its host/web regression at this status update; no complete baseline PASS is claimed yet.
+- Baseline build [41481399187](https://github.com/energundenis/Felucca/actions/runs/41481399187) on the same code HEAD: **SUCCESS**. The unmodified Felucca build, AC79 VCA/Sidecar compile-only probes and full host/web regression completed successfully. The CP1 queue still correctly reports **BLOCKED** at Pair Commit Ordering; workflow SUCCESS means the queue detected the blocker as designed, not that the pair coordinator exists.
 - This automation change does not change CP0–CP7 completion percentages. No physical FM-1, Flash layout, object IDs, bootloader, OTA or recovery changes.
