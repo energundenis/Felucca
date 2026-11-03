@@ -125,7 +125,8 @@ energun_pair_v1_status_t energun_pair_v1_commit(
     rc = ops->sidecar_read_copy(context, kind, index,
         (uint8_t)selection.write_copy, workspace->records[0],
         sizeof workspace->records[0], &verify_length, &verify_sequence);
-    if (rc != 0 || verify_sequence != selection.next_storage_sequence ||
+    if (rc != 0 || verify_length > sizeof workspace->records[0] ||
+        verify_sequence != selection.next_storage_sequence ||
         verify_length != encoded_length ||
         memcmp(workspace->records[0], workspace->verify_record, encoded_length) != 0 ||
         energun_sc_v1_validate(workspace->records[0], verify_length,
@@ -176,6 +177,8 @@ energun_pair_v1_status_t energun_pair_v1_load(
     rc = ops->base_current(context, object, &selected);
     if (rc != 0)
         return rc == 1 ? ENERGUN_PAIR_V1_ERR_NO_MATCH : ENERGUN_PAIR_V1_ERR_BASE_IO;
+    if (selected.copy > 1u)
+        return ENERGUN_PAIR_V1_ERR_BASE_IO;
 
     if (pair_read_candidates(ops, context, workspace, kind, index) != ENERGUN_PAIR_V1_OK)
         return ENERGUN_PAIR_V1_ERR_SIDECAR_IO;
