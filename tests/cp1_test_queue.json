@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently after storage/FM6 foundations; Sidecar A/B selection joins both results before pair-commit stages.",
+  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. A separate host-only pair transaction harness uses real storage.c with an isolated test Sidecar backend; production pair integration remains a distinct blocked gate.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -61,15 +61,27 @@
       "enable_when": "Real explicit A/B copy reader, selector and simulated-NOR acceptance test committed together."
     },
     {
+      "id": "pair-transaction-harness",
+      "title": "Host-only pair transaction algorithm harness (real storage.c)",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "sidecar-ab-selection"
+      ],
+      "command": "sh tests/run_sidecar_pair_transaction_test.sh",
+      "blocker": "Runs the transaction ordering/fault model against the real Felucca storage.c and Sidecar V1 serializer. Sidecar sectors are isolated in a test-only backend; this does not qualify production coordinator or authorize Flash allocation."
+    },
+    {
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "sidecar-ab-selection"
+        "sidecar-ab-selection",
+        "pair-transaction-harness"
       ],
       "command": null,
-      "blocker": "Production pair transaction coordinator is not implemented. Test preservation of the old matching pair when staging or Base commit fails."
+      "blocker": "Production pair transaction coordinator and approved target Sidecar backend are not implemented. The host-only harness is supporting evidence, not production integration."
     },
     {
       "id": "pair-power-loss",
