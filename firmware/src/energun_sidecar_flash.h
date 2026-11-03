@@ -40,4 +40,5 @@ int energun_sc_flash_write_copy(void *, energun_sc_identity_kind_t, uint8_t,
                                 uint8_t, const uint8_t *, size_t);
 
 extern const energun_sidecar_storage_ops_t energun_sc_flash_storage_ops;
+int energun_sidecar_flash_hw_init(void);
 #endif
