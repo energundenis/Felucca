@@ -63,7 +63,7 @@ const bkBase64 = (bytes) => { let s = ""; for (const b of bytes) s += String.fro
 export function readBackup(file) {
   if (typeof file === "string") file = JSON.parse(file);
   const ids = file && Array.isArray(file.objects) ? idsOf(file.objects.length) : null;
-  if (!file || file.format !== "felucca-backup" || file.version !== 1 || !ids)
+  if (!file || file.format !== "felucca-backup" || ![1, 2].includes(file.version) || !ids)
     throw new Error("Not a complete Felucca backup");
   const objects = file.objects.map((o, i) => {
     if (!o || o.id !== ids[i] || !Number.isInteger(o.size) || o.size < 0 || o.size > (o.id >= 32 ? 81920 : 3840) ||
@@ -87,7 +87,41 @@ export function readBackup(file) {
     return { ...o, bytes };
   });
   if (!objects[0].size || !objects[1].size) throw new Error("Backup is missing the current music or settings");
-  return { ...file, objects };
+  let sidecars;
+  if (file.version === 2) {
+    const identities = [
+      ["project", 0, 2, "project"], ["project", 1, 3, "project"],
+      ["project", 2, 4, "project"], ["project", 3, 5, "project"],
+      ["live", 0, 0, "project"], ["preset_bank", 0, 6, "preset"],
+      ["preset_bank", 1, 7, "preset"],
+    ];
+    if (!Array.isArray(file.sidecars) || file.sidecars.length !== identities.length)
+      throw new Error("Incomplete Archive V2 Sidecar manifest");
+    sidecars = file.sidecars.map((entry, i) => {
+      const [kind, index, baseId, payloadKind] = identities[i];
+      const base = objects.find((o) => o.id === baseId);
+      if (!entry || entry.kind !== kind || entry.index !== index || entry.base_id !== baseId ||
+          entry.schema !== 1 || !base || !Number.isInteger(entry.base_crc32) ||
+          entry.base_crc32 < 0 || entry.base_crc32 > 0xffffffff || entry.base_crc32 !== base.crc ||
+          !Number.isInteger(entry.size) || !Number.isInteger(entry.crc) ||
+          entry.crc < 0 || entry.crc > 0xffffffff || typeof entry.data !== "string" ||
+          entry.data.length !== 4 * Math.ceil(entry.size / 3) ||
+          !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(entry.data))
+        throw new Error("Invalid Archive V2 Sidecar entry");
+      const bytes = Uint8Array.from(atob(entry.data), (c) => c.charCodeAt(0));
+      if (bytes.length !== entry.size || bkBase64(bytes) !== entry.data || bkCrc(bytes) !== entry.crc)
+        throw new Error("Archive V2 Sidecar checksum mismatch");
+      if (payloadKind === "project") {
+        if (bytes.length < 117 || bytes.length > 501 || bytes[116] > 128 ||
+            bytes.length !== 117 + bytes[116] * 3)
+          throw new Error("Invalid Archive V2 project Sidecar payload");
+      } else if (bytes.length !== 210) {
+        throw new Error("Invalid Archive V2 preset Sidecar payload");
+      }
+      return { ...entry, bytes };
+    });
+  }
+  return { ...file, objects, ...(sidecars ? { sidecars } : {}) };
 }
 export async function captureBackup(request, firmware, onProgress = () => {}) {
   const manifest = bkManifest(await request([BACKUP_CMD.LIST, []], { timeout: 3000, retries: 0 }));
@@ -110,6 +144,8 @@ export async function captureBackup(request, firmware, onProgress = () => {}) {
 }
 export async function restoreBackup(request, file, onProgress = () => {}) {
   const archive = readBackup(file); // Validate every byte before the first destructive request.
+  if (archive.version === 2)
+    throw new Error("Archive V2 is validated offline; pair-aware firmware restore is not available yet");
   const total = archive.objects.reduce((n, o) => n + o.size, 0); let done = 0;
   const ask = async (r, o = {}) => request(r, { timeout: 4000, retries: 0, ...o });
   const put = async (args) => { const a = await ask([BACKUP_CMD.PUT, args]); bkCheck(a[2]); return a; };
