@@ -198,7 +198,7 @@ class GitCliQueueClient:
         return ledger
 
     def commit_ledger(self, expected_head: str, ledger: dict[str, Any], branch: str) -> str:
-        encoded = json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\\n"
+        encoded = json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\n"
         with tempfile.NamedTemporaryFile(prefix="cp8-index-", delete=True) as index:
             env = {"GIT_INDEX_FILE": index.name}
             self._git("read-tree", expected_head, env=env)
