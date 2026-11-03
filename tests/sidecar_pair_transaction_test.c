@@ -52,23 +52,33 @@ typedef struct {
     uint8_t bytes[4096];
 } sc_test_sector_t;
 
-static sc_test_sector_t sc_nor[2];
+static sc_test_sector_t sc_nor[7][2];
 static int sc_fail_after = -1;
 
-static int sc_read_copy(unsigned copy, uint8_t *record, size_t cap,
+static int sc_identity_slot(energun_sc_identity_kind_t kind, uint8_t index)
+{
+    if (kind == ENERGUN_SC_ID_PROJECT && index < 4u) return (int)index;
+    if (kind == ENERGUN_SC_ID_LIVE_AUTOSAVE && index == 0u) return 4;
+    if (kind == ENERGUN_SC_ID_PRESET_BANK && index < 2u) return 5 + (int)index;
+    return -1;
+}
+
+static int sc_read_copy(energun_sc_identity_kind_t kind, uint8_t index,
+                        unsigned copy, uint8_t *record, size_t cap,
                         size_t *record_len, uint32_t *sequence)
 {
     st_hdr_t h;
     uint32_t off;
-    if (copy > 1u || record == NULL || record_len == NULL || sequence == NULL)
+    int identity = sc_identity_slot(kind, index);
+    if (identity < 0 || copy > 1u || record == NULL || record_len == NULL || sequence == NULL)
         return -1;
     off = 0u;
-    memcpy(&h, sc_nor[copy].bytes + off, sizeof h);
+    memcpy(&h, sc_nor[identity][copy].bytes + off, sizeof h);
     if (h.magic != ST_MAGIC || h.type != SC_TEST_TYPE || h.slot != copy ||
         h.len > cap || h.len > ST_PAYLOAD_MAX ||
         h.hcrc != st_crc32(&h, sizeof h - 4u))
         return -1;
-    if (st_crc32(sc_nor[copy].bytes + SC_TEST_PAYLOAD_OFF, h.len) != h.crc)
+    if (st_crc32(sc_nor[identity][copy].bytes + SC_TEST_PAYLOAD_OFF, h.len) != h.crc)
         return -1;
     memcpy(record, sc_nor[copy].bytes + SC_TEST_PAYLOAD_OFF, h.len);
     *record_len = h.len;
@@ -89,15 +99,17 @@ static int sc_program_bytes(uint8_t *dst, const uint8_t *src, size_t n)
 }
 
 /* Test-only sector backend with the Felucca 32-byte header-last convention. */
-static int sc_write_copy(unsigned copy, const uint8_t *record, size_t len,
+static int sc_write_copy(energun_sc_identity_kind_t kind, uint8_t index,
+                         unsigned copy, const uint8_t *record, size_t len,
                          uint32_t sequence)
 {
     st_hdr_t h;
     uint8_t header[sizeof h];
-    if (copy > 1u || record == NULL || len > ST_PAYLOAD_MAX)
+    int identity = sc_identity_slot(kind, index);
+    if (identity < 0 || copy > 1u || record == NULL || len > ST_PAYLOAD_MAX)
         return -1;
-    memset(sc_nor[copy].bytes, 0xFF, sizeof sc_nor[copy].bytes);
-    if (sc_program_bytes(sc_nor[copy].bytes + SC_TEST_PAYLOAD_OFF, record, len))
+    memset(sc_nor[identity][copy].bytes, 0xFF, sizeof sc_nor[identity][copy].bytes);
+    if (sc_program_bytes(sc_nor[identity][copy].bytes + SC_TEST_PAYLOAD_OFF, record, len))
         return -1;
     h.magic = ST_MAGIC;
     h.type = SC_TEST_TYPE;
@@ -108,12 +120,13 @@ static int sc_write_copy(unsigned copy, const uint8_t *record, size_t len,
     h.rsv[0] = h.rsv[1] = 0xFFFFFFFFu;
     h.hcrc = st_crc32(&h, sizeof h - 4u);
     memcpy(header, &h, sizeof h);
-    if (sc_program_bytes(sc_nor[copy].bytes, header, sizeof header))
+    if (sc_program_bytes(sc_nor[identity][copy].bytes, header, sizeof header))
         return -1;
     return 0;
 }
 
-static void sc_candidates(energun_sc_candidate_t out[2],
+static void sc_candidates(energun_sc_identity_kind_t kind, uint8_t index,
+                          energun_sc_candidate_t out[2],
                           uint8_t records[2][SC_TEST_MAX_RECORD])
 {
     unsigned i;
@@ -121,7 +134,7 @@ static void sc_candidates(energun_sc_candidate_t out[2],
     for (i = 0; i < 2u; ++i) {
         size_t n = 0;
         uint32_t seq = 0;
-        if (sc_read_copy(i, records[i], SC_TEST_MAX_RECORD, &n, &seq) == 0) {
+        if (sc_read_copy(kind, index, i, records[i], SC_TEST_MAX_RECORD, &n, &seq) == 0) {
             out[i].record = records[i];
             out[i].record_length = n;
             out[i].storage_sequence = seq;
@@ -130,7 +143,8 @@ static void sc_candidates(energun_sc_candidate_t out[2],
     }
 }
 
-static int pair_load(uint32_t obj, uint8_t *base, size_t base_cap,
+static int pair_load(uint32_t obj, energun_sc_identity_kind_t kind, uint8_t index,
+                     uint8_t *base, size_t base_cap,
                      uint8_t *extension, size_t extension_cap,
                      uint32_t *base_seq, int *sidecar_copy)
 {
@@ -146,15 +160,15 @@ static int pair_load(uint32_t obj, uint8_t *base, size_t base_cap,
         return -1;
     if (st_read_copy_meta(obj, meta.copy, base, (uint32_t)base_cap, &read_meta) < 0)
         return -1;
-    sc_candidates(candidates, records);
-    if (energun_sc_v1_select_ab(candidates, ENERGUN_SC_ID_PROJECT, 0u,
+    sc_candidates(kind, index, candidates, records);
+    if (energun_sc_v1_select_ab(candidates, kind, index,
             meta.sequence, meta.payload_crc, 0u, &selection) != ENERGUN_SC_OK ||
         selection.matching_copy < 0)
         return -2;
-    rc = sc_read_copy((unsigned)selection.matching_copy,
+    rc = sc_read_copy(kind, index, (unsigned)selection.matching_copy,
                       extension, extension_cap, &ext_len, &meta.sequence);
     if (rc) return -3;
-    rc = energun_sc_v1_validate(extension, ext_len, ENERGUN_SC_ID_PROJECT, 0u,
+    rc = energun_sc_v1_validate(extension, ext_len, kind, index,
             read_meta.sequence, read_meta.payload_crc, 0u, &view);
     if (rc != ENERGUN_SC_OK) return -4;
     *base_seq = read_meta.sequence;
@@ -162,7 +176,8 @@ static int pair_load(uint32_t obj, uint8_t *base, size_t base_cap,
     return 0;
 }
 
-static int pair_commit(uint32_t obj, const uint8_t *base, size_t base_len,
+static int pair_commit(uint32_t obj, energun_sc_identity_kind_t kind, uint8_t index,
+                       const uint8_t *base, size_t base_len,
                        const uint8_t *logical_payload, uint16_t payload_len,
                        int *sidecar_target_out)
 {
@@ -185,15 +200,15 @@ static int pair_commit(uint32_t obj, const uint8_t *base, size_t base_len,
     next_base_seq = current_seq + 1u;
     next_base_crc = st_crc32(base, (uint32_t)base_len);
     base_target = current_copy < 0 ? 0 : 1 - current_copy;
-    sc_candidates(candidates, records);
-    if (energun_sc_v1_select_ab(candidates, ENERGUN_SC_ID_PROJECT, 0u,
+    sc_candidates(kind, index, candidates, records);
+    if (energun_sc_v1_select_ab(candidates, kind, index,
             current_seq, current_crc, 0u, &selection) != ENERGUN_SC_OK)
         return -2;
     if (energun_sc_v1_encode(encoded, sizeof encoded, &encoded_len,
-            ENERGUN_SC_ID_PROJECT, 0u, next_base_seq, next_base_crc,
+            kind, index, next_base_seq, next_base_crc,
             logical_payload, payload_len, 0u) != ENERGUN_SC_OK)
         return -3;
-    if (sc_write_copy((unsigned)selection.write_copy, encoded, encoded_len,
+    if (sc_write_copy(kind, index, (unsigned)selection.write_copy, encoded, encoded_len,
                       selection.next_storage_sequence))
         return -4;
     if (sidecar_target_out != NULL) *sidecar_target_out = selection.write_copy;
@@ -213,11 +228,11 @@ static int pair_commit(uint32_t obj, const uint8_t *base, size_t base_len,
                               sizeof verify_base, &committed) < 0 ||
             committed.payload_length != base_len ||
             memcmp(verify_base, base, base_len) != 0 ||
-            sc_read_copy((unsigned)selection.write_copy, verify_sc,
+            sc_read_copy(kind, index, (unsigned)selection.write_copy, verify_sc,
                          sizeof verify_sc, &verify_sc_len, &verify_sc_seq) != 0)
             return -6;
         if (energun_sc_v1_validate(verify_sc, verify_sc_len,
-                ENERGUN_SC_ID_PROJECT, 0u, next_base_seq, next_base_crc,
+                kind, index, next_base_seq, next_base_crc,
                 0u, &(energun_sc_view_t){0}) != ENERGUN_SC_OK)
             return -7;
     }
@@ -251,26 +266,65 @@ int main(void)
     memset(base2, 0x52, sizeof base2);
 
     reset_media();
-    bad += check("first base+Sidecar pair commit", pair_commit(OBJ_PROJECT0, base1, sizeof base1, payload, 117u, &target) == 0);
+    bad += check("first base+Sidecar pair commit", pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, &target) == 0);
     bad += check("first pair binds exact Base sequence/CRC",
-        pair_load(OBJ_PROJECT0, loaded_base, sizeof loaded_base, loaded_sc,
+        pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 1u && copy == target && !memcmp(loaded_base, base1, sizeof base1));
 
-    bad += check("second pair replaces old pair", pair_commit(OBJ_PROJECT0, base2, sizeof base2, payload, 117u, &target) == 0);
+    bad += check("second pair replaces old pair", pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, &target) == 0);
     bad += check("second pair loads exact new Base and Sidecar",
-        pair_load(OBJ_PROJECT0, loaded_base, sizeof loaded_base, loaded_sc,
+        pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 2u && copy == target && !memcmp(loaded_base, base2, sizeof base2));
+
+    /* Seven independent Base A/B histories: four projects, live autosave, two preset banks. */
+    {
+        static const struct {
+            energun_sc_identity_kind_t kind;
+            uint8_t index;
+            uint32_t object;
+            uint16_t payload_len;
+        } ids[7] = {
+            { ENERGUN_SC_ID_PROJECT, 0u, OBJ_PROJECT0 + 0u, 117u },
+            { ENERGUN_SC_ID_PROJECT, 1u, OBJ_PROJECT0 + 1u, 117u },
+            { ENERGUN_SC_ID_PROJECT, 2u, OBJ_PROJECT0 + 2u, 117u },
+            { ENERGUN_SC_ID_PROJECT, 3u, OBJ_PROJECT0 + 3u, 117u },
+            { ENERGUN_SC_ID_LIVE_AUTOSAVE, 0u, OBJ_AUTOSAVE, 117u },
+            { ENERGUN_SC_ID_PRESET_BANK, 0u, OBJ_UPRESET0 + 0u, ENERGUN_SC_V1_PRESET_PAYLOAD },
+            { ENERGUN_SC_ID_PRESET_BANK, 1u, OBJ_UPRESET0 + 1u, ENERGUN_SC_V1_PRESET_PAYLOAD }
+        };
+        unsigned i;
+        int matrix_ok = 1;
+        reset_media();
+        for (i = 0; i < 7u; ++i) {
+            uint8_t p1[64], p2[64], ext[SC_TEST_MAX_RECORD], got[128];
+            uint8_t logical[ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD];
+            uint32_t got_seq = 0;
+            int got_copy = -1;
+            memset(logical, 0, sizeof logical);
+            memset(p1, (int)(0x20u + i), sizeof p1);
+            memset(p2, (int)(0x60u + i), sizeof p2);
+            if (pair_commit(ids[i].object, ids[i].kind, ids[i].index,
+                            p1, sizeof p1, logical, ids[i].payload_len, NULL) ||
+                pair_commit(ids[i].object, ids[i].kind, ids[i].index,
+                            p2, sizeof p2, logical, ids[i].payload_len, NULL) ||
+                pair_load(ids[i].object, ids[i].kind, ids[i].index, got, sizeof got,
+                          ext, sizeof ext, &got_seq, &got_copy) ||
+                got_seq != 2u || memcmp(got, p2, sizeof p2) != 0)
+                matrix_ok = 0;
+        }
+        bad += check("seven identities: independent Base A/B histories and exact pair roundtrip", matrix_ok);
+    }
 
     /* Every torn Sidecar payload/header byte must leave the original pair readable. */
     for (cut = 0; cut < ENERGUN_SC_V1_HEADER_SIZE + 117u + sizeof(st_hdr_t); ++cut) {
         reset_media();
-        if (pair_commit(OBJ_PROJECT0, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
+        if (pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
         sc_fail_after = (int)cut;
-        (void)pair_commit(OBJ_PROJECT0, base2, sizeof base2, payload, 117u, NULL);
+        (void)pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL);
         sc_fail_after = -1;
-        bad += pair_load(OBJ_PROJECT0, loaded_base, sizeof loaded_base, loaded_sc,
+        bad += pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                          sizeof loaded_sc, &seq, &copy) == 0 &&
                seq == 1u && !memcmp(loaded_base, base1, sizeof base1) ? 0 : 1;
     }
@@ -279,11 +333,11 @@ int main(void)
     /* Every torn Base payload/header byte after a successful future-bound Sidecar write leaves old pair. */
     for (cut = 0; cut < sizeof base2 + sizeof(st_hdr_t); ++cut) {
         reset_media();
-        if (pair_commit(OBJ_PROJECT0, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
+        if (pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
         fail_bytes = (int)cut;
-        (void)pair_commit(OBJ_PROJECT0, base2, sizeof base2, payload, 117u, NULL);
+        (void)pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL);
         fail_bytes = -1;
-        bad += pair_load(OBJ_PROJECT0, loaded_base, sizeof loaded_base, loaded_sc,
+        bad += pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                          sizeof loaded_sc, &seq, &copy) == 0 &&
                seq == 1u && !memcmp(loaded_base, base1, sizeof base1) ? 0 : 1;
     }
@@ -291,17 +345,17 @@ int main(void)
 
     /* A newer orphan must not displace the old matching copy as the next write target. */
     reset_media();
-    bad += check("seed matching pair", pair_commit(OBJ_PROJECT0, base1, sizeof base1, payload, 117u, NULL) == 0);
+    bad += check("seed matching pair", pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) == 0);
     fail_bytes = 0; /* Sidecar B is committed, Base A erase/write then fails */
     bad += check("failed Base commit leaves old pair selected",
-        pair_commit(OBJ_PROJECT0, base2, sizeof base2, payload, 117u, NULL) != 0 &&
-        (fail_bytes = -1, pair_load(OBJ_PROJECT0, loaded_base, sizeof loaded_base, loaded_sc,
+        pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL) != 0 &&
+        (fail_bytes = -1, pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                                     sizeof loaded_sc, &seq, &copy) == 0) &&
         seq == 1u && copy == 0 && !memcmp(loaded_base, base1, sizeof base1));
     bad += check("retry protects old matching copy despite newer orphan",
-        pair_commit(OBJ_PROJECT0, base2, sizeof base2, payload, 117u, &target) == 0 &&
+        pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, &target) == 0 &&
         target == 1 &&
-        pair_load(OBJ_PROJECT0, loaded_base, sizeof loaded_base, loaded_sc,
+        pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 2u && copy == 1 && !memcmp(loaded_base, base2, sizeof base2));
 
@@ -314,7 +368,7 @@ int main(void)
             nor[off] ^= 1u;
         }
         bad += check("corrupt newest Base falls back to old Base+Sidecar",
-            pair_load(OBJ_PROJECT0, loaded_base, sizeof loaded_base, loaded_sc,
+            pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                       sizeof loaded_sc, &seq, &copy) == 0 &&
             seq == 1u && copy == 0 && !memcmp(loaded_base, base1, sizeof base1));
     }
