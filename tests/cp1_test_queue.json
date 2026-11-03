@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently with the four-part Private runtime cache; the Private-to-project/preset payload bridge joins after both the runtime cache and typed payload codecs. A/B selection and pair transactions remain independent host acceptance stages. Production lifecycle integration remains a separate blocked gate.",
+  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently with the four-part Private runtime cache; the Private-to-project/preset payload bridge joins after both the runtime cache and typed payload codecs. A/B selection and pair transactions remain independent host acceptance stages. Production lifecycle integration remains a separate blocked gate. Legacy Base-only project compatibility is now an explicit acceptance stage: absent or invalid Sidecar returns the Base with zero extension length for canonical-default restoration; I/O faults remain errors.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -84,6 +84,17 @@
       "blocker": "The reusable coordinator implements Sidecar-first/Base-second ordering, readback validation, generation-bound pair load and Base tombstone erase. Host adapters use real storage.c with a separate test-only Sidecar backend. Coverage includes seven independent Base A/B histories, Rename preserving/rebinding the stored extension, Save As creating an isolated destination identity, torn writes, orphan retry and fallback. No target Flash backend or runtime call sites are connected."
     },
     {
+      "id": "legacy-sidecar-fallback",
+      "title": "Legacy Base-only load compatibility and Sidecar fault policy",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "pair-transaction-harness"
+      ],
+      "command": "sh tests/run_sidecar_pair_transaction_test.sh",
+      "blocker": "Host acceptance covers valid pair load, missing Sidecar, semantically invalid Sidecar, Base absence and Sidecar I/O fault separation. The caller must apply canonical defaults when LEGACY_FALLBACK is returned; production project.c runtime wiring remains a separate integration gate."
+    },
+    {
       "id": "sidecar-payload-codec",
       "title": "Typed project/live and preset-bank Sidecar payload codecs",
       "kind": "executable-host-test",
@@ -160,7 +171,8 @@
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
-        "sidecar-integrity"
+        "sidecar-integrity",
+        "legacy-sidecar-fallback"
       ],
       "command": null,
       "blocker": "Backend-neutral generation-bound pair load and simulated recovery are implemented and tested. Missing: production runtime pair restore, legacy FUN10 E0–E7 fallback/default handling, and restoration of live engine/runtime caches at actual project and preset load call sites."
