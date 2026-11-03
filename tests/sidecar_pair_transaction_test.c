@@ -470,6 +470,39 @@ int main(void)
     }
     bad += check("Base torn-write sweep preserves old pair", bad == 0);
 
+    /* Exhaustively interrupt the Sidecar record and its storage header. The
+       previously committed Sidecar A must remain the only matching extension;
+       no Base write may start until the complete Sidecar readback succeeds. */
+    {
+        unsigned sidecar_cut;
+        int sidecar_sweep_ok = 1;
+        const unsigned sidecar_write_bytes =
+            ENERGUN_SC_V1_HEADER_SIZE + 117u + (unsigned)sizeof(st_hdr_t);
+        for (sidecar_cut = 0; sidecar_cut < sidecar_write_bytes; ++sidecar_cut) {
+            reset_media();
+            if (coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+                    base1, sizeof base1, payload, 117u, NULL) != 0) {
+                sidecar_sweep_ok = 0;
+                break;
+            }
+            sc_fail_after = (int)sidecar_cut;
+            if (coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+                    base2, sizeof base2, payload, 117u, NULL) == 0)
+                sidecar_sweep_ok = 0;
+            sc_fail_after = -1;
+            if (coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u,
+                    loaded_base, sizeof loaded_base, loaded_sc,
+                    sizeof loaded_sc, &seq, &copy) != 0 ||
+                seq != 1u || copy != 0 ||
+                memcmp(loaded_base, base1, sizeof base1) != 0)
+                sidecar_sweep_ok = 0;
+            if (!sidecar_sweep_ok)
+                break;
+        }
+        bad += check("Sidecar torn-write/header sweep preserves old pair",
+                     sidecar_sweep_ok);
+    }
+
     /* A newer orphan must not displace the old matching copy as the next write target. */
     reset_media();
     bad += check("seed matching pair", coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) == 0);
