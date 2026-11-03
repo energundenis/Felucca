@@ -781,6 +781,41 @@ int main(void)
             (bank_payload.slot_bitmap[0] & (1u << 6)) != 0u &&
             bank_payload.private_values[6][ENERGUN_PRIVATE_FOLLOW] == 1u;
 
+
+        /* Native upreset.c ABI: checked load binds Sidecar occupancy to Base records. */
+        {
+            uint8_t raw_bank[3080u];
+            memset(raw_bank, 0, sizeof raw_bank);
+            raw_bank[0] = 'U'; raw_bank[1] = 'P';
+            raw_bank[2] = 'B'; raw_bank[3] = '1';
+            raw_bank[4] = 192u; raw_bank[6] = 16u;
+            raw_bank[8] = 0xA5u; raw_bank[9] = 4u;
+            raw_bank[10] = 0u; raw_bank[11] = 8u;
+            raw_bank[12] = 'A';
+            memset(&bank_payload, 0, sizeof bank_payload);
+            bank_payload.slot_bitmap[0] = 1u;
+            reset_media();
+            preset_ok &= energun_preset_lifecycle_v1_save_bank(&preset_lifecycle,
+                OBJ_UPRESET0, 0u, raw_bank, sizeof raw_bank, &bank_payload) ==
+                ENERGUN_LIFECYCLE_V1_OK;
+            loaded_base_length = 0u;
+            preset_ok &= energun_preset_lifecycle_v1_load_bank_checked(
+                &preset_lifecycle, OBJ_UPRESET0, 0u, 13u,
+                loaded_base, sizeof loaded_base, &loaded_base_length,
+                &bank_payload, &meta) == ENERGUN_LIFECYCLE_V1_OK &&
+                loaded_base_length == sizeof raw_bank;
+            raw_bank[8] = 0u;
+            preset_ok &= energun_preset_lifecycle_v1_save_bank(&preset_lifecycle,
+                OBJ_UPRESET0, 0u, raw_bank, sizeof raw_bank, &bank_payload) ==
+                ENERGUN_LIFECYCLE_V1_OK;
+            loaded_base_length = 99u;
+            preset_ok &= energun_preset_lifecycle_v1_load_bank_checked(
+                &preset_lifecycle, OBJ_UPRESET0, 0u, 13u,
+                loaded_base, sizeof loaded_base, &loaded_base_length,
+                &bank_payload, &meta) == ENERGUN_LIFECYCLE_V1_ERR_PAIR &&
+                loaded_base_length == 0u;
+        }
+
         reset_media();
         preset_ok &= st_save(OBJ_UPRESET0 + 1u, bank_base, sizeof bank_base) == 0;
         memset(&bank_payload, 0xA5, sizeof bank_payload);
