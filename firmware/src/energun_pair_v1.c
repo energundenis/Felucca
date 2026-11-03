@@ -2,7 +2,22 @@
  * ENERGUN FM-1 CORE — backend-neutral Base + Sidecar V1 pair coordinator.
  */
 #include "energun_pair_v1.h"
-#include <string.h>
+
+static void pair_copy(uint8_t *destination, const uint8_t *source, size_t length)
+{
+    size_t i;
+    for (i = 0; i < length; ++i)
+        destination[i] = source[i];
+}
+
+static int pair_equal(const uint8_t *a, const uint8_t *b, size_t length)
+{
+    size_t i;
+    for (i = 0; i < length; ++i)
+        if (a[i] != b[i])
+            return 0;
+    return 1;
+}
 
 static uint32_t pair_crc32(const uint8_t *data, size_t length)
 {
@@ -128,7 +143,7 @@ energun_pair_v1_status_t energun_pair_v1_commit(
     if (rc != 0 || verify_length > sizeof workspace->records[0] ||
         verify_sequence != selection.next_storage_sequence ||
         verify_length != encoded_length ||
-        memcmp(workspace->records[0], workspace->verify_record, encoded_length) != 0 ||
+        !pair_equal(workspace->records[0], workspace->verify_record, encoded_length) ||
         energun_sc_v1_validate(workspace->records[0], verify_length,
             kind, index, next_base_sequence, next_base_crc,
             base_motion_count, &view) != ENERGUN_SC_OK)
@@ -209,7 +224,7 @@ energun_pair_v1_status_t energun_pair_v1_load(
         return ENERGUN_PAIR_V1_ERR_BASE_VERIFY;
 
     loaded_length = view.payload_length;
-    memcpy(sidecar_payload, view.payload, loaded_length);
+    pair_copy(sidecar_payload, view.payload, loaded_length);
     *base_length = loaded.payload_length;
     *sidecar_length = loaded_length;
     *base_meta = loaded;
