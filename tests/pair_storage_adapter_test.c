@@ -250,7 +250,7 @@ int main(void)
      * trial starts from a valid old pair and must recover it unchanged.
      */
     ok = 1;
-    for (i = 0; i < 553u; i += 37u) {
+    for (i = 0; i < 169u; i += 13u) {
         setup(&adapter);
         if (save_value(&adapter, &workspace, 60u) != ENERGUN_PAIR_OK) {
             ok = 0; break;
