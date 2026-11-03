@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence and parameter verification. Independent quantization, Sidecar format and Base-generation binding suites run concurrently after storage/FM6 foundations; Sidecar A/B selection joins its prerequisites before pair-commit stages.",
+  "description": "Dependency-aware CP1 persistence and parameter verification. Independent quantization, Sidecar format, Base-generation binding and pinned-BSP Flash-map source audit run concurrently after storage/FM6 foundations; Sidecar A/B selection joins its prerequisites before pair-commit stages.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -22,6 +22,18 @@
       "depends_on": [
         "storage-foundation"
       ]
+    },
+    {
+      "id": "sidecar-flash-map-source-audit",
+      "title": "Pinned BSP XDATA1 and update-record exclusion audit",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "fm6-staging-baseline"
+      ],
+      "command": "sh tests/run_sidecar_flash_map_test.sh",
+      "blocker": "The source audit validates the candidate XDATA1 window and loader marker exclusion only. It does not allocate sectors, enable writes, or replace production build/link qualification.",
+      "enable_when": "The pinned BSP and loader source-level range/exclusion audit is committed with a host-only test."
     },
     {
       "id": "sidecar-format",
