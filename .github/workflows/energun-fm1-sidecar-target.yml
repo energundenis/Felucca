@@ -1,0 +1,84 @@
+name: ENERGUN Sidecar AC79 target compile
+
+on:
+  push:
+    branches:
+      - energun-development-orchestrator
+    paths:
+      - 'firmware/src/energun_sidecar_flash.c'
+      - 'firmware/src/energun_sidecar_flash.h'
+      - 'firmware/src/energun_pair_storage_adapter.h'
+      - 'firmware/src/energun_pair_txn.h'
+      - 'tests/sidecar_flash_backend_test.c'
+      - 'tests/run_sidecar_flash_backend_test.sh'
+      - '.github/workflows/energun-fm1-sidecar-target.yml'
+      - 'tools/get_toolchain.sh'
+  pull_request:
+    branches:
+      - energun-metal-core
+    paths:
+      - 'firmware/src/energun_sidecar_flash.c'
+      - 'firmware/src/energun_sidecar_flash.h'
+      - 'firmware/src/energun_pair_storage_adapter.h'
+      - 'firmware/src/energun_pair_txn.h'
+      - 'tests/sidecar_flash_backend_test.c'
+      - 'tests/run_sidecar_flash_backend_test.sh'
+      - '.github/workflows/energun-fm1-sidecar-target.yml'
+      - 'tools/get_toolchain.sh'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: energun-sidecar-target-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sidecar-target:
+    name: AC79 pi32v2 compile + host acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install pinned JieLi pi32v2 toolchain
+        run: |
+          set -euo pipefail
+          sh tools/get_toolchain.sh "$HOME/.jieli"
+          "$HOME/.jieli/toolchain/pi32v2/bin/clang" --version
+
+      - name: Compile Sidecar Flash backend for AC79
+        run: |
+          set -euo pipefail
+          mkdir -p build/sidecar-ac79
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wno-unused-function -Ifirmware/src \
+            -c firmware/src/energun_sidecar_flash.c \
+            -o build/sidecar-ac79/sidecar_flash.o
+          "$TC/common/bin/objdump" -d build/sidecar-ac79/sidecar_flash.o \
+            > build/sidecar-ac79/sidecar_flash.dis
+          "$TC/common/bin/objdump" -t build/sidecar-ac79/sidecar_flash.o \
+            > build/sidecar-ac79/sidecar_flash.symbols
+          grep -q "energun_sc_flash_init" build/sidecar-ac79/sidecar_flash.symbols
+          grep -q "energun_sc_flash_read_copy" build/sidecar-ac79/sidecar_flash.symbols
+          grep -q "energun_sc_flash_write_copy" build/sidecar-ac79/sidecar_flash.symbols
+          grep -q "energun_sc_flash_storage_ops" build/sidecar-ac79/sidecar_flash.symbols
+          {
+            echo "## Sidecar Flash AC79 target compile"
+            echo "PASS: bounded Sidecar A/B backend compiled with the pinned pi32v2 compiler."
+            echo "Evidence is compile/code-generation only; no firmware link, hardware transport qualification or physical Flash operation is implied."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run Sidecar host acceptance
+        run: tests/run_sidecar_flash_backend_test.sh
+
+      - name: Upload target compile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-ac79-target-${{ github.sha }}
+          path: build/sidecar-ac79/*
+          if-no-files-found: ignore
+          retention-days: 14
