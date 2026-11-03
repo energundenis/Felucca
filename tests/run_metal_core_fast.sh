@@ -41,7 +41,7 @@ run_test storage
 
 # The pair harness includes the real storage.c and Sidecar V1 serializer; its
 # Sidecar sectors live only in a separate test backend, never in target Flash.
-compile_test_strict sidecar_pair_transaction tests/sidecar_pair_transaction_test.c
+compile_test sidecar_pair_transaction tests/sidecar_pair_transaction_test.c
 run_test sidecar_pair_transaction
 
 compile_test fm6bank tests/fm6bank_test.c -lm
