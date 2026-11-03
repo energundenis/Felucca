@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Independent Sidecar format and Base-generation binding suites run concurrently, then A/B selection joins them. One coordinator harness covers all seven identities, Rename rebind, Save As isolation and byte-level power-loss injection. Production lifecycle integration remains a separate blocked gate.",
+  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently with the isolated four-part Private runtime cache acceptance; A/B selection joins the Sidecar branches. Pair coordinator covers all seven identities, Rename rebind, Save As isolation and byte-level power-loss injection. Production lifecycle integration remains a separate blocked gate.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -22,6 +22,17 @@
       "depends_on": [
         "storage-foundation"
       ]
+    },
+    {
+      "id": "private-runtime-cache",
+      "title": "Four-part typed Private runtime cache and generation-safe lifecycle",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "fm6-staging-baseline"
+      ],
+      "command": "sh tests/run_private_v1_test.sh",
+      "blocker": "Typed V1 Private cache now has four independent part banks, canonical per-key domains, defaults fallback, snapshot/atomic compare-and-replace, dirty tracking and generation-safe persistence acknowledgement. This host test validates the runtime primitive only; production project/preset call sites and editor/UI transport remain separate integration work."
     },
     {
       "id": "sidecar-format",
