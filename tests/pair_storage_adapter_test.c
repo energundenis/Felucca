@@ -162,6 +162,14 @@ static int recover_equals(energun_pair_storage_adapter_t *adapter,
     int n = energun_pair_storage_adapter_load(adapter, loaded,
         sizeof loaded, sidecar, sizeof sidecar, &sidecar_length,
         ENERGUN_SC_ID_PROJECT, 0u, 0u, &meta);
+    if (!(n == (int)length && meta.sequence == sequence &&
+          sidecar_length == sizeof sidecar &&
+          sidecar[0] == (uint8_t)(sidecar_marker % 3u) &&
+          memcmp(loaded, expected, length) == 0))
+        printf("DEBUG recover n=%d expected=%u seq=%u expected_seq=%u sc_len=%u marker=%u\\n",
+            n, (unsigned int)length, (unsigned int)meta.sequence,
+            (unsigned int)sequence, (unsigned int)sidecar_length,
+            (unsigned int)sidecar[0]);
     return n == (int)length && meta.sequence == sequence &&
            sidecar_length == sizeof sidecar &&
            sidecar[0] == (uint8_t)(sidecar_marker % 3u) &&
@@ -179,10 +187,18 @@ static int save_value(energun_pair_storage_adapter_t *adapter,
     unsigned int i;
     for (i = 0; i < sizeof base; ++i)
         base[i] = (uint8_t)(marker + i);
+    energun_pair_status_t status;
     make_sidecar_payload(sidecar, marker);
-    return energun_pair_storage_adapter_save(adapter, workspace, base,
+    status = energun_pair_storage_adapter_save(adapter, workspace, base,
         sizeof base, ENERGUN_SC_ID_PROJECT, 0u, sidecar,
         sizeof sidecar, 0u);
+    if (status != ENERGUN_PAIR_OK)
+        printf("DEBUG save marker=%u status=%d protected_base=%d protected_sidecar=%d target_sidecar=%u\\n",
+            (unsigned int)marker, (int)status,
+            (int)adapter->protected_base_copy,
+            (int)adapter->protected_sidecar_copy,
+            (unsigned int)adapter->selected_sidecar_copy);
+    return status;
 }
 static int setup(energun_pair_storage_adapter_t *adapter)
 {
