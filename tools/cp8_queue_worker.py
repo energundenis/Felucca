@@ -140,8 +140,11 @@ def completed_owner_workers(store) -> set[tuple[str, int]]:
     }
     expected_names = {
         "cp8-cp1-persistence-run-": "Queue Worker CP1 — persistence",
+        "cp8-cp1-persistence-worker": "Queue Worker CP1 — persistence",
         "cp8-cp2-dsp-vca-run-": "Queue Worker CP2 — DSP/VCA",
+        "cp8-cp2-dsp-vca-worker": "Queue Worker CP2 — DSP/VCA",
         "cp8-cp3-sequencer-run-": "Queue Worker CP3 — sequencer",
+        "cp8-cp3-sequencer-worker": "Queue Worker CP3 — sequencer",
     }
     completed: set[tuple[str, int]] = set()
     for worker_id, owner_run_id in owners:
