@@ -132,6 +132,22 @@ static void test_motion_payload(void)
     unsigned int i;
     size_t n = 0u;
     make_project(payload);
+    payload[MOTION_COUNT_OFF] = 1u;
+    payload[MOTION_OFF] = 0u;
+    payload[MOTION_OFF + 1u] = 15u;
+    payload[MOTION_OFF + 2u] = 127u;
+    check("P_MC logical index 15 is accepted as the final Motion destination",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
+    payload[MOTION_OFF + 1u] = 0x8Fu;
+    check("Motion Lock flag is preserved on P_MC logical index 15",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
+    payload[MOTION_OFF + 1u] = 16u;
+    check("Private namespace index 16 is rejected from Sidecar Motion",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
+    payload[MOTION_OFF + 1u] = 0x90u;
+    check("flagged Private namespace index 16 is also rejected",
+          ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
+    make_project(payload);
     payload[MOTION_COUNT_OFF] = 128u;
     for (i = 0; i < 128u; ++i) {
         uint8_t *event = payload + MOTION_OFF + i * 3u;
