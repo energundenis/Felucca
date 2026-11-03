@@ -94,7 +94,7 @@ Full Baseline on the same exact HEAD:
 - Freeze complete per-part/per-voice state and retrigger reset/keep semantics; prove fit for both ADPCM build configurations.
 - Finalize the 37-control V1 parameter include/defer map and storage/editor/preset implications.
 - Reserve a stable append-only engine ID that cannot collide across optional SLICE/ADPCM builds.
-- Qualify real cross-part voice stealing, stage-4 fade and done() retirement with the METAL VCA callback.
+- The test-only METAL VCA descriptor already passes hostsim cross-part eight-voice budget, stage-4 steal fade, done() retirement and stale-state reset checks. Remaining: repeat this with the eventual production-registered complete DSP engine and qualify its target timing.
 - Complete full-chain target code-generation and cycle measurements; no hardware audio claim is made.
 
 ## Open pull requests at inspection
