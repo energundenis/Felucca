@@ -63,6 +63,9 @@ jobs:
       - name: Run CP1 pair transaction coordinator core fault-injection tests
         run: sh tests/run_pair_txn_test.sh
 
+      - name: Run production storage adapter against simulated NOR
+        run: sh tests/run_pair_storage_adapter_test.sh
+
       - name: Run dependency-aware parallel CP1 persistence test queue
         id: cp1-queue
         continue-on-error: true
@@ -94,6 +97,7 @@ jobs:
           path: |
             build/metal-core-fast/
             build/cp1-test-queue/
+            build/cp1-pair-storage-adapter/
             build/development-orchestrator/
             build/cp8-dispatch/
           if-no-files-found: ignore
