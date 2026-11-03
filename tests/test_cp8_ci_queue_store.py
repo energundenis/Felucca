@@ -1,5 +1,8 @@
 import copy
 import io
+import os
+import subprocess
+import tempfile
 import urllib.error
 import threading
 import unittest
@@ -7,7 +10,7 @@ from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 
 from cp8_ci_queue import make_idempotency_key
-from cp8_ci_queue_store import (GitHubGitDataClient, GitRefCASQueueStore,
+from cp8_ci_queue_store import (GitCliQueueClient, GitHubGitDataClient, GitRefCASQueueStore,
                                 QueueCASConflict, QueueRefNotFound, QueueStoreError)
 
 SHA = "a" * 40
@@ -51,6 +54,48 @@ class ConflictOnceBackend(FakeGitRefBackend):
             self.conflict_once = False
             raise QueueCASConflict("simulated competing writer")
         return super().commit_ledger(expected_head, ledger, branch)
+
+
+class GitCliQueueClientTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.remote = os.path.join(self.temp.name, "remote.git")
+        self.repo = os.path.join(self.temp.name, "work")
+        subprocess.run(["git", "init", "--bare", self.remote], check=True, capture_output=True)
+        os.mkdir(self.repo)
+        subprocess.run(["git", "init", self.repo], check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.name", "CP8 test"], cwd=self.repo, check=True)
+        subprocess.run(["git", "config", "user.email", "cp8-test@example.invalid"], cwd=self.repo, check=True)
+        with open(os.path.join(self.repo, "README"), "w", encoding="utf-8") as stream:
+            stream.write("queue test base\\n")
+        subprocess.run(["git", "add", "README"], cwd=self.repo, check=True)
+        subprocess.run(["git", "commit", "-m", "base"], cwd=self.repo, check=True, capture_output=True)
+        subprocess.run(["git", "remote", "add", "origin", self.remote], cwd=self.repo, check=True)
+        subprocess.run(["git", "push", "origin", "HEAD:refs/heads/main"], cwd=self.repo, check=True, capture_output=True)
+        self.base = subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.repo,
+                                   check=True, capture_output=True, text=True).stdout.strip()
+        self.client = GitCliQueueClient(repo_dir=self.repo)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_git_transport_initializes_and_reads_queue_ledger(self):
+        with self.assertRaises(QueueRefNotFound):
+            self.client.read_ref("energun-ci-queue")
+        initial = {"schema_version": 1, "records": [], "workers": {}}
+        self.client.commit_ledger(self.base, initial, "energun-ci-queue")
+        head = self.client.read_ref("energun-ci-queue")
+        self.assertEqual(self.client.read_ledger_at(head), initial)
+
+    def test_git_transport_rejects_stale_queue_writer(self):
+        self.client.commit_ledger(self.base, {"schema_version": 1, "records": [], "workers": {}},
+                                  "energun-ci-queue")
+        head = self.client.read_ref("energun-ci-queue")
+        self.client.commit_ledger(head, {"schema_version": 1, "records": [{"id": 1}], "workers": {}},
+                                  "energun-ci-queue")
+        with self.assertRaises(QueueCASConflict):
+            self.client.commit_ledger(head, {"schema_version": 1, "records": [{"id": 2}], "workers": {}},
+                                      "energun-ci-queue")
 
 
 class CP8QueueStoreTests(unittest.TestCase):
