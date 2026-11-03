@@ -3,7 +3,9 @@
 Date: 2026-11-04  
 Repository: energundenis/Felucca  
 Work branch: energun-metal-core  
-Inspected code/test HEAD before this status-document update: 78cc46c39b5b7599c894a2a144cea0f649105beb
+Initial verified code/test HEAD: 78cc46c39b5b7599c894a2a144cea0f649105beb  
+Latest queue/test commit: 8b333643e78c34e4bd050337da9d2f43f06ff31b  
+Current branch HEAD at latest refresh: 3d3da78594d679ea97ed9a55cc10e3f200b129a3 (documentation-only after the tested queue commit)
 
 ## Overall status
 
