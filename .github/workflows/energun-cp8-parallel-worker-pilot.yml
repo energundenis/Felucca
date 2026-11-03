@@ -48,10 +48,10 @@ jobs:
           set -euo pipefail
           mkdir -p build/metal-core-fast
           : > build/metal-core-fast/results.txt
-          cc -O2 -w -Ibuild/gen -Ifirmware/src -o build/metal-core-fast/storage tests/storage_test.c -lm
+          cc -O2 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o build/metal-core-fast/storage tests/storage_test.c -lm
           build/metal-core-fast/storage
           echo 'PASS: storage' >> build/metal-core-fast/results.txt
-          cc -O2 -w -Ibuild/gen -Ifirmware/src -o build/metal-core-fast/fm6bank tests/fm6bank_test.c -lm
+          cc -O2 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o build/metal-core-fast/fm6bank tests/fm6bank_test.c -lm
           build/metal-core-fast/fm6bank
           echo 'PASS: fm6bank' >> build/metal-core-fast/results.txt
       - name: Run pair transaction fault-injection suite
@@ -121,7 +121,7 @@ jobs:
           set -euo pipefail
           mkdir -p build/cp8-cp3
           for test in chord ratchet step15 seq155 swing; do
-            cc -O1 -w -Ibuild/gen -Ifirmware/src -o "build/cp8-cp3/${test}_test" "tests/${test}_test.c" -lm
+            cc -O1 -w -Ibuild/gen -Ifirmware/hal -Ifirmware/bsp/chip -Ifirmware/bsp/boards/fm1 -Ifirmware/src -o "build/cp8-cp3/${test}_test" "tests/${test}_test.c" -lm
           done
       - name: Run sequencer host tests
         run: |
