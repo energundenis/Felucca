@@ -302,6 +302,61 @@ static const energun_pair_v1_ops_t pair_test_ops = {
     pair_test_sidecar_write
 };
 
+static energun_pair_v1_workspace_t coordinator_workspace;
+
+static int coordinator_matching_copy(energun_sc_identity_kind_t kind, uint8_t index,
+                                     const energun_pair_v1_base_meta_t *base,
+                                     int *copy)
+{
+    energun_sc_candidate_t candidates[2];
+    uint8_t records[2][SC_TEST_MAX_RECORD];
+    energun_sc_ab_selection_t selection;
+    sc_candidates(kind, index, candidates, records);
+    if (energun_sc_v1_select_ab(candidates, kind, index,
+            base->sequence, base->payload_crc32, 0u, &selection) != ENERGUN_SC_OK ||
+        selection.matching_copy < 0)
+        return -1;
+    *copy = selection.matching_copy;
+    return 0;
+}
+
+static int coordinator_commit_test(uint32_t obj, energun_sc_identity_kind_t kind,
+                                   uint8_t index, const uint8_t *base, size_t base_len,
+                                   const uint8_t *logical, uint16_t logical_len,
+                                   int *sidecar_target_out)
+{
+    energun_pair_v1_base_meta_t current;
+    int rc = energun_pair_v1_commit(&pair_test_ops, NULL, &coordinator_workspace,
+        obj, kind, index, base, base_len, logical, logical_len, 0u);
+    if (rc != ENERGUN_PAIR_V1_OK)
+        return -1;
+    if (sidecar_target_out != NULL) {
+        if (pair_test_base_current(NULL, obj, &current) != 0 ||
+            coordinator_matching_copy(kind, index, &current, sidecar_target_out) != 0)
+            return -1;
+    }
+    return 0;
+}
+
+static int coordinator_load_test(uint32_t obj, energun_sc_identity_kind_t kind,
+                                 uint8_t index, uint8_t *base, size_t base_cap,
+                                 uint8_t *extension, size_t extension_cap,
+                                 uint32_t *base_seq, int *sidecar_copy)
+{
+    energun_pair_v1_base_meta_t meta;
+    size_t base_len = 0u, extension_len = 0u;
+    int rc = energun_pair_v1_load(&pair_test_ops, NULL, &coordinator_workspace,
+        obj, kind, index, base, base_cap, &base_len, extension, extension_cap,
+        &extension_len, 0u, &meta);
+    if (rc != ENERGUN_PAIR_V1_OK)
+        return -1;
+    if (base_seq != NULL) *base_seq = meta.sequence;
+    if (sidecar_copy != NULL &&
+        coordinator_matching_copy(kind, index, &meta, sidecar_copy) != 0)
+        return -1;
+    return 0;
+}
+
 static int check(const char *label, int ok)
 {
     printf("%-58s %s\n", label, ok ? "PASS" : "FAIL");
@@ -329,15 +384,15 @@ int main(void)
     memset(base2, 0x52, sizeof base2);
 
     reset_media();
-    bad += check("first base+Sidecar pair commit", pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, &target) == 0);
+    bad += check("first base+Sidecar pair commit", coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, &target) == 0);
     bad += check("first pair binds exact Base sequence/CRC",
-        pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
+        coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 1u && copy == target && !memcmp(loaded_base, base1, sizeof base1));
 
-    bad += check("second pair replaces old pair", pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, &target) == 0);
+    bad += check("second pair replaces old pair", coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, &target) == 0);
     bad += check("second pair loads exact new Base and Sidecar",
-        pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
+        coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 2u && copy == target && !memcmp(loaded_base, base2, sizeof base2));
 
@@ -406,11 +461,11 @@ int main(void)
     /* Every torn Sidecar payload/header byte must leave the original pair readable. */
     for (cut = 0; cut < ENERGUN_SC_V1_HEADER_SIZE + 117u + sizeof(st_hdr_t); ++cut) {
         reset_media();
-        if (pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
+        if (coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
         sc_fail_after = (int)cut;
-        (void)pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL);
+        (void)coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL);
         sc_fail_after = -1;
-        bad += pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
+        bad += coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                          sizeof loaded_sc, &seq, &copy) == 0 &&
                seq == 1u && !memcmp(loaded_base, base1, sizeof base1) ? 0 : 1;
     }
@@ -419,11 +474,11 @@ int main(void)
     /* Every torn Base payload/header byte after a successful future-bound Sidecar write leaves old pair. */
     for (cut = 0; cut < sizeof base2 + sizeof(st_hdr_t); ++cut) {
         reset_media();
-        if (pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
+        if (coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) != 0) { bad++; break; }
         fail_bytes = (int)cut;
-        (void)pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL);
+        (void)coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL);
         fail_bytes = -1;
-        bad += pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
+        bad += coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                          sizeof loaded_sc, &seq, &copy) == 0 &&
                seq == 1u && !memcmp(loaded_base, base1, sizeof base1) ? 0 : 1;
     }
@@ -431,17 +486,17 @@ int main(void)
 
     /* A newer orphan must not displace the old matching copy as the next write target. */
     reset_media();
-    bad += check("seed matching pair", pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) == 0);
+    bad += check("seed matching pair", coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base1, sizeof base1, payload, 117u, NULL) == 0);
     fail_bytes = 0; /* Sidecar B is committed, Base A erase/write then fails */
     bad += check("failed Base commit leaves old pair selected",
-        pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL) != 0 &&
-        (fail_bytes = -1, pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
+        coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, NULL) != 0 &&
+        (fail_bytes = -1, coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                                     sizeof loaded_sc, &seq, &copy) == 0) &&
         seq == 1u && copy == 0 && !memcmp(loaded_base, base1, sizeof base1));
     bad += check("retry protects old matching copy despite newer orphan",
-        pair_commit(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, &target) == 0 &&
+        coordinator_commit_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, base2, sizeof base2, payload, 117u, &target) == 0 &&
         target == 1 &&
-        pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
+        coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                   sizeof loaded_sc, &seq, &copy) == 0 &&
         seq == 2u && copy == 1 && !memcmp(loaded_base, base2, sizeof base2));
 
@@ -454,7 +509,7 @@ int main(void)
             nor[off] ^= 1u;
         }
         bad += check("corrupt newest Base falls back to old Base+Sidecar",
-            pair_load(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
+            coordinator_load_test(OBJ_PROJECT0, ENERGUN_SC_ID_PROJECT, 0u, loaded_base, sizeof loaded_base, loaded_sc,
                       sizeof loaded_sc, &seq, &copy) == 0 &&
             seq == 1u && copy == 0 && !memcmp(loaded_base, base1, sizeof base1));
     }
