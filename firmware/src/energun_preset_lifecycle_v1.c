@@ -8,7 +8,7 @@ static int preset_args_valid(const energun_lifecycle_v1_t *lifecycle,
 {
     return lifecycle != NULL && lifecycle->ops != NULL &&
            lifecycle->workspace != NULL && lifecycle->canonical_sidecar_defaults != NULL &&
-           lifecycle->canonical_sidecar_defaults_length > 0u &&
+           lifecycle->canonical_sidecar_defaults_length == ENERGUN_SC_V1_PRESET_PAYLOAD &&
            lifecycle->sidecar_scratch != NULL &&
            lifecycle->sidecar_scratch_capacity >= ENERGUN_SC_V1_PRESET_PAYLOAD &&
            lifecycle->base_scratch != NULL && lifecycle->base_scratch_capacity > 0u &&
