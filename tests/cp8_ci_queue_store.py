@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -140,6 +143,79 @@ class GitHubGitDataClient:
             "force": False,
         })
         return commit["sha"]
+
+
+class GitCliQueueClient:
+    """Queue ledger transport using authenticated Git smart HTTP, not REST API quota."""
+
+    def __init__(self, remote: str = "origin", repo_dir: str = ".") -> None:
+        self.remote = remote
+        self.repo_dir = repo_dir
+
+    def _git(self, *args: str, env: dict[str, str] | None = None,
+             check: bool = True) -> subprocess.CompletedProcess[str]:
+        merged = os.environ.copy()
+        if env:
+            merged.update(env)
+        result = subprocess.run(
+            ["git", *args], cwd=self.repo_dir, env=merged,
+            capture_output=True, text=True,
+        )
+        if check and result.returncode:
+            raise QueueStoreError(
+                f"git {' '.join(args[:3])} failed ({result.returncode}): "
+                f"{result.stderr.strip()[:400]}"
+            )
+        return result
+
+    def read_ref(self, branch: str) -> str:
+        ref = f"refs/heads/{branch}"
+        self._git("fetch", "--no-tags", self.remote, f"+{ref}:refs/remotes/{self.remote}/{branch}")
+        result = self._git("rev-parse", f"refs/remotes/{self.remote}/{branch}")
+        sha = result.stdout.strip()
+        if len(sha) != 40:
+            raise QueueStoreError("Git returned an invalid queue branch SHA")
+        return sha
+
+    def read_ledger_at(self, commit_sha: str) -> dict[str, Any]:
+        result = self._git("show", f"{commit_sha}:{LEDGER_PATH}", check=False)
+        if result.returncode:
+            if "does not exist" in result.stderr or "exists on disk, but not in" in result.stderr:
+                return {"schema_version": 1, "records": []}
+            raise QueueStoreError(f"unable to read queue ledger: {result.stderr.strip()[:400]}")
+        try:
+            ledger = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise QueueStoreError("queue ledger blob is invalid") from exc
+        if not isinstance(ledger, dict) or ledger.get("schema_version") != 1 or not isinstance(ledger.get("records"), list):
+            raise QueueStoreError("queue ledger schema is invalid")
+        return ledger
+
+    def commit_ledger(self, expected_head: str, ledger: dict[str, Any], branch: str) -> str:
+        encoded = json.dumps(ledger, sort_keys=True, separators=(",", ":")) + "\\n"
+        with tempfile.NamedTemporaryFile(prefix="cp8-index-", delete=True) as index:
+            env = {"GIT_INDEX_FILE": index.name}
+            self._git("read-tree", expected_head, env=env)
+            # hash-object receives the ledger bytes on stdin.
+            obj = subprocess.run(
+                ["git", "hash-object", "-w", "--stdin"], cwd=self.repo_dir,
+                env={**os.environ, **env}, input=encoded, capture_output=True, text=True,
+            )
+            if obj.returncode:
+                raise QueueStoreError(f"unable to write queue ledger blob: {obj.stderr.strip()[:300]}")
+            self._git("update-index", "--add", "--cacheinfo", f"100644,{obj.stdout.strip()},{LEDGER_PATH}", env=env)
+            tree = self._git("write-tree", env=env).stdout.strip()
+            commit = self._git("-c", "user.name=ENERGUN CP8 Queue",
+                               "-c", "user.email=energum-cp8-queue@users.noreply.github.com",
+                               "commit-tree", tree, "-p", expected_head, "-m",
+                               "ci(queue): update durable CP8 request ledger").stdout.strip()
+            pushed = self._git("push", self.remote, f"{commit}:refs/heads/{branch}", check=False)
+            if pushed.returncode:
+                detail = pushed.stderr.strip()
+                if any(token in detail.lower() for token in ("non-fast-forward", "fetch first", "stale info", "rejected")):
+                    raise QueueCASConflict(f"queue branch advanced during commit: {detail[:400]}")
+                raise QueueStoreError(f"unable to push queue ledger: {detail[:400]}")
+            return commit
 
 
 class GitRefCASQueueStore:
