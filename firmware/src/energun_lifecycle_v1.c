@@ -150,6 +150,11 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_save_live(
     const uint8_t *base_payload, size_t base_length,
     const energun_sc_project_payload_v1_t *sidecar)
 {
+    if (!lifecycle_valid(lifecycle))
+        return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
+    if (lifecycle->write_guard != NULL &&
+        lifecycle->write_guard(lifecycle->guard_context) != 0)
+        return ENERGUN_LIFECYCLE_V1_ERR_GUARD;
     return lifecycle_save_typed(lifecycle, object, ENERGUN_SC_ID_LIVE_AUTOSAVE,
         0u, base_payload, base_length, sidecar);
 }
