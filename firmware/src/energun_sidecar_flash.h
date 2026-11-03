@@ -41,4 +41,6 @@ int energun_sc_flash_write_copy(void *, energun_sc_identity_kind_t, uint8_t,
 
 extern const energun_sidecar_storage_ops_t energun_sc_flash_storage_ops;
 int energun_sidecar_flash_hw_init(void);
+/* Valid only after a successful init; static-lifetime context for runtime binding. */
+energun_sc_flash_t *energun_sidecar_flash_hw_context(void);
 #endif
