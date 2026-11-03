@@ -55,6 +55,9 @@ static uint32_t fl_jedec_ram(void) { return 0; }
 static void fl_plain_window_init(void) {}
 #define FL_FAR(fn) (fn)
 #include "../firmware/src/storage.c"
+/* upreset.c includes fm6_vbank.c, whose production path uses the shared
+ * staging lease. Match felucca.c's implementation order in this host link. */
+#include "../firmware/src/energun_flash_arbiter.c"
 #include "../firmware/src/upreset.c"
 #include "../firmware/src/project.c"
 
