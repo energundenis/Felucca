@@ -16,6 +16,9 @@ from cp8_ci_queue_store import (  # noqa: E402
 
 ALLOWED_COMMANDS = {
     "fast-regression": ["sh", "tests/run_metal_core_fast.sh"],
+    "cp1-persistence": ["python3", "tools/cp8_worker_lanes.py", "cp1-persistence"],
+    "cp2-dsp-vca": ["python3", "tools/cp8_worker_lanes.py", "cp2-dsp-vca"],
+    "cp3-sequencer": ["python3", "tools/cp8_worker_lanes.py", "cp3-sequencer"],
 }
 
 
@@ -46,18 +49,20 @@ def make_store():
 
 def enqueue() -> None:
     store, _ = make_store()
-    result = store.enqueue(
-        repository=env("GITHUB_REPOSITORY"),
-        lanes=["fast-regression"],
-        ref=env("GITHUB_REF"),
-        commit_sha=env("GITHUB_SHA"),
-        event=os.environ.get("GITHUB_EVENT_NAME", "push"),
-        workflow_run_id=int(env("GITHUB_RUN_ID")),
-    )
-    record = result["record"]
-    print(f"queue_request_id={record['request_id']}")
-    print(f"queue_created={str(result['created']).lower()}")
-    print(f"queue_state={record['state']}")
+    for lane in ("cp1-persistence", "cp2-dsp-vca", "cp3-sequencer"):
+        result = store.enqueue(
+            repository=env("GITHUB_REPOSITORY"),
+            lanes=[lane],
+            ref=env("GITHUB_REF"),
+            commit_sha=env("GITHUB_SHA"),
+            event=os.environ.get("GITHUB_EVENT_NAME", "push"),
+            workflow_run_id=int(env("GITHUB_RUN_ID")),
+        )
+        record = result["record"]
+        print(f"queue_lane={lane}")
+        print(f"queue_request_id={record['request_id']}")
+        print(f"queue_created={str(result['created']).lower()}")
+        print(f"queue_state={record['state']}")
 
 
 def checkout_sha(sha: str) -> None:
@@ -66,32 +71,33 @@ def checkout_sha(sha: str) -> None:
     subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=ROOT, check=True)
 
 
-def drain() -> None:
+def drain(lane: str) -> None:
     store, _ = make_store()
     run_id = int(env("GITHUB_RUN_ID"))
     run_url = (
         f"{env('GITHUB_SERVER_URL')}/{env('GITHUB_REPOSITORY')}/actions/runs/{run_id}"
     )
-    max_items = int(os.environ.get("CP8_MAX_ITEMS_PER_RUN", "4"))
+    if lane not in ALLOWED_COMMANDS:
+        raise RuntimeError(f"lane is not allow-listed: {lane}")
+    max_items = int(os.environ.get("CP8_MAX_ITEMS_PER_RUN", "2"))
     processed = 0
     while processed < max_items:
-        record = store.claim_next("cp8-trusted-coordinator", run_id, lease_seconds=3600)
+        record = store.claim_next(f"cp8-{lane}-worker", run_id, lease_seconds=3600, required_lane=lane)
         if record is None:
             print("queue_empty=true")
             break
         request_id = record["request_id"]
         sha = record["commit_sha"]
         lanes = record["requested_lanes"]
-        print(f"claimed request={request_id} sha={sha} lanes={','.join(lanes)}")
+        if lanes != [lane]:
+            raise RuntimeError(f"lane isolation violation: expected {[lane]}, got {lanes}")
+        print(f"claimed request={request_id} sha={sha} lane={lane}")
         try:
             store.mark_running(request_id, run_id)
             checkout_sha(sha)
-            for lane in lanes:
-                command = ALLOWED_COMMANDS.get(lane)
-                if command is None:
-                    raise RuntimeError(f"lane is not allow-listed: {lane}")
-                print(f"RUN lane={lane} command={' '.join(command)}")
-                subprocess.run(command, cwd=ROOT, check=True)
+            command = ALLOWED_COMMANDS[lane]
+            print(f"RUN lane={lane} command={' '.join(command)}")
+            subprocess.run(command, cwd=ROOT, check=True)
             store.finish(
                 request_id, run_id, "passed",
                 "All allow-listed queue lanes passed.",
@@ -111,6 +117,9 @@ def drain() -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or sys.argv[1] not in {"enqueue", "drain"}:
-        raise SystemExit("usage: cp8_queue_worker.py enqueue|drain")
-    {"enqueue": enqueue, "drain": drain}[sys.argv[1]]()
+    if len(sys.argv) == 2 and sys.argv[1] == "enqueue":
+        enqueue()
+    elif len(sys.argv) == 3 and sys.argv[1] == "drain" and sys.argv[2] in ALLOWED_COMMANDS:
+        drain(sys.argv[2])
+    else:
+        raise SystemExit("usage: cp8_queue_worker.py enqueue|drain LANE")
