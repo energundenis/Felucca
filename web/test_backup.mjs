@@ -83,6 +83,8 @@ const badV2Motion = structuredClone(v2file); {
 ok(throws(() => readBackup(badV2Motion)), "backup V2: malformed Motion payload length is refused");
 const badV2Preset = structuredClone(v2file); badV2Preset.sidecars[5].size = 209;
 ok(throws(() => readBackup(badV2Preset)), "backup V2: malformed preset-bank payload size is refused");
+const hugeV2 = structuredClone(v2file); hugeV2.sidecars[0].size = 0x7fffffff;
+ok(throws(() => readBackup(hugeV2)), "backup V2: oversized Sidecar is rejected before Base64 decoding");
 const v2Target = device([]);
 ok(await athrows(() => restoreBackup(v2Target.request, v2file)) && v2Target.log.length === 0,
   "backup V2: restore is blocked before device writes until pair-aware firmware protocol exists");
