@@ -26,7 +26,8 @@ energun_sc_status_t energun_sc_project_payload_v1_encode(
     if (length > ENERGUN_SC_V1_PROJECT_MAX_PAYLOAD || capacity < length)
         return ENERGUN_SC_ERR_LENGTH;
 
-    payload_copy(output, &payload->p_mc[0][0], ENERGUN_SC_V1_PROJECT_VALUES);
+    payload_copy(output, &payload->p_mc[0][0], 64u);
+    payload_copy(output + 64u, &payload->private_values[0][0], 52u);
     output[116] = payload->motion_count;
     for (i = 0; i < (size_t)payload->motion_count * 3u; ++i)
         output[117u + i] = ((const uint8_t *)payload->motion)[i];
@@ -51,7 +52,7 @@ energun_sc_status_t energun_sc_project_payload_v1_decode(
     if (input_length != expected)
         return ENERGUN_SC_ERR_LENGTH;
 
-    payload_copy(&payload->p_mc[0][0], input, ENERGUN_SC_V1_PROJECT_VALUES);
+    payload_copy(&payload->p_mc[0][0], input, 64u);
     payload_copy(&payload->private_values[0][0], input + 64u, 52u);
     payload->motion_count = input[116];
     payload_copy((uint8_t *)payload->motion, input + 117u, motion_bytes);
