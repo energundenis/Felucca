@@ -75,3 +75,81 @@ Before the sidecar format can be frozen:
 - No firmware source, emulator, factory firmware or physical device was changed.
 - `main` remains untouched.
 - CP1 remains OPEN.
+
+
+## 8. Accepted V1 ownership and payload closure — 2026-11-03
+
+This addendum reconciles CP1.17 against the adopted CP1.4.1 logical map and the existing Sidecar V1 encoder/validator. It closes the logical ownership question for V1. It does not assign stable firmware parameter IDs, approve physical Flash sectors, or authorize device writes.
+
+### 8.1 Control ownership
+
+The controlling V1 allocation is **8 Engine EDIT + 16 common P_MC + 13 Private per part**:
+
+- E0–E7 remain the existing eight Engine EDIT values and retain their existing Base-project Motion representation.
+- P_MC is the exact sixteen-control order in `ENERGUN_METAL_CORE_CP1_4_1_FROZEN_PARAMETER_MAP.md`, section 4. Each of four parts has sixteen values.
+- Private is the exact thirteen-control order in that map, section 5. Each of four parts has an independent bank (52 values total).
+- Private values are not stored in volatile engine DSP memory.
+- FOLLOW and METAL remain separate persistent booleans. Disabling either never clears other patch values.
+- MCX0–MCX6 are excluded from Sidecar V1. They remain a separately versioned future extension; MCX values and MCX Motion events are both deferred.
+
+### 8.2 Motion ownership — resolved for V1
+
+Motion ownership is now explicit:
+
+1. Existing E0–E7 events remain in the unchanged Base-project Motion block.
+2. Sidecar V1 owns Motion Lock events for the sixteen P_MC controls only.
+3. Each Sidecar Motion event stores a logical P_MC index in the low seven bits of its parameter byte (0–15); bit 7 retains the existing Motion Lock flag. This is a schema-local index, not a stable global parameter ID.
+4. Event values use the canonical Felucca signed value domain -64..127. The selected P_MC descriptor performs the same conversion used by edit and persistence paths.
+5. Duplicate (track/step, P_MC index) events are invalid. The combined Base + Sidecar event count must not exceed the existing 128-event pool.
+6. The thirteen Private values, including booleans/enums and Private envelope controls, are not Motion Lock or modulation-matrix destinations in V1.
+7. MCX0–MCX6 and MCX Motion are not represented in V1.
+
+The Sidecar validator now enforces the P_MC namespace boundary: low-seven-bit logical indices 0–15 are accepted; index 16 or above is rejected, with or without the Motion Lock flag. The new regression checks protect this boundary.
+
+### 8.3 Project payload layout
+
+The existing Sidecar V1 project payload is reconciled to the frozen map:
+
+| Offset | Size | Meaning |
+|---:|---:|---|
+| 0 | 64 bytes | Four parts × sixteen P_MC values, part-major and map-order |
+| 64 | 52 bytes | Four parts × thirteen Private values, part-major and map-order |
+| 116 | 1 byte | Sidecar Motion event count |
+| 117 | 3 × count | Motion events: place, P_MC logical index + flag, signed value |
+
+Therefore the fixed project prefix is 117 bytes and the maximum payload is 501 bytes (117 + 128 × 3). The 20-byte Sidecar envelope binds the logical identity and the exact Base sequence/CRC. The outer A/B storage object supplies its own storage sequence, CRC and header-last commit semantics. A Sidecar is optional: a missing, corrupt, or mismatched Sidecar must never prevent a valid Base project from loading; Private/P_MC state falls back to deterministic V1 defaults.
+
+The Base FUN10 serialized object layout is not expanded to carry these 16 P_MC values. Project runtime integration must keep the legacy Base byte layout and serialization contract intact, and obtain P_MC/Private values from the matching Sidecar. Existing E0–E7 and Base Motion remain Base-owned.
+
+### 8.4 User-preset payload ownership
+
+The existing Sidecar V1 preset-bank payload is 210 bytes:
+
+- two-byte presence bitmap for sixteen records in the selected bank;
+- thirteen Private values for each of the sixteen preset slots (208 bytes).
+
+The common P_MC values remain part of the existing user-preset parameter record, subject to the CP1.6/CP1.7 compatibility adapter and the approved common-parameter conversion path. The Sidecar preset bank carries only the thirteen Private values per preset. An absent preset slot must have all thirteen Private bytes zeroed; stale Private state cannot survive slot deletion/reuse. Preset Sidecar data is optional and must default safely if absent or invalid.
+
+### 8.5 Encoding and identity boundaries
+
+- P_MC order, types, ranges, defaults and semantic distinctions are taken from the frozen CP1.4.1 map.
+- P_MC values use the accepted standard Felucca 7-bit descriptor representation; FOLD SYMMETRY uses the signed -64..63 descriptor range. The current Sidecar project validator enforces those bounds for all four parts.
+- Private enum ordinals and 7-bit values follow the frozen map and current V1 semantic validator.
+- The envelope's project identities remain four stored projects plus live autosave. Preset identities remain two banks. A/B copy selection and Base generation pairing remain separate from the logical payload.
+- No MCX values, MCX events, high-resolution values, engine IDs, stable global P_MC IDs, archive-v2 object IDs, or physical Flash addresses are introduced by this closure.
+
+### 8.6 Closure and remaining implementation gates
+
+**CP1.17 logical ownership and V1 payload scope: CLOSED.**
+
+The following are deliberately not claimed complete:
+
+- stable P_MC numeric IDs and runtime descriptor registration;
+- exact UI/editor read/write routing for Private values;
+- project runtime binding, safe snapshot and generation pairing;
+- preset runtime binding and archive-v2 backup/restore;
+- full Base + Sidecar power-cut and migration qualification;
+- full firmware target link/runtime qualification;
+- full FM-1 V1.5 dump and physical recovery audit.
+
+No physical Flash allocation/write, factory firmware modification, firmware installation, device connection, or PR merge is authorized.
