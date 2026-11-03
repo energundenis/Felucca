@@ -7,10 +7,28 @@
  * exclusion). Only the two exact candidate sector bases are accepted.
  */
 #include "energun_sidecar_flash.h"
-#include <string.h>
 
 #define SCF_MAGIC 0x31435345u /* "ESC1" */
 #define SCF_VERSION 1u
+
+
+static void scf_fill(void *destination, uint8_t value, size_t length)
+{
+    uint8_t *p = (uint8_t *)destination;
+    while (length-- != 0u)
+        *p++ = value;
+}
+
+static int scf_equal(const void *left, const void *right, size_t length)
+{
+    const uint8_t *a = (const uint8_t *)left;
+    const uint8_t *b = (const uint8_t *)right;
+    while (length-- != 0u) {
+        if (*a++ != *b++)
+            return 0;
+    }
+    return 1;
+}
 
 typedef struct {
     uint32_t magic;
@@ -153,7 +171,7 @@ int energun_sc_flash_write_copy(void *opaque, energun_sc_identity_kind_t kind,
                     record, length) != 0)
         return -1;
 
-    memset(&header, 0xFF, sizeof header);
+    scf_fill(&header, 0xFFu, sizeof header);
     header.magic = SCF_MAGIC;
     header.version = SCF_VERSION;
     header.identity_kind = (uint8_t)kind;
@@ -177,7 +195,7 @@ int energun_sc_flash_write_copy(void *opaque, energun_sc_identity_kind_t kind,
         return -1;
     if (energun_sc_flash_read_copy(flash, kind, index, copy, verify,
             sizeof verify, &verify_length, &verify_sequence) != 0 ||
-        verify_length != length || memcmp(verify, record, length) != 0 ||
+        verify_length != length || !scf_equal(verify, record, length) ||
         verify_sequence != header.sequence)
         return -1;
     return 0;
