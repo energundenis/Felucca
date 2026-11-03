@@ -132,7 +132,7 @@ energun_private_status_v1_t energun_private_v1_replace(
         return ENERGUN_PRIVATE_V1_ERR_SCHEMA;
     if (current->generation != expected_generation)
         return ENERGUN_PRIVATE_V1_ERR_STALE;
-    if (snapshot->schema_version != ENERGUN_PRIVATE_V1_SCHEMA)
+    if (!snapshot->valid || snapshot->schema_version != ENERGUN_PRIVATE_V1_SCHEMA)
         return ENERGUN_PRIVATE_V1_ERR_SCHEMA;
     if (!private_values_valid(snapshot->value))
         return ENERGUN_PRIVATE_V1_ERR_VALUE;
