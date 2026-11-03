@@ -226,6 +226,26 @@ jobs:
             echo "The storage-independent Sidecar V1 encoder/validator compiled for pi32v2. This is target compile/codegen evidence only; it is not linked into firmware or executed on hardware."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Compile pair coordinator with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wextra -Wno-unused-function -Ifirmware/src \
+            -c firmware/src/energun_pair_v1.c \
+            -o build/metal-core-vca-target/pair_v1.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/pair_v1.o \
+            > build/metal-core-vca-target/pair_v1.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/pair_v1.o \
+            > build/metal-core-vca-target/pair_v1.symbols
+          grep -q "energun_pair_v1_commit" build/metal-core-vca-target/pair_v1.symbols
+          grep -q "energun_pair_v1_load" build/metal-core-vca-target/pair_v1.symbols
+          {
+            echo "## ENERGUN pair coordinator AC79 compile-only probe"
+            echo "The backend-neutral Base + Sidecar V1 transaction coordinator compiles for pi32v2. This is compile/codegen evidence only; it is not linked into firmware and has no target Flash backend or runtime call sites."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run Felucca host and web regression tests
         run: tests/run_tests.sh
 
