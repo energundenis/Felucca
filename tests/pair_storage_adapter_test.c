@@ -152,6 +152,28 @@ static const energun_sidecar_storage_ops_t sc_test_ops = {
     sc_test_read, sc_test_write
 };
 
+/* Seed an outer-CRC-valid but semantically orphaned Sidecar copy so target
+ * selection can be tested independently of Base/Sidecar pair recovery.
+ */
+static int seed_sc_copy(uint8_t copy, uint32_t sequence, uint8_t marker)
+{
+    test_sc_header_t h;
+    uint8_t payload[1] = {marker};
+    uint32_t off = sc_test_sector(copy);
+    if (copy > 1u || sim_erase(off) != 0)
+        return -1;
+    memset(&h, 0xFF, sizeof h);
+    h.magic = SC_MAGIC_TEST;
+    h.sequence = sequence;
+    h.length = sizeof payload;
+    h.crc = st_crc32(payload, sizeof payload);
+    h.header_crc = st_crc32(&h, sizeof h - sizeof h.header_crc);
+    if (sim_program(off + SC_PAYLOAD_OFF, payload, sizeof payload, 0) != 0 ||
+        sim_program(off, &h, sizeof h, 0) != 0)
+        return -1;
+    return 0;
+}
+
 static int recover_equals(energun_pair_storage_adapter_t *adapter,
     const uint8_t *expected, uint32_t length, uint32_t sequence,
     uint8_t sidecar_marker)
@@ -207,6 +229,18 @@ int main(void)
 
     CHECK("adapter initializes against existing Base object",
           setup(&adapter) == 0);
+
+    CHECK("orphan Sidecar target selection is wrap-aware and preserves newest copy",
+          setup(&adapter) == 0 &&
+          seed_sc_copy(0u, 0xFFFFFFFEu, 0xA0u) == 0 &&
+          seed_sc_copy(1u, 2u, 0xB0u) == 0 &&
+          save_value(&adapter, &workspace, 77u) == ENERGUN_PAIR_OK &&
+          sc_test_read(0, ENERGUN_SC_ID_PROJECT, 0u, 1u,
+              (uint8_t[ENERGUN_SC_V1_MAX_RECORD]){0},
+              ENERGUN_SC_V1_MAX_RECORD, &(size_t){0}, &(uint32_t){0}) == 0 &&
+          recover_equals(&adapter,
+              (uint8_t[16]){77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92},
+              16u, 1u, 77u));
     CHECK("legacy Base load/save entrypoints remain linked",
           st_save(OBJ_COUNT, probe, sizeof probe) != 0 &&
           st_load(OBJ_COUNT, probe, sizeof probe) < 0);
