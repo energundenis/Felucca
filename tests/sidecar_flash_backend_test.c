@@ -64,6 +64,30 @@ int main(void)
     CHECK("reserved update-loader tail is never programmed",sim_program(0,ENERGUN_SC_FLASH_A+0xF00u,input,1u)!=0);
     CHECK("erase rejects non-candidate sector",sim_erase(0,ENERGUN_SC_FLASH_A+8192u)!=0);
     CHECK("program cannot cross page",sim_program(0,ENERGUN_SC_FLASH_A+0x2FFu,input,2u)!=0);
+    /* Every possible program-byte cut while replacing B must preserve A. */
+    memset(nor,0xFF,sizeof nor);
+    program_budget = -1;
+    CHECK("sweep fixture commits old A",energun_sc_flash_write_copy(&flash,ENERGUN_SC_ID_PROJECT,2,0,input,sizeof input)==0);
+    {
+        unsigned int cut;
+        int sweep_ok = 1;
+        for (cut=0; cut<553u; ++cut) {
+            size_t keep_length=0u;
+            uint32_t keep_sequence=0u;
+            memset(nor + (ENERGUN_SC_FLASH_B-NOR_BASE),0xFF,4096u);
+            program_budget=(int)cut;
+            if (energun_sc_flash_write_copy(&flash,ENERGUN_SC_ID_PROJECT,2,1,input,sizeof input)==0)
+                sweep_ok=0;
+            program_budget=-1;
+            if (energun_sc_flash_read_copy(&flash,ENERGUN_SC_ID_PROJECT,2,0,
+                    output,sizeof output,&keep_length,&keep_sequence)!=0 ||
+                keep_length!=sizeof input || keep_sequence!=1u ||
+                memcmp(output,input,sizeof input)!=0)
+                sweep_ok=0;
+        }
+        CHECK("553 Sidecar byte-cut positions preserve previous A",sweep_ok);
+    }
+    program_budget=-1;
     printf("SIDECAR FLASH BACKEND: %u checks, %u failures; erase calls=%u\n",checks,failures,erases);
     return failures!=0u;
 }
