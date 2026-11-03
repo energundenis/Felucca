@@ -313,6 +313,10 @@ energun_pair_v1_status_t energun_pair_v1_load_compat(
         return ENERGUN_PAIR_V1_ERR_NO_MATCH;
     if (rc != 0 || selected.copy > 1u)
         return ENERGUN_PAIR_V1_ERR_BASE_IO;
+    /* A zero-length Base is the committed erase tombstone, not a legacy
+     * Base-only object. Never resurrect it through compatibility fallback. */
+    if (selected.payload_length == 0u)
+        return ENERGUN_PAIR_V1_ERR_NO_MATCH;
     if (selected.payload_length > base_capacity)
         return ENERGUN_PAIR_V1_ERR_CAPACITY;
 
