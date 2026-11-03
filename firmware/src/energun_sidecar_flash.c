@@ -183,10 +183,6 @@ int energun_sc_flash_write_copy(void *opaque, energun_sc_identity_kind_t kind,
     return 0;
 }
 
-static const energun_sidecar_storage_ops_t scf_ops = {
-    energun_sc_flash_read_copy,
-    energun_sc_flash_write_copy
-};
 const energun_sidecar_storage_ops_t energun_sc_flash_storage_ops = {
     energun_sc_flash_read_copy,
     energun_sc_flash_write_copy
