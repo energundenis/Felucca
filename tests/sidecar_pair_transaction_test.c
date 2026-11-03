@@ -313,6 +313,16 @@ int main(void)
                           ext, sizeof ext, &got_seq, &got_copy) ||
                 got_seq != 2u || memcmp(got, p2, sizeof p2) != 0)
                 matrix_ok = 0;
+            /* A valid Base object must not load an extension from a different logical identity. */
+            if (ids[i].kind == ENERGUN_SC_ID_PROJECT) {
+                uint8_t wrong_index = (uint8_t)((ids[i].index + 1u) & 3u);
+                if (pair_load(ids[i].object, ENERGUN_SC_ID_PROJECT, wrong_index,
+                              got, sizeof got, ext, sizeof ext, &got_seq, &got_copy) == 0)
+                    matrix_ok = 0;
+            } else if (pair_load(ids[i].object, ENERGUN_SC_ID_PROJECT, 0u,
+                                 got, sizeof got, ext, sizeof ext, &got_seq, &got_copy) == 0) {
+                matrix_ok = 0;
+            }
         }
         bad += check("seven identities: independent Base A/B histories and exact pair roundtrip", matrix_ok);
     }
