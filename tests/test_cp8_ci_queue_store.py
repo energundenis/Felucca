@@ -80,6 +80,21 @@ class CP8QueueStoreTests(unittest.TestCase):
         self.assertTrue(result["created"])
         self.assertEqual(len(self.backend.ledgers[self.backend.head]["records"]), 2)
 
+    def test_lane_scoped_workers_claim_only_matching_requests(self):
+        cp1 = self.store.enqueue("energundenis/Felucca", ["cp1-persistence"], "refs/heads/lanes",
+                                 SHA, "push", now=NOW)["record"]
+        cp2 = self.store.enqueue("energundenis/Felucca", ["cp2-dsp-vca"], "refs/heads/lanes",
+                                 SHA, "push", now=NOW)["record"]
+        claim = self.store.claim_next("cp1-worker", 301, now=NOW + timedelta(seconds=1),
+                                      required_lane="cp1-persistence")
+        self.assertEqual(claim["request_id"], cp1["request_id"])
+        self.assertNotEqual(claim["request_id"], cp2["request_id"])
+        self.assertIsNone(self.store.claim_next("cp1-worker", 302, now=NOW + timedelta(seconds=2),
+                                                required_lane="cp1-persistence"))
+        cp2_claim = self.store.claim_next("cp2-worker", 303, now=NOW + timedelta(seconds=2),
+                                          required_lane="cp2-dsp-vca")
+        self.assertEqual(cp2_claim["request_id"], cp2["request_id"])
+
     def test_claim_is_exclusive_and_owner_bound(self):
         request = self.store.enqueue("energundenis/Felucca", ["fast-regression"], "refs/heads/feature",
                                      SHA, "push", now=NOW)["record"]
