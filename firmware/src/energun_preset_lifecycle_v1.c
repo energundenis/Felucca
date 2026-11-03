@@ -97,6 +97,32 @@ energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_load_bank(
     return status;
 }
 
+
+energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_load_bank_checked(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t bank,
+    uint8_t engine_count,
+    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+    energun_sc_preset_payload_v1_t *sidecar,
+    energun_pair_v1_base_meta_t *base_meta)
+{
+    energun_lifecycle_v1_status_t status;
+    energun_sc_status_t binding_status;
+    if (engine_count == 0u)
+        return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
+    status = energun_preset_lifecycle_v1_load_bank(lifecycle, object, bank,
+        base_payload, base_capacity, base_length, sidecar, base_meta);
+    if (status != ENERGUN_LIFECYCLE_V1_OK)
+        return status;
+    binding_status = energun_sc_v1_validate_preset_bank_binding(
+        base_payload, *base_length, engine_count,
+        lifecycle->sidecar_scratch, ENERGUN_SC_V1_PRESET_PAYLOAD);
+    if (binding_status != ENERGUN_SC_OK) {
+        *base_length = 0u;
+        return ENERGUN_LIFECYCLE_V1_ERR_PAIR;
+    }
+    return ENERGUN_LIFECYCLE_V1_OK;
+}
+
 energun_lifecycle_v1_status_t energun_preset_lifecycle_v1_capture_slot(
     const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t bank,
     uint8_t part, uint8_t slot,
