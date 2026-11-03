@@ -1365,6 +1365,8 @@ static void autosave_poll(void)
     if (sig == as.saved || (ui_prefs & PREF_RESTORE_OFF) || fm1_ms - as.t < AS_IDLE_MS ||
         (as.wrote && fm1_ms - as.last < (as.err ? AS_RETRY_MS : AS_GAP_MS)))
         return;
+    if (st_object_reserved(OBJ_AUTOSAVE))
+        return;                                         /* FM6 owns the inactive autosave sector for staging */
     as.last = fm1_ms;
     as.wrote = 1;
     project_capture(&proj_scratch);
