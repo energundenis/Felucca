@@ -26,6 +26,8 @@
 #define SC_PRESET_BITMAP_OFF     0u
 #define SC_PRESET_PRIVATE_OFF    2u
 #define SC_PRIVATE_COUNT         13u
+#define SC_PMC_MOTION_FIRST       103u
+#define SC_PMC_MOTION_LAST        118u
 #define SC_PRESET_SLOTS          16u
 
 static void sc_zero(void *destination, size_t length)
@@ -101,10 +103,9 @@ static int sc_identity_valid(energun_sc_identity_kind_t kind, uint8_t index)
  * MOD OSC WAVE(enum 4), FM CHARACTER(enum 3), COMPLEX MODULE VOLUME(7-bit),
  * FOLD MODE(enum 3), LPG MODULE VOLUME(7-bit), ATTACK/DECAY/SUSTAIN/RELEASE
  * (7-bit canonical Felucca codes).
- *
- * Enum ordinals follow the v98 source order. FM CHARACTER accepts all three
- * defined ordinals; its source object default vs HTML selected-state mismatch
- * is intentionally not resolved by the persistence format.
+ * Enum ordinals follow the v98 source order; FM CHARACTER accepts all three
+ * defined ordinals. The canonical runtime default is supplied by the typed
+ * snapshot adapter, not inferred by this validator.
  */
 static int sc_private_value_valid(unsigned int key, uint8_t value)
 {
@@ -164,9 +165,12 @@ static energun_sc_status_t sc_validate_project(
         uint8_t place = event[0];
         uint8_t param = event[1];
         int value = sc_i8_value(event[2]);
+        uint8_t parameter_id = (uint8_t)(param & 0x7Fu);
         (void)place; /* all 256 encodings map to track 0..3 / step 0..63 */
-        (void)param; /* numeric P_MC IDs remain unassigned at this stage */
-        if (value < -64 || value > 127)
+        /* Sidecar Motion owns P_MC only. E0-E7 remain in the legacy FUN10
+         * Motion stream; Private and MCX values are never Motion targets. */
+        if (parameter_id < SC_PMC_MOTION_FIRST || parameter_id > SC_PMC_MOTION_LAST ||
+            value < -64 || value > 127)
             return ENERGUN_SC_ERR_MOTION_EVENT;
         for (j = 0; j < i; ++j) {
             const uint8_t *prior = payload + SC_PROJECT_MOTION_OFF + j * 3u;
