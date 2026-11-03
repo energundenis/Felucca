@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
 from cp8_ci_queue_store import (  # noqa: E402
     DEFAULT_BRANCH, GitHubGitDataClient, GitRefCASQueueStore, QueueCASConflict,
-    QueueStoreError,
+    QueueStoreError, QueueRefNotFound,
 )
 from cp8_worker_runtime import (  # noqa: E402
     claim_next_for_worker, finish_worker_task, mark_worker_running, register_worker, release_worker,
@@ -37,7 +37,7 @@ def make_store():
     branch = os.environ.get("CP8_QUEUE_BRANCH", DEFAULT_BRANCH)
     try:
         client.read_ref(branch)
-    except QueueStoreError:
+    except QueueRefNotFound:
         source_sha = env("GITHUB_SHA")
         try:
             client.request("POST", "/git/refs", {
