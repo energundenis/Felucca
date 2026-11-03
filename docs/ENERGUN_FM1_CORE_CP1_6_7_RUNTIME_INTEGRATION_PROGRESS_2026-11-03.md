@@ -149,3 +149,14 @@ Follow-up on 2026-11-03:
 - Fast regression count increased from 23 to 24; exact-HEAD CI is pending for the latest codec and lifecycle commits.
 
 This is a serialization building block, not a runtime snapshot adapter. It does not yet capture live engine state, bind FUN10 E0–E7 migration, implement legacy Base fallback, or connect project/autosave/preset production call sites. No target Flash backend or physical address was introduced.
+
+
+## 11. Latest integration acceleration — 2026-11-03
+
+- CP1 queue now executes the coordinator power-loss harness only once; the previous `pair-power-loss` stage reran the identical `run_sidecar_pair_transaction_test.sh` command and added no coverage.
+- CP1 queue blockers distinguish completed host components from missing production integration: Sidecar envelope/semantic validation and backend-neutral pair recovery are implemented; production Sidecar A/B backend, runtime pair restore, legacy defaults/fallback, and Sidecar-aware FM6 autosave coordination remain open.
+- Implemented the frozen Sidecar Motion target whitelist in `energun_sidecar_v1.c`: Sidecar project/live Motion events accept only P_MC IDs 103–118. The Motion Lock bit is masked for whitelist comparison and preserved in the record. E0–E7 (119–126) remain in the Base FUN10 Motion stream; Private, MCX and ID 127 are rejected.
+- Added strict host cases for P_MC IDs 103 and 118, locked ID 103, below-range ID 102, E0 ID 119 and unallocated ID 127. These tests are pending exact-head CI.
+- The previous baseline run was cancelled when a newer commit arrived after all AC79 compile probes succeeded. Do not treat it as a complete baseline pass; the new head must complete both workflows.
+
+Runtime integration remains deliberately gated: the agreed Private controls have no production per-part cache/owner in the current engine runtime, and the Sidecar target backend has no approved physical sector map. Do not invent an adapter that persists transient DSP state or silently changes FUN10 compatibility.

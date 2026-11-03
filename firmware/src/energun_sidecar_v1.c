@@ -26,8 +26,6 @@
 #define SC_PRESET_BITMAP_OFF     0u
 #define SC_PRESET_PRIVATE_OFF    2u
 #define SC_PRIVATE_COUNT         13u
-#define SC_PMC_MOTION_FIRST       103u
-#define SC_PMC_MOTION_LAST        118u
 #define SC_PRESET_SLOTS          16u
 
 static void sc_zero(void *destination, size_t length)
@@ -169,7 +167,7 @@ static energun_sc_status_t sc_validate_project(
         (void)place; /* all 256 encodings map to track 0..3 / step 0..63 */
         /* Sidecar Motion owns P_MC only. E0-E7 remain in the legacy FUN10
          * Motion stream; Private and MCX values are never Motion targets. */
-        if (parameter_id < SC_PMC_MOTION_FIRST || parameter_id > SC_PMC_MOTION_LAST ||
+        if (parameter_id < ENERGUN_SC_V1_PMC_MOTION_ID_FIRST || parameter_id > ENERGUN_SC_V1_PMC_MOTION_ID_LAST ||
             value < -64 || value > 127)
             return ENERGUN_SC_ERR_MOTION_EVENT;
         for (j = 0; j < i; ++j) {

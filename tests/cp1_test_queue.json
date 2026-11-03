@@ -128,7 +128,7 @@
         "pair-transaction-harness"
       ],
       "command": null,
-      "blocker": "Sidecar V1 envelope, CRC, schema and semantic value/motion validator are implemented and host-tested. Remaining work is the production Sidecar A/B reader/backend and integration of validation into real project/preset load paths; P_MC numeric-ID whitelist remains a separate CP1.4.4 gate."
+      "blocker": "The frozen Sidecar Motion whitelist is implemented in the V1 semantic validator: only P_MC IDs 103–118 are accepted (including the Motion Lock bit); legacy E0–E7 IDs 119–126 stay in Base FUN10, and Private/MCX/unallocated IDs are rejected. Strict host cases cover both boundaries and denied IDs. Production Sidecar A/B reader/backend and runtime project/preset integration remain absent; target storage stays gated."
     },
     {
       "id": "pair-recovery-roundtrip",

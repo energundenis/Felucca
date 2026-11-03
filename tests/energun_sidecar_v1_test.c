@@ -136,7 +136,7 @@ static void test_motion_payload(void)
     for (i = 0; i < 128u; ++i) {
         uint8_t *event = payload + MOTION_OFF + i * 3u;
         event[0] = (uint8_t)i;
-        event[1] = 103u;
+        event[1] = ENERGUN_SC_V1_PMC_MOTION_ID_FIRST;
         event[2] = 0u;
     }
     check("maximum 128 Sidecar events encode to 501-byte payload",
@@ -151,7 +151,7 @@ static void test_motion_payload(void)
           ENC_PROJECT(record, payload, MOTION_OFF, 129u) == ENERGUN_SC_ERR_MOTION_COUNT);
     payload[MOTION_COUNT_OFF] = 2u;
     payload[MOTION_OFF + 0u] = 7u;
-    payload[MOTION_OFF + 1u] = 103u;
+    payload[MOTION_OFF + 1u] = ENERGUN_SC_V1_PMC_MOTION_ID_FIRST;
     payload[MOTION_OFF + 2u] = 0u;
     payload[MOTION_OFF + 3u] = 7u;
     payload[MOTION_OFF + 4u] = 0xE7u;
@@ -182,16 +182,16 @@ static void test_motion_pmc_whitelist(void)
     payload[MOTION_OFF + 1u] = 103u;
     check("P_MC Motion first frozen ID 103 accepted",
           ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
-    payload[MOTION_OFF + 1u] = 118u;
+    payload[MOTION_OFF + 1u] = ENERGUN_SC_V1_PMC_MOTION_ID_LAST;
     check("P_MC Motion last frozen ID 118 accepted",
           ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
-    payload[MOTION_OFF + 1u] = 0xE7u;
+    payload[MOTION_OFF + 1u] = (uint8_t)(ENERGUN_SC_V1_PMC_MOTION_ID_FIRST | 0x80u);
     check("P_MC Motion Lock bit is retained above whitelisted ID 103",
           ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_OK);
-    payload[MOTION_OFF + 1u] = 102u;
+    payload[MOTION_OFF + 1u] = (uint8_t)(ENERGUN_SC_V1_PMC_MOTION_ID_FIRST - 1u);
     check("Motion ID below P_MC range rejected (common legacy parameter)",
           ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
-    payload[MOTION_OFF + 1u] = 119u;
+    payload[MOTION_OFF + 1u] = (uint8_t)(ENERGUN_SC_V1_PMC_MOTION_ID_LAST + 1u);
     check("E0 Motion ID rejected from Sidecar (stays in Base FUN10)",
           ENC_PROJECT(record, payload, MOTION_OFF + 3u, 0u) == ENERGUN_SC_ERR_MOTION_EVENT);
     payload[MOTION_OFF + 1u] = 127u;
