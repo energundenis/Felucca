@@ -116,8 +116,40 @@ export function readBackup(file) {
         if (bytes.length < 117 || bytes.length > 501 || bytes[116] > 128 ||
             bytes.length !== 117 + bytes[116] * 3)
           throw new Error("Invalid Archive V2 project Sidecar payload");
-      } else if (bytes.length !== 210) {
-        throw new Error("Invalid Archive V2 preset Sidecar payload");
+        const privateMax = [2, 1, 1, 1, 3, 2, 127, 2, 127, 127, 127, 127, 127];
+        for (let part = 0; part < 4; part++) {
+          for (let parameter = 0; parameter < 16; parameter++) {
+            const raw = bytes[part * 16 + parameter];
+            if (parameter === 9 ? !((raw <= 63) || raw >= 192) : raw > 127)
+              throw new Error("Invalid Archive V2 P_MC value");
+          }
+        }
+        for (let i = 0; i < 4 * 13; i++)
+          if (bytes[64 + i] > privateMax[i % 13])
+            throw new Error("Invalid Archive V2 Private value");
+        const seenMotion = new Set();
+        for (let i = 0; i < bytes[116]; i++) {
+          const off = 117 + i * 3, place = bytes[off], parameter = bytes[off + 1] & 0x7f;
+          const rawValue = bytes[off + 2];
+          if (parameter < 103 || parameter > 118 || (rawValue > 127 && rawValue < 192))
+            throw new Error("Invalid Archive V2 Motion event");
+          const key = place * 128 + parameter;
+          if (seenMotion.has(key))
+            throw new Error("Duplicate Archive V2 Motion event");
+          seenMotion.add(key);
+        }
+      } else {
+        if (bytes.length !== 210)
+          throw new Error("Invalid Archive V2 preset Sidecar payload");
+        const privateMax = [2, 1, 1, 1, 3, 2, 127, 2, 127, 127, 127, 127, 127];
+        for (let slot = 0; slot < 16; slot++) {
+          const present = (bytes[slot >> 3] >> (slot & 7)) & 1;
+          for (let key = 0; key < 13; key++) {
+            const value = bytes[2 + slot * 13 + key];
+            if ((!present && value !== 0) || (present && value > privateMax[key]))
+              throw new Error("Invalid Archive V2 preset Private slot");
+          }
+        }
       }
       return { ...entry, bytes };
     });
