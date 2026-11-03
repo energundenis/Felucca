@@ -43,7 +43,7 @@
         "fm6-staging-baseline"
       ],
       "command": "sh tests/run_sidecar_v1_test.sh",
-      "blocker": "Sidecar V1 envelope and identity/length/value/motion validation are implemented and covered by the focused host acceptance suite. P_MC numeric-ID whitelist validation remains a later CP1.4.4 gate because IDs are intentionally not assigned.",
+      "blocker": "Sidecar V1 envelope, identity/length/value validation and frozen P_MC Motion whitelist (103–118) are implemented and covered by the focused host acceptance suite. Production A/B backend and project/preset runtime integration remain separate gates.",
       "enable_when": "V1 format implementation and strict host acceptance suite committed together."
     },
     {
@@ -118,7 +118,7 @@
         "sidecar-payload-codec"
       ],
       "command": "sh tests/run_sidecar_pair_transaction_test.sh",
-      "blocker": "Host acceptance exercises full-bank pair save/load, per-slot Private capture and restore, erase clearing only the selected slot, preservation of unrelated slots, Rename/Save As rebinding and legacy Base-only canonical preset defaults. AC79 compile-only probe is separate. Production upreset.c call-site wiring and target Sidecar backend remain open."
+      "blocker": "Host acceptance exercises full-bank pair save/load, per-slot Private capture and restore, erase clearing only the selected slot, preservation of unrelated slots, Rename/Save As rebinding and legacy Base-only canonical preset defaults. Firmware-side Base-bank occupancy ↔ Sidecar bitmap validation is now implemented and covered by Sidecar V1 host cases. Production upreset.c call-site wiring and target Sidecar backend remain open."
     },
     {
       "id": "sidecar-payload-codec",
