@@ -86,6 +86,9 @@ class GitCliQueueClientTests(unittest.TestCase):
         self.client.commit_ledger(self.base, initial, "energun-ci-queue")
         head = self.client.read_ref("energun-ci-queue")
         self.assertEqual(self.client.read_ledger_at(head), initial)
+        raw = subprocess.run(["git", "show", f"{head}:queue/ledger.json"], cwd=self.repo,
+                             check=True, capture_output=True).stdout
+        self.assertTrue(raw.endswith(b"\\n"), "queue ledger commit must end with one canonical newline")
 
     def test_git_transport_rejects_stale_queue_writer(self):
         self.client.commit_ledger(self.base, {"schema_version": 1, "records": [], "workers": {}},
