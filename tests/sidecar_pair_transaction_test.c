@@ -358,6 +358,24 @@ int main(void)
                     0u, &meta) == ENERGUN_PAIR_V1_OK) {
                 matrix_ok = 0;
             }
+
+            /* Erase is a Base tombstone: stale Sidecar A/B data must not load. */
+            if (energun_pair_v1_erase(&pair_test_ops, NULL, ids[i].object) != ENERGUN_PAIR_V1_OK ||
+                energun_pair_v1_load(&pair_test_ops, NULL, &workspace,
+                    ids[i].object, ids[i].kind, ids[i].index,
+                    got, sizeof got, &got_base_len, ext, sizeof ext, &got_ext_len,
+                    0u, &meta) != ENERGUN_PAIR_V1_ERR_NO_MATCH ||
+                got_base_len != 0u || got_ext_len != 0u ||
+                energun_pair_v1_commit(&pair_test_ops, NULL, &workspace,
+                    ids[i].object, ids[i].kind, ids[i].index,
+                    p1, sizeof p1, logical, ids[i].payload_len, 0u) != ENERGUN_PAIR_V1_OK ||
+                energun_pair_v1_load(&pair_test_ops, NULL, &workspace,
+                    ids[i].object, ids[i].kind, ids[i].index,
+                    got, sizeof got, &got_base_len, ext, sizeof ext, &got_ext_len,
+                    0u, &meta) != ENERGUN_PAIR_V1_OK ||
+                meta.sequence != 4u || got_base_len != sizeof p1 ||
+                memcmp(got, p1, sizeof p1) != 0)
+                matrix_ok = 0;
         }
         bad += check("coordinator: seven identities, A/B histories and exact pair roundtrip", matrix_ok);
     }
