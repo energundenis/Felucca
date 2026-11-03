@@ -55,6 +55,7 @@ typedef struct {
 
 static sc_test_sector_t sc_nor[7][2];
 static int sc_fail_after = -1;
+static int sc_read_error;
 
 static int sc_identity_slot(energun_sc_identity_kind_t kind, uint8_t index)
 {
@@ -187,6 +188,7 @@ static int pair_test_sidecar_read(void *context, energun_sc_identity_kind_t kind
 {
     int rc;
     (void)context;
+    if (sc_read_error) return -1;
     rc = sc_read_copy(kind, index, copy, record, capacity, length, sequence);
     return rc == 0 ? 0 : 1; /* simulated NOR: invalid/empty is not an I/O fault */
 }
@@ -275,6 +277,7 @@ static void reset_media(void)
     memset(sc_nor, 0xFF, sizeof sc_nor);
     fail_bytes = -1;
     sc_fail_after = -1;
+    sc_read_error = 0;
     erase_error = 0;
 }
 
