@@ -22,8 +22,10 @@ int main(void)
     unsigned i, bad = 0;
     memset(&project, 0, sizeof project);
     memset(&decoded_project, 0xA5, sizeof decoded_project);
-    for (i = 0; i < ENERGUN_SC_V1_PROJECT_VALUES; ++i)
+    for (i = 0; i < 64u; ++i)
         ((uint8_t *)&project.p_mc[0][0])[i] = (uint8_t)(i & 0x7Fu);
+    for (i = 0; i < 52u; ++i)
+        ((uint8_t *)&project.private_values[0][0])[i] = (uint8_t)((i + 64u) & 0x7Fu);
     project.motion_count = ENERGUN_SC_V1_PROJECT_MAX_MOTION;
     for (i = 0; i < 128u * 3u; ++i)
         ((uint8_t *)project.motion)[i] = (uint8_t)(i * 13u);
