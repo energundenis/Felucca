@@ -85,7 +85,7 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
         for record in records:
             if record.get("state") == "passed":
                 completed.update(record.get("requested_lanes", []))
-        active_global = sum(1 for item in records if item.get("state") in ACTIVE_STATES)
+        active_global = sum(1 for item in records if item.get("state") in ACTIVE_STATES and (item.get("claim") or {}).get("owner_run_id") not in completed_owner_run_ids)
         if active_global >= 3:
             return None
         active_for_worker = [
@@ -142,6 +142,26 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
         worker["heartbeat_at"] = timestamp
         worker["active_request_id"] = selected["request_id"]
         return selected
+    return store._transact(mutate)
+
+
+def mark_worker_running(store: Any, request_id: str, worker_id: str, run_id: int,
+                        now: datetime | None = None) -> dict[str, Any]:
+    timestamp = _iso(now or datetime.now(timezone.utc))
+
+    def mutate(ledger: dict[str, Any]) -> dict[str, Any]:
+        item = _find_record(ledger, request_id)
+        claim = item.get("claim") or {}
+        if (item.get("state") != "claimed" or claim.get("owner_run_id") != run_id
+                or claim.get("owner_workflow") != worker_id
+                or claim.get("fencing_attempt") != item.get("attempts")):
+            raise QueueStoreError("worker claim lost or fenced by another worker")
+        if _parse_iso(claim["lease_expires_at"]) <= _parse_iso(timestamp):
+            raise QueueStoreError("claim lease has expired")
+        item["state"] = "running"
+        item["updated_at"] = timestamp
+        validate_queue_record(item)
+        return item
     return store._transact(mutate)
 
 
