@@ -65,16 +65,20 @@ static void test_base_projection(void)
           base[0] == (uint8_t)(runtime[0] + 64) &&
           base[ENERGUN_PROJECT_BASE_COMMON_NP] == (uint8_t)(100 + 64));
 
+    memset(base, 0xA5, sizeof base);
     runtime[0] = 128;
-    check("out-of-range Base common value is rejected",
-          energun_project_pack_base_params(base, runtime) == ENERGUN_PROJECT_MAP_ERR_VALUE);
+    check("out-of-range Base common value is rejected atomically",
+          energun_project_pack_base_params(base, runtime) == ENERGUN_PROJECT_MAP_ERR_VALUE &&
+          base[0] == 0xA5u);
     runtime[0] = 0;
     runtime[ENERGUN_PROJECT_ENGINE_FIRST_ID + 7u] = 128;
     check("out-of-range Engine EDIT value is rejected",
           energun_project_pack_base_params(base, runtime) == ENERGUN_PROJECT_MAP_ERR_VALUE);
+    memset(loaded, 0x55, sizeof loaded);
     base[4] = 192u;
-    check("invalid stored Base byte is rejected on load",
-          energun_project_unpack_base_params(loaded, base, defaults) == ENERGUN_PROJECT_MAP_ERR_VALUE);
+    check("invalid stored Base byte is rejected without changing runtime state",
+          energun_project_unpack_base_params(loaded, base, defaults) == ENERGUN_PROJECT_MAP_ERR_VALUE &&
+          loaded[0] == 0x5555);
 }
 
 static void test_motion_split_merge(void)
@@ -115,6 +119,7 @@ static void test_motion_split_merge(void)
     base[0].param = 2u;
     input[1].param = 0x80u | 103u;
     input[2].param = 0x80u | 103u;
+    input[2].place = input[1].place;
     check("duplicate P_MC place/parameter is rejected during split",
           energun_project_split_motion(input, 4u, base, &nb, sidecar, &ns) == ENERGUN_PROJECT_MAP_ERR_DUPLICATE);
     input[1].param = 0x80u | 103u;
