@@ -29,6 +29,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+      - name: Validate CP8 worker runtime before enqueue
+        run: python3 -m unittest discover -s tests -p 'test_cp8_*.py' -v
       - name: Enqueue independent lane requests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
