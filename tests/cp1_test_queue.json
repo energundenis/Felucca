@@ -24,6 +24,18 @@
       ]
     },
     {
+      "id": "fm6-staging-arbitration-host",
+      "title": "FM6 staging lease and autosave exclusion",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "fm6-staging-baseline"
+      ],
+      "command": "sh tests/run_flash_arbiter_test.sh",
+      "blocker": "A wrap-safe lease protects the autosave inactive A/B sector across the multi-message FM6 bank transfer; autosave must defer while the lease is live and resume after completion or 30-second inactivity expiry. Host acceptance covers lease ownership, renewal, expiry, stale release and clock rollover.",
+      "enable_when": "Lease-based staging arbiter, FM6 begin/write/end integration, autosave exclusion and strict-C11 host acceptance are committed together."
+    },
+    {
       "id": "sidecar-flash-map-source-audit",
       "title": "Pinned BSP XDATA1 and update-record exclusion audit",
       "kind": "executable-host-test",
@@ -129,7 +141,8 @@
       "depends_on": [
         "pair-storage-adapter-simulated-nor",
         "sidecar-flash-map-source-audit",
-        "sidecar-flash-backend-host"
+        "sidecar-flash-backend-host",
+        "fm6-staging-arbitration-host"
       ],
       "command": null,
       "blocker": "The bounded A/B backend and its host acceptance are now implemented; production runtime save/load callsites, FM6 staging arbitration, target firmware build/link evidence and exhaustive backend power-cut acceptance remain required before pair commit can be enabled. Candidate sectors remain protected by the bounded transport; no physical device write has been performed."
