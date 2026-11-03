@@ -324,6 +324,7 @@ int main(void)
     test_motion_payload();
     test_motion_pmc_whitelist();
     test_preset_bank();
+    test_preset_base_binding();
     test_envelope_rejection_and_atomic_encode();
     printf("CP1.4.5 Sidecar V1: %u checks, %u failures\n", checks, failures);
     return failures != 0u;
