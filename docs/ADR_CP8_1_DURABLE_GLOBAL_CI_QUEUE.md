@@ -1,79 +1,68 @@
 # ADR — CP8.1 durable global CI coordination
 
-Status: **Phase 1 implemented (record validation); durable storage and coordinator not implemented**  
+Status: **Trusted Git-ref queue and three-lane worker integration implemented; stress qualification remains open**  
 Date: 2026-11-03  
 Scope: ENERGUN FM-1 CORE repository CI only
 
-## Context
+## Decision
 
-A shared GitHub Actions `concurrency` group was experimentally applied to the existing fast-regression and baseline workflows. Both runs were cancelled while competing for the single pending slot. GitHub Actions concurrency is therefore not an adequate durable task queue by itself.
+Use a durable request ledger on the dedicated `energun-ci-queue` Git branch as the source of truth. A trusted enqueue job records exact-SHA lane requests. Three independent lane workers (CP1 Persistence, CP2 DSP/VCA, CP3 Sequencer) claim work from the shared ledger. The system is not a single sequential consumer and does not rely on GitHub Actions concurrency as its queue.
 
-The repository needs to serialize expensive CI lanes without silently losing work requests, while preserving exact commit identity and recoverability.
+The Git-ref update uses non-forced fast-forward compare-and-swap (CAS). Competing writers retry from the latest branch head. Queue content is data only; execution remains restricted to repository-owned lane commands.
 
-## Decision proposal
+## Queue record
 
-Use a **durable request ledger plus one coordinator consumer**. GitHub Issues (or a dedicated repository data store) hold the durable queue records; a single coordinator workflow is the only consumer. GitHub Actions concurrency is used only to prevent two coordinator consumers from running simultaneously, not as the queue itself.
+Each request records:
+- stable idempotency key: repository + sorted lane set + ref + exact commit SHA;
+- source event and originating workflow/run;
+- requested lane, state and attempt count;
+- claim owner (worker identity and GitHub run ID), claim timestamp and lease expiry;
+- exact-SHA terminal outcome and evidence URL.
 
-### Queue record
+States are `queued`, `claimed`, `running`, `passed`, `blocked`, `failed`, and `superseded`.
 
-Every request must record:
-- stable idempotency key: repository + workflow/lane + ref + exact commit SHA;
-- source event and originating PR/push/run identifiers;
-- requested validation lanes;
-- state: `queued`, `claimed`, `running`, `passed`, `blocked`, `failed`, `superseded`;
-- owner workflow/run ID and claim timestamp;
-- lease expiry/heartbeat and attempt count;
-- links to logs, artifacts and final evidence.
+## Runtime behavior
 
-### Consumer behavior
+1. Trusted push, schedule or manual events enqueue requests on the durable ledger.
+2. CP1, CP2 and CP3 workers register in the same ledger at job start.
+3. Before every claim, the worker checks its lane, per-worker capacity, the global three-worker limit and the declared DAG prerequisites.
+4. A claim is committed atomically through CAS and bound to the worker identity, run ID and attempt number.
+5. The worker checks out and tests the exact requested SHA, then records evidence before taking another task.
+6. Independent lanes can run concurrently; each lane has its own Actions concurrency group.
+7. The periodic workflow reconciliation wakes workers to drain durable requests left by replaced or cancelled workflow runs.
 
-1. Workflow events create or update durable queue records; they do not run expensive jobs directly.
-2. A single coordinator workflow wakes on queue events and on a periodic reconciliation schedule.
-3. The coordinator is serialized with one dedicated concurrency group and `cancel-in-progress: false`.
-4. It scans durable records, deduplicates by idempotency key and claims one request.
-5. It validates the exact SHA and runs the allow-listed CI lanes sequentially.
-6. It records the terminal state and evidence before claiming another request.
-7. The periodic sweep recovers queued records even if an event-triggered coordinator run was replaced in GitHub's one-pending-run mechanism.
+## Recovery and duplicate-execution rules
 
-### Recovery rules
+- A claim is not a PASS; only exact-SHA terminal evidence is a PASS.
+- A worker claim is recovered only after GitHub confirms that the owning *job* has completed. A sibling job in the same workflow run may still be active.
+- Recovery prioritizes abandoned claims ahead of new queued work.
+- The new attempt increments the fencing counter; the old worker cannot mark the task running or finish it.
+- A live owner is never displaced merely because a lease timestamp elapsed.
+- Idempotency keys prevent duplicate enqueue for the same repository/lane/ref/SHA.
+- CAS prevents two competing workers from acquiring the same queued request.
+- Commands must be idempotent because process death can occur after a side effect but before its terminal result is committed.
 
-- A claim is not a PASS. It must have an owner, exact SHA, start time and lease expiry.
-- If a coordinator disappears, a later consumer may recover only an expired lease.
-- A live lease must never be stolen.
-- Every state transition is auditable.
-- Repeated requests for the same idempotency key must not start duplicate builds.
-- Newer commits may supersede older unstarted requests for the same ref/lane, but this policy must be explicit and recorded; different PRs must not silently supersede one another.
+## Implementation evidence (2026-11-03)
 
-## Phase 1 implementation note (2026-11-03)\n\nAdded `tests/cp8_ci_queue.py` and `tests/test_cp8_ci_queue.py`. The validator enforces a fixed lane allow-list, deterministic idempotency identity over repository + sorted lane set + ref + exact 40-character commit SHA, explicit queue states, claim ownership and lease timestamp ordering, exact-SHA PASS evidence, and legal state transitions. It is intentionally storage-agnostic and has no GitHub write permissions or execution side effects. The fast-regression workflow now runs these unit tests. This does **not** implement durable persistence, atomic claims, a coordinator, or a global lock.\n\n## Phase 2 implementation note (2026-11-03)
+- `tests/cp8_ci_queue.py` and `tests/cp8_ci_queue_store.py` validate queue identity, state transitions, exact-SHA evidence, CAS contention, exclusive claims and stale-owner fencing.
+- `tests/cp8_worker_runtime.py` persists worker enrollment, lane, capabilities, availability, active request and run identity in the ledger.
+- `tests/cp8_worker_dag.json` declares the three production lanes; `load_worker_dag()` rejects unknown lanes, invalid dependencies and cycles.
+- `tests/test_cp8_worker_runtime.py` covers dependency blocking, three independent worker claims, two distinct workers competing for one task, same-run cross-lane fencing and recovery fencing.
+- The live `energun-ci-queue` ledger contains real worker registrations and queue outcomes.
+- A live CP1 worker job was terminated while holding request `907803acfeb2b8d9508bec29`. A later worker reclaimed the same request with attempt count **2**, recorded the prior owner, and passed the exact requested SHA. The prior worker registry entry was marked offline.
+- Three lane workers have run concurrently in GitHub Actions; the CP1, CP2 and CP3 pilot jobs passed on the same exact source SHA in run [41637129117](https://github.com/energundenis/Felucca/actions/runs/41637129117).
 
-Added `tests/cp8_ci_queue_store.py` and `tests/test_cp8_ci_queue_store.py`.
+## Remaining qualification
 
-- The durable ledger is a single JSON blob at `queue/ledger.json` on a dedicated data branch (`energun-ci-queue` by default), separate from source branches and current CI triggers.
-- Writers read the exact branch head, create a new blob/tree/commit with that head as parent, then update the ref with `force: false`. A competing commit based on the same old head is non-fast-forward and must retry from the new head; no force-push is used.
-- Enqueue is idempotent on repository + sorted lane set + ref + exact SHA.
-- Claims are exclusive, bound to workflow/run identity, heartbeat-extended, and recoverable only after lease expiry.
-- PASS requires evidence URLs and the exact requested SHA. Owner mismatch and expired-lease heartbeats are rejected.
-- Unit tests simulate competing writers and claimants, verify retry after a CAS conflict, and reject stale owners attempting to heartbeat, start or finish after lease expiry. Idempotent no-op requests do not create redundant commits. This is not yet a live GitHub integration test.
-
-The store is **not wired into either existing workflow**. No queue branch is provisioned by this change, no write token is granted to pull-request code, and no global CI lock is enabled. A trusted coordinator integration and live Git-ref contention test remain required.
-
-## Required implementation phases
-
-1. [x] Add a queue-record schema and validation tests.
-2. [x] Implement the Git-ref ledger adapter, enqueue idempotency, claim/heartbeat/finish and lease-recovery primitives with simulated contention tests.
-3. Implement a trusted single coordinator and periodic reconciliation.
-4. Route fast-regression and baseline lanes through the coordinator; prevent direct expensive execution outside approved manual recovery.
-5. Implement lease expiry, recovery, timeout and cancellation handling in the live coordinator.
-6. Prove mutual exclusion, no lost requests, no duplicate execution and exact-SHA evidence using live GitHub integration tests.
+- Stress-test many concurrent enqueue and claim writers against the live Git-ref CAS ledger and prove no lost requests or duplicate execution.
+- Drain and reconcile the current queue backlog.
+- Add periodic worker heartbeats for long-running tasks and bound registry retention.
+- Keep untrusted pull-request code away from queue-write credentials.
 
 ## Security boundaries
 
-- Queue content is data, never executable shell input.
-- Only fixed workflow/lane identifiers are accepted; arbitrary commands are forbidden.
-- Pull-request code must not receive queue-write or privileged dispatch credentials.
-- No secret is exposed to untrusted PR code.
-- No workflow may write to `main`, merge a PR, modify factory firmware or access/flash physical FM-1.
-
-## Exit criteria
-
-CP8.1 remains incomplete until two independently triggered requests are queued, processed without overlapping expensive CI, neither request is lost, stale claims recover safely, duplicate requests are idempotent, and every result is tied to the exact tested SHA.
+- Only trusted branch workflows receive `contents:write`; pull-request code does not.
+- Queue records cannot supply arbitrary shell commands; lane commands are allow-listed.
+- No workflow writes to `main` or auto-merges a PR.
+- Factory V15 remains immutable.
+- No physical FM-1 access, Flash mapping, erase/program, installation or flashing is performed.
