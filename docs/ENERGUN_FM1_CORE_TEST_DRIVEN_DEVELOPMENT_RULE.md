@@ -52,3 +52,23 @@ For each development update, report:
 - whether evidence is host-only, target compile, target runtime or physical-device level.
 
 This rule changes the development process only. It does not change firmware behavior, parameter IDs, storage ABI, Flash layout, factory firmware or device state.
+
+## CP2 / CP3 test-growth requirement — accepted 2026-11-03
+
+The general rule above is mandatory for CP2 (DSP/VCA) and CP3 (sequencer/integration) in particular:
+
+1. Every new feature, behavior change, bug fix, or completed implementation subtask in CP2 or CP3 must add a new executable test or extend an existing test with a distinct assertion that covers the changed behavior. A code change must not be considered test-complete merely because the old suite still passes.
+2. Every defect found in CP2/CP3 must gain a regression assertion that reproduces the defect and verifies the fix.
+3. The existing CP2 and CP3 suites remain mandatory regression gates. Re-running an unchanged suite is useful regression evidence, but it is not new test coverage and must not be reported as progress in test coverage.
+4. Each CP2/CP3 development update and CI summary must identify: (a) tests added/extended since the previous update, (b) focused tests executed and pass/fail counts, (c) the unchanged regression suites executed, and (d) open behaviors without executable coverage and their blockers.
+5. When a task is research/design/audit-only and cannot yet be expressed as an executable test, record the missing acceptance contract and the concrete implementation milestone at which its test will be added. Do not silently waive the requirement.
+6. CP2 and CP3 may share a CI worker or run in parallel, but each lane must preserve clear ownership and traceability of its tests. Do not count the same test twice merely because it is invoked by more than one workflow.
+
+### Current CP2 / CP3 baseline (2026-11-03)
+
+The current CP8 worker invokes:
+- CP2: `tests/run_metal_core_fast.sh` (currently 21 focused host regression executables/assertion groups as reported by that script).
+- CP3: `chord`, `ratchet`, `step15`, `seq155`, and `swing` host test executables.
+
+These are the existing baseline suites, not proof that new CP2/CP3 coverage is being added. Their test inventory and counts must be refreshed from actual CI output when tests change; do not assume the number of assertions equals the number of executables. A successful repeat run establishes regression status for that SHA only.
+
