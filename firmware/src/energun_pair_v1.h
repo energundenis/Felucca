@@ -56,7 +56,9 @@ typedef enum {
     ENERGUN_PAIR_V1_ERR_NO_MATCH = -5,
     ENERGUN_PAIR_V1_ERR_BASE_COMMIT = -6,
     ENERGUN_PAIR_V1_ERR_BASE_VERIFY = -7,
-    ENERGUN_PAIR_V1_ERR_CAPACITY = -8
+    ENERGUN_PAIR_V1_ERR_CAPACITY = -8,
+    /* Base loaded successfully; caller must apply canonical Sidecar defaults. */
+    ENERGUN_PAIR_V1_LEGACY_FALLBACK = 1
 } energun_pair_v1_status_t;
 
 /* Sidecar is committed and read-back validated first. Only then is the
@@ -85,6 +87,23 @@ energun_pair_v1_status_t energun_pair_v1_erase(
  * validates successfully.
  */
 energun_pair_v1_status_t energun_pair_v1_load(
+    const energun_pair_v1_ops_t *ops, void *context,
+    energun_pair_v1_workspace_t *workspace,
+    uint32_t object, energun_sc_identity_kind_t kind, uint8_t index,
+    uint8_t *base_payload, size_t base_capacity,
+    size_t *base_length,
+    uint8_t *sidecar_payload, size_t sidecar_capacity,
+    size_t *sidecar_length,
+    uint16_t base_motion_count,
+    energun_pair_v1_base_meta_t *base_meta);
+
+/* Compatibility load for legacy Base-only projects. A valid matching pair
+ * returns OK. Missing or semantically invalid Sidecar falls back to the
+ * exact current Base and returns LEGACY_FALLBACK with sidecar_length=0;
+ * callers must apply canonical Sidecar defaults. Base/Sidecar I/O errors,
+ * capacity errors, and a missing Base are never converted to fallback.
+ */
+energun_pair_v1_status_t energun_pair_v1_load_compat(
     const energun_pair_v1_ops_t *ops, void *context,
     energun_pair_v1_workspace_t *workspace,
     uint32_t object, energun_sc_identity_kind_t kind, uint8_t index,
