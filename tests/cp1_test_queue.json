@@ -72,13 +72,25 @@
       "blocker": "Runs the transaction ordering/fault model against the real Felucca storage.c and Sidecar V1 serializer. Sidecar sectors are isolated in a test-only backend; this does not qualify production coordinator or authorize Flash allocation."
     },
     {
+      "id": "sidecar-identity-matrix",
+      "title": "Seven-identity Sidecar isolation and preset-slot preservation",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "pair-transaction-harness"
+      ],
+      "command": "sh tests/run_sidecar_identity_matrix_test.sh",
+      "blocker": "Host-only strict serializer test covers four project identities, Live Autosave, two preset banks, cross-identity rejection and preset slot write/erase preservation. It does not qualify the production Base+Sidecar coordinator."
+    },
+    {
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
       "state": "blocked",
       "depends_on": [
         "sidecar-ab-selection",
-        "pair-transaction-harness"
+        "pair-transaction-harness",
+        "sidecar-identity-matrix"
       ],
       "command": null,
       "blocker": "Production pair transaction coordinator and approved target Sidecar backend are not implemented. The host-only harness is supporting evidence, not production integration."
