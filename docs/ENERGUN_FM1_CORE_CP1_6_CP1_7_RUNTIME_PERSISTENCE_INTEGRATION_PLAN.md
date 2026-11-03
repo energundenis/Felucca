@@ -147,3 +147,45 @@ The current user-preset binary record remains unchanged. Private state is not pl
 6. Add archive-v2 pair-aware backup/restore after project and preset roundtrips pass.
 
 **Status:** CP1.17 logical ownership is closed. CP1.6 and CP1.7 are OPEN; no runtime callsite has been wired by this plan.
+
+
+## 7. Host-only implementation checkpoint — 2026-11-03
+
+### CP1.6 Base projection / Motion adapter
+
+Added:
+- `firmware/src/energun_project_base_projection.h`
+- `firmware/src/energun_project_base_projection.c`
+- `tests/project_base_projection_test.c`
+- `tests/run_project_base_projection_test.sh`
+
+The helper is deliberately not yet called by `project.c`; it is a pure host-testable boundary contract.
+
+Verified on exact SHA `6d3a738389d70c3c89a1d3285903bc1bb7c40f01`, CP1 worker evidence in GitHub Actions run [41668891585](https://github.com/energundenis/Felucca/actions/runs/41668891585):
+
+- CP1.6 Base projection: **17 checks, 0 failures**.
+- The Base projection is exactly 111 values: 103 legacy common parameters + E0–E7.
+- P_MC changes do not alter the Base FUN10 projection.
+- Legacy Base load restores common values and E0–E7 and leaves P_MC at deterministic defaults until Sidecar overlay.
+- Base Motion and P_MC Motion split/merge preserves lock flags, rejects Private index 16 and P_COUNT sentinel 127, rejects duplicate place/parameter pairs, and enforces the shared 128-event limit.
+- Pack/unpack reject invalid values atomically without modifying output/runtime buffers.
+
+### CP1.7 preset schema coverage
+
+Expanded `tests/energun_sidecar_v1_test.c` to exercise both preset-bank identities and all 32 user-preset slots:
+
+- all sixteen Private records validate in bank 0 and bank 1;
+- delete clears the selected slot's thirteen Private bytes;
+- slot reuse does not change the other fifteen records;
+- absent slots cannot retain stale Private values.
+
+The same exact-SHA CP1 worker run reports Sidecar V1 **46 checks, 0 failures**. This verifies the V1 preset payload schema, not production `upreset.c` callsite integration.
+
+### Current disposition
+
+- CP1.17 logical schema/ownership: CLOSED.
+- CP2/CP3 parameter ownership and persistence-boundary audit: recorded; P_MC IDs 103–118 remain reserved candidates, not yet production ABI.
+- CP1.6 host Base projection/Motion adapter: PASS; production project/autosave/copy/rename/clear callsites NOT YET WIRED.
+- CP1.7 preset Sidecar schema: PASS; production preset save/load/delete/rename callsites NOT YET WIRED.
+- Pair commit remains blocked until runtime callsites, complete target firmware link evidence and exhaustive backend power-cut acceptance are complete.
+- No physical Sidecar sector allocation, hardware Sidecar init, Flash erase/program, device write, factory firmware modification or installation occurred.
