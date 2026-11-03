@@ -134,6 +134,18 @@
       "enable_when": "The adapter is bound to st_read_copy_meta/st_save_to and the host test models NOR erase/program/page semantics and interrupted pair commits."
     },
     {
+      "id": "project-base-projection-host",
+      "title": "CP1.6 legacy Base projection and Motion split/merge",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "sidecar-format"
+      ],
+      "command": "sh tests/run_project_base_projection_test.sh",
+      "blocker": "Pure host adapter verifies the fixed 111-value FUN10 Base projection (103 legacy common + E0–E7), P_MC defaults on legacy load, and the Base/Sidecar Motion ownership split. This is not yet wired into project.c or production storage callsites.",
+      "enable_when": "The Base projection helper and strict-C11 host test are committed together."
+    },
+    {
       "id": "pair-commit-order",
       "title": "Base + Sidecar pair transaction ordering",
       "kind": "executable-host-test",
