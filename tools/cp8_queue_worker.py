@@ -47,9 +47,63 @@ def make_store():
     return GitRefCASQueueStore(client, branch=branch), branch
 
 
+def detect_lanes() -> list[str]:
+    event = os.environ.get("GITHUB_EVENT_NAME", "push")
+    all_lanes = ["cp1-persistence", "cp2-dsp-vca", "cp3-sequencer"]
+    if event == "workflow_dispatch":
+        return all_lanes
+    if event == "schedule":
+        return []
+    event_path = os.environ.get("GITHUB_EVENT_PATH", "")
+    before = ""
+    if event_path and Path(event_path).is_file():
+        import json
+        payload = json.loads(Path(event_path).read_text(encoding="utf-8"))
+        before = payload.get("before", "")
+    head = env("GITHUB_SHA")
+    if not before or before == "0" * 40:
+        return all_lanes
+    changed = subprocess.run(
+        ["git", "diff", "--name-only", before, head],
+        cwd=ROOT, check=True, capture_output=True, text=True,
+    ).stdout.splitlines()
+    selected: set[str] = set()
+    known = False
+    for path in changed:
+        name = Path(path).name
+        if path.startswith("docs/") or name.endswith(".md"):
+            known = True
+        elif path.startswith(("firmware/hal/", "firmware/bsp/")) or path in {".gitmodules", "tools/build.py"}:
+            selected.update(all_lanes)
+            known = True
+        elif path.startswith("firmware/src/") and any(token in name for token in ("storage", "sidecar", "pair_txn", "fm6bank")):
+            selected.add("cp1-persistence")
+            known = True
+        elif path.startswith("tests/") and (name in {"storage_test.c", "fm6bank_test.c"} or name.startswith(("pair_txn", "pair_storage", "cp1_"))):
+            selected.add("cp1-persistence")
+            known = True
+        elif path.startswith(("firmware/src/", "tests/")) and (name.startswith(("eng_metal", "metal_core", "metalcore")) or name == "run_metal_core_fast.sh"):
+            selected.add("cp2-dsp-vca")
+            known = True
+        elif path.startswith(("firmware/src/", "tests/")) and name.startswith(("chord", "ratchet", "step15", "seq", "swing", "sequencer")):
+            selected.add("cp3-sequencer")
+            known = True
+        elif path.startswith(".github/workflows/"):
+            selected.update(all_lanes)
+            known = True
+        else:
+            # Unknown source paths are treated conservatively.
+            selected.update(all_lanes)
+    if changed and not known and not selected:
+        selected.update(all_lanes)
+    return [lane for lane in all_lanes if lane in selected]
+
+
 def enqueue() -> None:
     store, _ = make_store()
-    for lane in ("cp1-persistence", "cp2-dsp-vca", "cp3-sequencer"):
+    lanes = detect_lanes()
+    print(f"detected_lanes={','.join(lanes) if lanes else 'none'}")
+    for lane in lanes:
         result = store.enqueue(
             repository=env("GITHUB_REPOSITORY"),
             lanes=[lane],
