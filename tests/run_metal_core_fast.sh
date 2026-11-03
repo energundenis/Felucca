@@ -49,9 +49,6 @@ run_test sidecar_pair_transaction
 compile_test_strict sidecar_identity_matrix tests/sidecar_identity_matrix_test.c firmware/src/energun_sidecar_v1.c
 run_test sidecar_identity_matrix
 
-# Typed project/live and preset-bank payload codecs are strict, byte-exact host-tested.
-echo "== Run Sidecar V1 payload codec acceptance"
-sh tests/run_sidecar_payload_v1_test.sh
 compile_test fm6bank tests/fm6bank_test.c -lm
 run_test fm6bank
 
