@@ -158,12 +158,12 @@
       "id": "sidecar-integrity",
       "title": "Sidecar CRC, schema and semantic integrity",
       "kind": "executable-host-test",
-      "state": "blocked",
+      "state": "ready",
       "depends_on": [
         "pair-transaction-harness"
       ],
-      "command": null,
-      "blocker": "The frozen Sidecar Motion whitelist is implemented in the V1 semantic validator: only P_MC IDs 103–118 are accepted (including the Motion Lock bit); legacy E0–E7 IDs 119–126 stay in Base FUN10, and Private/MCX/unallocated IDs are rejected. Strict host cases cover both boundaries and denied IDs. Production Sidecar A/B reader/backend and runtime project/preset integration remain absent; target storage stays gated."
+      "command": "sh tests/run_sidecar_v1_test.sh",
+      "blocker": "Host acceptance is independently executable and covers the frozen P_MC Motion whitelist (103–118), legacy E0–E7 exclusion (119–126), Private/MCX/unallocated-ID rejection, envelope integrity and semantic boundaries. Passing this stage proves the V1 validator only; production A/B backend and project/preset runtime integration remain separate gates."
     },
     {
       "id": "pair-recovery-roundtrip",
