@@ -3,6 +3,8 @@ import io
 import os
 import subprocess
 import tempfile
+import sys
+from pathlib import Path
 import urllib.error
 import threading
 import unittest
@@ -10,6 +12,10 @@ from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 
 from cp8_ci_queue import make_idempotency_key
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+from cp8_queue_worker import completed_owner_workers
+
 from cp8_ci_queue_store import (GitCliQueueClient, GitHubGitDataClient, GitRefCASQueueStore,
                                 QueueCASConflict, QueueRefNotFound, QueueStoreError)
 
@@ -89,6 +95,12 @@ class GitCliQueueClientTests(unittest.TestCase):
         raw = subprocess.run(["git", "show", f"{head}:queue/ledger.json"], cwd=self.repo,
                              check=True, capture_output=True).stdout
         self.assertTrue(raw.endswith(b"\n"), "queue ledger commit must end with one canonical newline")
+
+    def test_git_transport_uses_bounded_lease_for_worker_recovery(self):
+        class Store:
+            client = object()
+            branch = "energun-ci-queue"
+        self.assertEqual(completed_owner_workers(Store()), set())
 
     def test_git_transport_rejects_stale_queue_writer(self):
         self.client.commit_ledger(self.base, {"schema_version": 1, "records": [], "workers": {}},
