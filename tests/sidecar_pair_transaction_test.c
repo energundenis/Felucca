@@ -742,10 +742,8 @@ int main(void)
 
         preset_ok &= energun_private_v1_defaults(&private_cache, 3u,
             private_defaults) == ENERGUN_PRIVATE_V1_OK;
-        preset_ok &= energun_preset_lifecycle_v1_restore_slot(&preset_lifecycle,
-            OBJ_UPRESET0, 0u, 3u, 5u, loaded_base, sizeof loaded_base,
-            &loaded_base_length, &private_cache, private_defaults, &meta) ==
-            ENERGUN_LIFECYCLE_V1_OK;
+        preset_ok &= energun_preset_lifecycle_v1_apply_slot(&bank_payload,
+            &private_cache, 3u, 5u, private_defaults) == ENERGUN_LIFECYCLE_V1_OK;
         preset_ok &= energun_private_v1_get(&private_cache, 3u,
             ENERGUN_PRIVATE_WAVE, &value) == ENERGUN_PRIVATE_V1_OK && value == 2u;
 
@@ -764,10 +762,8 @@ int main(void)
             bank_payload.private_values[5][ENERGUN_PRIVATE_WAVE] == 0u &&
             bank_payload.private_values[6][ENERGUN_PRIVATE_FOLLOW] == 1u;
 
-        preset_ok &= energun_preset_lifecycle_v1_restore_slot(&preset_lifecycle,
-            OBJ_UPRESET0, 0u, 3u, 5u, loaded_base, sizeof loaded_base,
-            &loaded_base_length, &private_cache, private_defaults, &meta) ==
-            ENERGUN_LIFECYCLE_V1_OK;
+        preset_ok &= energun_preset_lifecycle_v1_apply_slot(&bank_payload,
+            &private_cache, 3u, 5u, private_defaults) == ENERGUN_LIFECYCLE_V1_OK;
         preset_ok &= energun_private_v1_get(&private_cache, 3u,
             ENERGUN_PRIVATE_WAVE, &value) == ENERGUN_PRIVATE_V1_OK && value == 0u;
 
