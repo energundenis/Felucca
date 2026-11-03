@@ -1,10 +1,14 @@
 import copy
+import io
+import urllib.error
 import threading
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 
 from cp8_ci_queue import make_idempotency_key
-from cp8_ci_queue_store import GitRefCASQueueStore, QueueCASConflict, QueueStoreError
+from cp8_ci_queue_store import (GitHubGitDataClient, GitRefCASQueueStore,
+                                QueueCASConflict, QueueRefNotFound, QueueStoreError)
 
 SHA = "a" * 40
 NOW = datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc)
@@ -203,6 +207,22 @@ class CP8QueueStoreTests(unittest.TestCase):
         for thread in threads:
             thread.join()
         self.assertEqual(sum(item is not None for item in claims), 1)
+
+    def test_missing_queue_ref_is_distinguished_from_other_api_errors(self):
+        client = GitHubGitDataClient("energundenis/Felucca", "test-token")
+        missing = urllib.error.HTTPError(
+            "https://api.github.com/ref", 404, "Not Found", {},
+            io.BytesIO(b'{"message":"Not Found"}'))
+        with patch("cp8_ci_queue_store.urllib.request.urlopen", side_effect=missing):
+            with self.assertRaises(QueueRefNotFound):
+                client.read_ref("energun-ci-queue")
+
+        limited = urllib.error.HTTPError(
+            "https://api.github.com/ref", 403, "Forbidden", {},
+            io.BytesIO(b'{"message":"API rate limit exceeded"}'))
+        with patch("cp8_ci_queue_store.urllib.request.urlopen", side_effect=limited):
+            with self.assertRaisesRegex(QueueStoreError, "403"):
+                client.read_ref("energun-ci-queue")
 
     def test_bad_lease_and_retry_configuration_are_rejected(self):
         with self.assertRaisesRegex(ValueError, "at least 30"):
