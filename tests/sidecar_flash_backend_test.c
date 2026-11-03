@@ -56,9 +56,9 @@ int main(void)
     CHECK("invalid copy rejected",energun_sc_flash_read_copy(&flash,ENERGUN_SC_ID_PROJECT,2,2,output,sizeof output,&n,&seq)!=0);
     nor[256] ^= 1u;
     CHECK("payload corruption rejected by CRC",energun_sc_flash_read_copy(&flash,ENERGUN_SC_ID_PROJECT,2,0,output,sizeof output,&n,&seq)!=0);
-    CHECK("reserved update-loader tail is never programmed",sim_program(ENERGUN_SC_FLASH_A+0xF00u,input,1u)!=0);
-    CHECK("erase rejects non-candidate sector",sim_erase(ENERGUN_SC_FLASH_A+4096u)!=0);
-    CHECK("program cannot cross page",sim_program(ENERGUN_SC_FLASH_A+0x2FFu,input,2u)!=0);
+    CHECK("reserved update-loader tail is never programmed",sim_program(0,ENERGUN_SC_FLASH_A+0xF00u,input,1u)!=0);
+    CHECK("erase rejects non-candidate sector",sim_erase(0,ENERGUN_SC_FLASH_A+4096u)!=0);
+    CHECK("program cannot cross page",sim_program(0,ENERGUN_SC_FLASH_A+0x2FFu,input,2u)!=0);
     printf("SIDECAR FLASH BACKEND: %u checks, %u failures; erase calls=%u\n",checks,failures,erases);
     return failures!=0u;
 }
