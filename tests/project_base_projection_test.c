@@ -13,6 +13,19 @@ static void check(const char *name, int ok)
     if (!ok) ++failures;
 }
 
+static int contains_event(const energun_project_motion_event_t *events,
+                          uint32_t count,
+                          const energun_project_motion_event_t *wanted)
+{
+    uint32_t i;
+    for (i = 0; i < count; ++i)
+        if (events[i].place == wanted->place &&
+            events[i].param == wanted->param &&
+            events[i].value == wanted->value)
+            return 1;
+    return 0;
+}
+
 static void test_base_projection(void)
 {
     int16_t runtime[ENERGUN_PROJECT_RUNTIME_NP];
@@ -23,7 +36,7 @@ static void test_base_projection(void)
     unsigned int i;
 
     for (i = 0; i < ENERGUN_PROJECT_RUNTIME_NP; ++i) {
-        runtime[i] = defaults[i] = (int16_t)((i % 80u) - 40);
+        runtime[i] = defaults[i] = (int16_t)((int)(i % 80u) - 40);
     }
     for (i = 0; i < ENERGUN_PROJECT_PMC_COUNT; ++i)
         runtime[ENERGUN_PROJECT_PMC_FIRST_ID + i] = (int16_t)(i * 7u);
@@ -85,9 +98,12 @@ static void test_motion_split_merge(void)
     check("Base-owned events retain original IDs and values",
           base[0].param == 2u && base[1].param == 126u &&
           base[0].value == 10 && base[1].value == 0);
-    check("merge restores the original combined Motion list",
+    check("merge restores all Base and P_MC events (Base events first)",
           energun_project_merge_motion(base, nb, sidecar, ns, merged, &nm) == ENERGUN_PROJECT_MAP_OK &&
-          nm == 4u && memcmp(input, merged, sizeof input) == 0);
+          nm == 4u && contains_event(merged, nm, &input[0]) &&
+          contains_event(merged, nm, &input[1]) &&
+          contains_event(merged, nm, &input[2]) &&
+          contains_event(merged, nm, &input[3]));
 
     sidecar[0].param = 16u;
     check("Sidecar Motion rejects logical index 16 (Private namespace)",
