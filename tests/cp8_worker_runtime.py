@@ -30,8 +30,10 @@ def register_worker(store: Any, worker_id: str, run_id: int, lane: str,
     def mutate(ledger: dict[str, Any]) -> dict[str, Any]:
         workers = ledger.setdefault("workers", {})
         current = workers.get(worker_id)
-        if current and current.get("state") == "busy" and current.get("run_id") != run_id:
+        if current and current.get("run_id") != run_id and current.get("state") in {"busy", "available"}:
             raise QueueStoreError("worker identity is already owned by another run")
+        if current and current.get("run_id") == run_id and current.get("state") == "busy":
+            raise QueueStoreError("worker is already busy in this run")
         item = {
             "worker_id": worker_id, "run_id": run_id, "lane": lane,
             "capabilities": sorted(set(capabilities)),
@@ -114,7 +116,7 @@ def claim_next_for_worker(store: Any, worker_id: str, run_id: int,
                 owner = claim.get("owner_run_id")
                 expired = bool(lease and _parse_iso(lease) <= current)
                 owner_finished = owner in completed_owner_run_ids
-                if expired or owner_finished:
+                if owner_finished:
                     candidates.append(item)
         if not candidates:
             worker["state"] = "available"
