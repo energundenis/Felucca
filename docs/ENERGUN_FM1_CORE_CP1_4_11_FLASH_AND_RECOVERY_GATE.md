@@ -113,13 +113,14 @@ The existing read-only rescue utility is only a candidate route. Its pinned stoc
 - [x] Correct Sidecar capacity to seven identities / fourteen A/B sectors.
 - [x] Confirm current firmware storage allowlist does not yet permit a Sidecar XDATA1 region.
 - [x] Confirm project and preset runtime call paths are not Sidecar-integrated.
-- [ ] Obtain the user's own full 1 MiB FM-1 V1.5 dump; verify SHA-256 and retain an immutable backup.
-- [ ] Compare every candidate sector and loader/SPL record location against that exact dump.
-- [ ] Verify the exact V1.5 stock package and read-only rescue route on the intended Mac/USB setup.
+- [x] Accept V1.5 as the authoritative firmware reference (user decision, 2026-11-03).
+- [x] Complete the source-derived comparison of storage ownership, loader scan windows, OTA, FM6 staging and current storage allowlist.
+- [ ] Complete the read-only rescue-tool/package/USB-path audit and document a reproducible recovery procedure.
+- [ ] Close the physical-device content/ownership check required before any sector allocation or write; this does not reopen the accepted V1.5 reference-fidelity question.
 - [ ] Approve an exact Sidecar sector map and reserved-tail policy.
 - [ ] Only after approval, implement the target storage whitelist and hardware backend.
 
-**Result: source audit completed; physical allocation remains BLOCKED pending the user's own full-device dump and recovery verification.** This is not a physical Flash safety sign-off.
+**Result: source audit completed using V1.5 as the accepted authoritative reference.** The remaining gate is physical safety qualification: exact target-device ownership/content check as needed for the proposed operation, rescue-path verification, and an approved sector/recovery plan. This is not a physical Flash safety sign-off.
 
 ## 9. Next safe engineering step
 
