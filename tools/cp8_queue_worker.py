@@ -216,9 +216,6 @@ def drain(lane: str) -> None:
             print(f"claimed request={request_id} sha={sha} lane={lane} attempt={record['attempts']}")
             try:
                 mark_worker_running(store, request_id, worker_id, run_id)
-                if lane == "cp1-persistence" and os.environ.get("CP8_TEST_CRASH_AFTER_CLAIM") == "1":
-                    print("TEST_CRASH_AFTER_CLAIM=1; leaving the durable lease for recovery", flush=True)
-                    raise SystemExit(86)
                 checkout_sha(sha)
                 command = ALLOWED_COMMANDS[lane]
                 child_env = os.environ.copy()
