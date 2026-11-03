@@ -1,18 +1,7 @@
 name: ENERGUN FM-1 CP8 parallel worker pilot
 
 on:
-  push:
-    branches:
-      - energun-development-orchestrator
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-  pull_request:
-    branches:
-      - energun-metal-core
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
+  # Manual qualification only. Automatic execution is owned by the durable CP8 coordinator.
   workflow_dispatch:
 
 permissions:
