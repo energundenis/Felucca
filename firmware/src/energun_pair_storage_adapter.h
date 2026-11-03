@@ -57,6 +57,7 @@ energun_pair_status_t energun_pair_storage_adapter_save(
  */
 int energun_pair_storage_adapter_load(
     energun_pair_storage_adapter_t *, void *, uint32_t,
+    void *, uint16_t, uint16_t *,
     energun_sc_identity_kind_t, uint8_t, uint16_t,
     energun_pair_base_meta_t *);
 #endif
