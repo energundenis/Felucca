@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently with the isolated four-part Private runtime cache acceptance; A/B selection joins the Sidecar branches. Pair coordinator covers all seven identities, Rename rebind, Save As isolation and byte-level power-loss injection. Production lifecycle integration remains a separate blocked gate.",
+  "description": "Dependency-aware CP1 persistence verification. Sidecar format and Base-generation binding run concurrently with the four-part Private runtime cache; the Private-to-project/preset payload bridge joins after both the runtime cache and typed payload codecs. A/B selection and pair transactions remain independent host acceptance stages. Production lifecycle integration remains a separate blocked gate.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -95,6 +95,18 @@
       "blocker": "Explicit byte codecs map four-part P_MC/Private/Motion payloads and 16-slot preset-bank payloads without C struct padding. Strict host acceptance covers 501-byte project maximum, 210-byte preset payload, roundtrip, malformed lengths and insufficient capacity. Semantic value validation remains in Sidecar V1 validator."
     },
     {
+      "id": "private-payload-bridge",
+      "title": "Private runtime ↔ project/live and preset-bank Sidecar bridge",
+      "kind": "executable-host-test",
+      "state": "ready",
+      "depends_on": [
+        "private-runtime-cache",
+        "sidecar-payload-codec"
+      ],
+      "command": "sh tests/run_private_payload_v1_test.sh",
+      "blocker": "The bridge validates and transfers all four project/live Private parts atomically, and updates/restores individual preset slots without disturbing unrelated slots. It is host-tested and target-compiled separately; production project.c/upreset.c call sites and target storage remain separate gates."
+    },
+    {
       "id": "sidecar-identity-matrix",
       "title": "Seven-identity Sidecar isolation and preset-slot preservation",
       "kind": "executable-host-test",
@@ -125,6 +137,7 @@
         "sidecar-ab-selection",
         "pair-transaction-harness",
         "sidecar-identity-matrix",
+        "private-payload-bridge",
         "fm6-staging-reservation"
       ],
       "command": null,
