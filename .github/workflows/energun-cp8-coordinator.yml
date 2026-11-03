@@ -59,6 +59,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CP8_MAX_ITEMS_PER_RUN: "8"
+          CP8_TEST_HOLD_SECONDS: "120"
         run: python3 tools/cp8_queue_worker.py drain cp1-persistence
       - name: Upload CP1 evidence
         if: always()
