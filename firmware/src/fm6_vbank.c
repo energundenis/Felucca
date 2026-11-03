@@ -38,7 +38,7 @@ _Static_assert(FVB_INFO + FVB_LEN == 0xF00u, "the sector's tail (0xF00..) stays 
 
 static struct {
     uint32_t used;                             /* the voices written since FM6B_BEGIN */
-    uint8_t on, copy;                          /* a transfer is open; its sector: the autosave's copy A (0) / B (1) */
+    uint8_t on, copy, committed;                /* transfer open; committed stage awaiting home copy */
 } fvb_tx __attribute__((section(".pool")));    /* (zeroed at boot) */
 
 /* the bank was replaced: a track on a bank slot keeps the voice it loaded, as its own patch (SLOT OWN) */
@@ -53,6 +53,13 @@ static void fm6_bank_changed(void)
 #if FELUCCA_FLASH
 _Static_assert(FVB_LEN <= ST_PAYLOAD_MAX, "the payload fits st_buf");
 static uint32_t fvb_stage(void) { return st_sector(OBJ_AUTOSAVE, fvb_tx.copy); }
+
+static void fvb_abort(void)
+{
+    fvb_tx.on = 0;
+    if (!fvb_tx.committed)
+        st_release(OBJ_AUTOSAVE, fvb_tx.copy, ST_RES_FM6_VBANK);
+}
 
 /* n bytes from RAM to flash at off, a page (256 bytes) at a time */
 static int fvb_prog(uint32_t off, const void *src, uint32_t n)
@@ -139,12 +146,16 @@ static int fvb_tx_ok(void)
 {
     uint8_t b[32];
     uint32_t i, x = 0xFFu;
-    if (!fvb_tx.on || st_read(fvb_stage(), b, sizeof b))
+    if (!fvb_tx.on || !st_reserved_by(OBJ_AUTOSAVE, fvb_tx.copy, ST_RES_FM6_VBANK) ||
+        st_read(fvb_stage(), b, sizeof b)) {
+        if (fvb_tx.on)
+            fvb_abort();
         return 0;
+    }
     for (i = 0; i < sizeof b; i++)
         x &= b[i];
     if (x != 0xFFu)
-        fvb_tx.on = 0;
+        fvb_abort();
     return fvb_tx.on;
 }
 
@@ -156,9 +167,14 @@ static uint32_t fvb_begin(void)
     if (!flash_ok)
         return 4;
     fvb_tx.copy = st_current(OBJ_AUTOSAVE, &h) == 0 ? 1u : 0u;   /* the copy st_save writes next */
-    if (st_erase(fvb_stage()))
+    if (st_reserve(OBJ_AUTOSAVE, fvb_tx.copy, ST_RES_FM6_VBANK))
         return 4;
+    if (st_erase(fvb_stage())) {
+        st_release(OBJ_AUTOSAVE, fvb_tx.copy, ST_RES_FM6_VBANK);
+        return 4;
+    }
     fvb_tx.used = 0;
+    fvb_tx.committed = 0;
     fvb_tx.on = 1;
     return 0;
 }
@@ -173,7 +189,7 @@ static uint32_t fvb_write(uint32_t k, const uint8_t *pk)
         return 1;
     upf_pk_put(pk, d);
     if (fvb_prog(fvb_stage() + FVB_VOICES + k * UPF_PK, d, UPF_PK)) {
-        fvb_tx.on = 0;
+        fvb_abort();
         return 4;
     }
     fvb_tx.used |= 1u << k;
@@ -189,24 +205,29 @@ static uint32_t fvb_end(const uint8_t *name, uint32_t crc)
     uint32_t k, c = 0xFFFFFFFFu, seq, base = fvb_stage();
     if (!fvb_tx_ok())
         return 5;
-    fvb_tx.on = 0;
     for (k = 0; k < FM6_NBANK; k++)
         if ((fvb_tx.used >> k) & 1u) {
             uint8_t d[UPF_PK], pk[FM6_PACKED];
-            if (st_read(base + FVB_VOICES + k * UPF_PK, d, UPF_PK))
+            if (st_read(base + FVB_VOICES + k * UPF_PK, d, UPF_PK)) {
+                fvb_abort();
                 return 4;
+            }
             upf_pk_get(d, pk);
             c = st_crc32_add(c, pk, FM6_PACKED);
         }
-    if (~c != crc)
+    if (~c != crc) {
+        fvb_abort();
         return 2;
+    }
     seq = fvb_valid(FVB_HOME, 0, &h) ? 0u : h.seq;           /* after the newest bank anywhere */
     for (k = 0; k < 2u; k++)
         if (!fvb_valid(st_sector(OBJ_AUTOSAVE, k), 1, &h) && h.seq - seq < 0x80000000u)
             seq = h.seq;
     seq++;
-    if (st_read(base + FVB_INFO, st_buf, FVB_LEN))           /* the voices as written, the header still erased */
+    if (st_read(base + FVB_INFO, st_buf, FVB_LEN)) {          /* the voices as written, the header still erased */
+        fvb_abort();
         return 4;
+    }
     memset(in, 0, sizeof *in);
     in->magic = FVB_MAGIC;
     in->ver = 1;
@@ -214,11 +235,25 @@ static uint32_t fvb_end(const uint8_t *name, uint32_t crc)
     in->used = fvb_tx.used;
     for (k = 0; k < 10u; k++)
         in->name[k] = (char)(name[k] >= 32u && name[k] <= 126u ? name[k] : ' ');
-    if (fvb_prog(base + FVB_INFO, in, sizeof *in) || fvb_commit(base, 1, seq) || fvb_valid(base, 1, &h))
+    if (fvb_prog(base + FVB_INFO, in, sizeof *in)) {
+        fvb_abort();
+        return 4;
+    }
+    if (fvb_commit(base, 1, seq)) {
+        fvb_abort();
+        return 4;
+    }
+    fvb_tx.on = 0;
+    fvb_tx.committed = 1;                                    /* keep the reservation until home is verified */
+    if (fvb_valid(base, 1, &h))
         return 4;
     fvb_boot();                                              /* the copy to 0xE7000, the voices */
+    if (fvb_valid(FVB_HOME, 0, &h) || h.seq != seq)
+        return 4;                                             /* retain the staged recovery copy and its reservation */
+    st_release(OBJ_AUTOSAVE, fvb_tx.copy, ST_RES_FM6_VBANK);
+    fvb_tx.committed = 0;
     fm6_bank_changed();
-    return fvb_valid(FVB_HOME, 0, &h) || h.seq != seq ? 4u : 0u;
+    return 0u;
 }
 
 /* FM6B_LIST: the bank at 0xE7000 -> its header (0 = none) */
