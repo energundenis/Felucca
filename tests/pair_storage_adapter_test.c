@@ -254,21 +254,21 @@ int main(void)
     sidecar_fault_stage = SC_FAULT_PAYLOAD;
     CHECK("Sidecar payload failure preserves previous complete pair",
           save_value(&adapter, &workspace, 41u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 4u, 30u));
     sidecar_fault_stage = SC_FAULT_HEADER;
     CHECK("Sidecar header failure preserves previous complete pair",
           save_value(&adapter, &workspace, 42u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 4u, 30u));
     sidecar_fault_stage = SC_FAULT_READBACK;
     CHECK("Sidecar readback failure preserves previous complete pair",
           save_value(&adapter, &workspace, 43u) == ENERGUN_PAIR_ERR_SIDECAR_COMMIT &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 4u, 30u));
     sidecar_fault_stage = SC_FAULT_NONE;
 
     base_erase_failure = 1;
     CHECK("Base erase failure after Sidecar staging preserves old pair",
           save_value(&adapter, &workspace, 50u) == ENERGUN_PAIR_ERR_BASE_COMMIT &&
-          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 3u, 30u));
+          recover_equals(&adapter, (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45}, 16u, 4u, 30u));
     base_erase_failure = 0;
 
     /* Sidecar is now a committed orphan in B. Base A + Sidecar A remains the
@@ -284,7 +284,7 @@ int main(void)
                     ENERGUN_PAIR_ERR_BASE_COMMIT ||
                 !recover_equals(&adapter,
                     (uint8_t[16]){30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45},
-                    16u, 3u, 30u)) {
+                    16u, 4u, 30u)) {
                 ok = 0;
                 break;
             }
