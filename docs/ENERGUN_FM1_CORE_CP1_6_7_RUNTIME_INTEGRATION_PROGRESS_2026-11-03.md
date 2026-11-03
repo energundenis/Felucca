@@ -66,3 +66,17 @@ The queue then correctly reports **BLOCKED** at production Pair Commit Ordering.
 ## 5. Safety
 
 No production firmware source was changed by this milestone. No Sidecar object IDs, `OBJ_COUNT`, storage whitelist, Flash address, sector, archive V1, bootloader, OTA, factory image or physical device state was changed. No PR was merged. `main` remains untouched.
+
+## 6. Follow-up host coverage — seven logical identities
+
+Added:
+- `tests/sidecar_identity_matrix_test.c`
+- `tests/run_sidecar_identity_matrix_test.sh`
+- A strict C11/Werror invocation in `tests/run_metal_core_fast.sh`.
+- A `sidecar-identity-matrix` stage in `tests/cp1_test_queue.json`, which must pass before the production pair-order stage can be considered.
+
+The matrix exercises all seven logical identities independently: Project 0–3, Live Autosave, Preset Bank 0–1. It checks each identity's own encoded record, rejects all cross-identity pairings, and checks that preset slot writes/erases preserve unrelated slots and clear the erased slot's values.
+
+Scope limit: this is a serializer/identity/slot-semantics host test. It does not yet exercise seven independent Base object histories through the pair coordinator, does not implement FM6 staging ownership, and is not production runtime integration.
+
+Verification status at this commit: **CI pending**. Do not report the new matrix or the updated 23-test fast regression as passed until GitHub Actions logs show the exact updated branch head executing them.
