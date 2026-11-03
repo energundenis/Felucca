@@ -9,6 +9,7 @@
 #define ENERGUN_LIFECYCLE_V1_H
 
 #include "energun_pair_v1.h"
+#include "energun_sidecar_payload_v1.h"
 
 typedef int (*energun_lifecycle_v1_guard_fn)(void *context);
 
@@ -53,6 +54,31 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_load(
     uint32_t object, energun_sc_identity_kind_t kind, uint8_t index,
     uint8_t *base_payload, size_t base_capacity, size_t *base_length,
     uint8_t *sidecar_payload, size_t sidecar_capacity, size_t *sidecar_length,
+    energun_pair_v1_base_meta_t *base_meta);
+
+
+/* Typed project/live variants use the frozen byte codec and the caller-owned
+ * sidecar_scratch buffer. Project load decodes only after the pair and Base
+ * have both validated; the caller then atomically applies Private via the
+ * Private payload bridge at its chosen runtime commit boundary.
+ */
+energun_lifecycle_v1_status_t energun_lifecycle_v1_save_project(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t index,
+    const uint8_t *base_payload, size_t base_length,
+    const energun_sc_project_payload_v1_t *sidecar);
+energun_lifecycle_v1_status_t energun_lifecycle_v1_load_project(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t index,
+    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+    energun_sc_project_payload_v1_t *sidecar,
+    energun_pair_v1_base_meta_t *base_meta);
+energun_lifecycle_v1_status_t energun_lifecycle_v1_save_live(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object,
+    const uint8_t *base_payload, size_t base_length,
+    const energun_sc_project_payload_v1_t *sidecar);
+energun_lifecycle_v1_status_t energun_lifecycle_v1_load_live(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object,
+    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+    energun_sc_project_payload_v1_t *sidecar,
     energun_pair_v1_base_meta_t *base_meta);
 
 /* Rename and Save As share one safe primitive: load the STORED source pair,
