@@ -23,10 +23,14 @@ static int energun_pair_sidecar_read(
         return -1;
     *length = 0u;
     *sequence = 0u;
-    return adapter->sidecar_ops->read_copy(
-        adapter->sidecar_context, adapter->identity_kind,
-        adapter->identity_index, copy, adapter->scratch_record,
-        sizeof adapter->scratch_record, length, sequence);
+    if (adapter->sidecar_ops->read_copy(
+            adapter->sidecar_context, adapter->identity_kind,
+            adapter->identity_index, copy, adapter->scratch_record,
+            sizeof adapter->scratch_record, length, sequence) != 0)
+        return -1;
+    if (*length > sizeof adapter->scratch_record)
+        return -1;
+    return 0;
 }
 
 /* Find the newest Base generation that has at least one exact matching,
