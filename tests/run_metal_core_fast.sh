@@ -49,6 +49,9 @@ run_test sidecar_pair_transaction
 compile_test_strict sidecar_identity_matrix tests/sidecar_identity_matrix_test.c firmware/src/energun_sidecar_v1.c
 run_test sidecar_identity_matrix
 
+# Typed project/live and preset-bank payload codecs are strict, byte-exact host-tested.
+echo "== Run Sidecar V1 payload codec acceptance"
+sh tests/run_sidecar_payload_v1_test.sh
 compile_test fm6bank tests/fm6bank_test.c -lm
 run_test fm6bank
 
@@ -111,12 +114,12 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 23 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 24 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 23 focused host tests."
+        echo "Generated headers and compiled/executed all 24 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
