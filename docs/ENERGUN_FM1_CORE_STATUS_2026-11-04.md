@@ -41,6 +41,8 @@ Fast Regression on exact HEAD 78cc46c39b5b7599c894a2a144cea0f649105beb:
 - The CP1 queue passed its storage, FM6, Private, Sidecar format, Base binding, A/B selection, payload codec/bridge, pair transaction, legacy fallback, identity, integrity, Archive V2 offline, reservation and project/preset host-adapter stages.
 - Queue result remains BLOCKED at production pair ordering and runtime recovery. The queue's successful workflow conclusion means the tests/report ran; it does not mean those production gates passed.
 
+The queue wording was then corrected in test/queue commit 8b333643e78c34e4bd050337da9d2f43f06ff31b. Fast Regression [run 41741370066](https://github.com/energundenis/Felucca/actions/runs/41741370066) also completed **SUCCESS** on that exact SHA: all 24 focused tests passed and the queue still reported BLOCKED only at the explicit production gates. The companion Full Baseline [run 41741369998](https://github.com/energundenis/Felucca/actions/runs/41741369998) was still in progress at the time of this status refresh.
+
 Full Baseline on the same exact HEAD:
 
 - Run 41734515025 — SUCCESS, #572: https://github.com/energundenis/Felucca/actions/runs/41734515025
