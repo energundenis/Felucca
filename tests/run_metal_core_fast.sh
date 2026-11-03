@@ -44,6 +44,11 @@ run_test storage
 compile_test sidecar_pair_transaction tests/sidecar_pair_transaction_test.c
 run_test sidecar_pair_transaction
 
+# All seven logical Sidecar identities are checked for strict identity isolation.
+# Preset-bank slot updates/erases must preserve unrelated slots.
+compile_test_strict sidecar_identity_matrix tests/sidecar_identity_matrix_test.c firmware/src/energun_sidecar_v1.c
+run_test sidecar_identity_matrix
+
 compile_test fm6bank tests/fm6bank_test.c -lm
 run_test fm6bank
 
@@ -106,12 +111,12 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 22 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 23 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 22 focused host tests."
+        echo "Generated headers and compiled/executed all 23 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
