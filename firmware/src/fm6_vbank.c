@@ -163,7 +163,7 @@ static int fvb_tx_ok(void)
 static uint32_t fvb_begin(void)
 {
     st_hdr_t h;
-    fvb_tx.on = 0;
+    fvb_abort();
     if (!flash_ok)
         return 4;
     fvb_tx.copy = st_current(OBJ_AUTOSAVE, &h) == 0 ? 1u : 0u;   /* the copy st_save writes next */
