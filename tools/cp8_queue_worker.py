@@ -128,27 +128,34 @@ def checkout_sha(sha: str) -> None:
     subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=ROOT, check=True)
 
 
-def completed_owner_runs(store) -> set[int]:
-    """Return owners whose Actions runs have ended; reclaim only after GitHub confirms."""
+def completed_owner_workers(store) -> set[tuple[str, int]]:
+    """Find completed lane jobs, even while sibling jobs in the run are active."""
     head = store.client.read_ref(store.branch)
     ledger = store.client.read_ledger_at(head)
     owners = {
-        item.get("claim", {}).get("owner_run_id")
+        (item.get("claim", {}).get("owner_workflow"),
+         item.get("claim", {}).get("owner_run_id"))
         for item in ledger.get("records", [])
         if item.get("state") in {"claimed", "running"}
     }
-    completed: set[int] = set()
-    for owner in owners:
-        if not isinstance(owner, int):
+    expected_names = {
+        "cp8-cp1-persistence-worker": "Queue Worker CP1 — persistence",
+        "cp8-cp2-dsp-vca-worker": "Queue Worker CP2 — DSP/VCA",
+        "cp8-cp3-sequencer-worker": "Queue Worker CP3 — sequencer",
+    }
+    completed: set[tuple[str, int]] = set()
+    for worker_id, owner_run_id in owners:
+        if worker_id not in expected_names or not isinstance(owner_run_id, int):
             continue
         try:
-            run = store.client.request("GET", f"/actions/runs/{owner}")
-            if run.get("status") == "completed":
-                completed.add(owner)
+            payload = store.client.request("GET", f"/actions/runs/{owner_run_id}/jobs?per_page=100")
+            for job in payload.get("jobs", []):
+                if job.get("name") == expected_names[worker_id] and job.get("status") == "completed":
+                    completed.add((worker_id, owner_run_id))
+                    break
         except QueueStoreError as exc:
-            print(f"WARNING: unable to verify owner run {owner}: {exc}", flush=True)
+            print(f"WARNING: unable to verify worker job {worker_id} in run {owner_run_id}: {exc}", flush=True)
     return completed
-
 
 def load_worker_dag() -> dict[str, list[str]]:
     import json
@@ -192,9 +199,9 @@ def drain(lane: str) -> None:
     processed = 0
     try:
         while processed < max_items:
-            recover_owners = completed_owner_runs(store)
+            recover_owners = completed_owner_workers(store)
             record = claim_next_for_worker(store, worker_id, run_id, dag,
-                completed_owner_run_ids=recover_owners, lease_seconds=5400)
+                completed_owner_workers=recover_owners, lease_seconds=5400)
             if record is None:
                 print("queue_empty_or_waiting_dependency_or_capacity=true")
                 break
