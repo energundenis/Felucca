@@ -73,6 +73,97 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_load(
                                       ENERGUN_LIFECYCLE_V1_ERR_PAIR;
 }
 
+
+static energun_lifecycle_v1_status_t lifecycle_save_typed(
+    const energun_lifecycle_v1_t *lifecycle,
+    uint32_t object, energun_sc_identity_kind_t kind, uint8_t index,
+    const uint8_t *base_payload, size_t base_length,
+    const energun_sc_project_payload_v1_t *sidecar)
+{
+    size_t encoded_length = 0u;
+    energun_sc_status_t codec_rc;
+    if (!lifecycle_valid(lifecycle) || lifecycle->sidecar_scratch == NULL ||
+        sidecar == NULL)
+        return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
+    codec_rc = energun_sc_project_payload_v1_encode(lifecycle->sidecar_scratch,
+        lifecycle->sidecar_scratch_capacity, &encoded_length, sidecar);
+    if (codec_rc != ENERGUN_SC_OK)
+        return codec_rc == ENERGUN_SC_ERR_LENGTH ?
+            ENERGUN_LIFECYCLE_V1_ERR_CAPACITY : ENERGUN_LIFECYCLE_V1_ERR_PAIR;
+    if (encoded_length > 0xFFFFu)
+        return ENERGUN_LIFECYCLE_V1_ERR_CAPACITY;
+    return lifecycle_commit(lifecycle, object, kind, index,
+        base_payload, base_length, lifecycle->sidecar_scratch,
+        (uint16_t)encoded_length);
+}
+
+static energun_lifecycle_v1_status_t lifecycle_load_typed(
+    const energun_lifecycle_v1_t *lifecycle,
+    uint32_t object, energun_sc_identity_kind_t kind, uint8_t index,
+    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+    energun_sc_project_payload_v1_t *sidecar,
+    energun_pair_v1_base_meta_t *base_meta)
+{
+    size_t encoded_length = 0u;
+    energun_lifecycle_v1_status_t status;
+    energun_sc_status_t codec_rc;
+    if (!lifecycle_valid(lifecycle) || lifecycle->sidecar_scratch == NULL ||
+        sidecar == NULL)
+        return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
+    status = energun_lifecycle_v1_load(lifecycle, object, kind, index,
+        base_payload, base_capacity, base_length,
+        lifecycle->sidecar_scratch, lifecycle->sidecar_scratch_capacity,
+        &encoded_length, base_meta);
+    if (status != ENERGUN_LIFECYCLE_V1_OK &&
+        status != ENERGUN_LIFECYCLE_V1_LEGACY_DEFAULTS)
+        return status;
+    codec_rc = energun_sc_project_payload_v1_decode(lifecycle->sidecar_scratch,
+        encoded_length, sidecar);
+    if (codec_rc != ENERGUN_SC_OK) {
+        if (base_length != NULL) *base_length = 0u;
+        return ENERGUN_LIFECYCLE_V1_ERR_PAIR;
+    }
+    return status;
+}
+
+energun_lifecycle_v1_status_t energun_lifecycle_v1_save_project(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t index,
+    const uint8_t *base_payload, size_t base_length,
+    const energun_sc_project_payload_v1_t *sidecar)
+{
+    return lifecycle_save_typed(lifecycle, object, ENERGUN_SC_ID_PROJECT,
+        index, base_payload, base_length, sidecar);
+}
+
+energun_lifecycle_v1_status_t energun_lifecycle_v1_load_project(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object, uint8_t index,
+    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+    energun_sc_project_payload_v1_t *sidecar,
+    energun_pair_v1_base_meta_t *base_meta)
+{
+    return lifecycle_load_typed(lifecycle, object, ENERGUN_SC_ID_PROJECT,
+        index, base_payload, base_capacity, base_length, sidecar, base_meta);
+}
+
+energun_lifecycle_v1_status_t energun_lifecycle_v1_save_live(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object,
+    const uint8_t *base_payload, size_t base_length,
+    const energun_sc_project_payload_v1_t *sidecar)
+{
+    return lifecycle_save_typed(lifecycle, object, ENERGUN_SC_ID_LIVE_AUTOSAVE,
+        0u, base_payload, base_length, sidecar);
+}
+
+energun_lifecycle_v1_status_t energun_lifecycle_v1_load_live(
+    const energun_lifecycle_v1_t *lifecycle, uint32_t object,
+    uint8_t *base_payload, size_t base_capacity, size_t *base_length,
+    energun_sc_project_payload_v1_t *sidecar,
+    energun_pair_v1_base_meta_t *base_meta)
+{
+    return lifecycle_load_typed(lifecycle, object, ENERGUN_SC_ID_LIVE_AUTOSAVE,
+        0u, base_payload, base_capacity, base_length, sidecar, base_meta);
+}
+
 energun_lifecycle_v1_status_t energun_lifecycle_v1_copy_stored(
     const energun_lifecycle_v1_t *lifecycle,
     uint32_t source_object, energun_sc_identity_kind_t source_kind,
