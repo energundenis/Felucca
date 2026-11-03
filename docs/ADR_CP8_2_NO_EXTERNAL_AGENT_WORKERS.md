@@ -1,6 +1,6 @@
 # ADR — CP8 worker architecture without external AI agents
 
-Status: **Accepted**  
+Status: **Accepted; first GitHub Actions worker runtime implemented**  
 Date: 2026-11-03  
 Scope: ENERGUN FM-1 CORE development automation
 
@@ -70,6 +70,17 @@ The first release is accepted only after:
 - each result is tied to the exact requested commit SHA and includes inspectable evidence;
 - the coordinator produces a truthful summary of passed, failed, blocked and pending work.
 
+## Current implementation evidence — 2026-11-03
+
+The first trusted GitHub Actions workers are now registered and executing:
+- CP1 Persistence
+- CP2 DSP/VCA
+- CP3 Sequencer
+
+The shared queue ledger stores each ephemeral worker's identity, run ID, lane, capabilities, availability/busy/offline state and active request. Workers claim through CAS, check the lane DAG and global concurrency limit, and record exact-SHA outcomes. The live queue has demonstrated three concurrent lanes and recovery of a CP1 task after its owning job was cancelled.
+
+The automated test suite covers dependency blocking, distinct-worker claim contention, stale-owner fencing and recovery. Full stress qualification and registry retention/heartbeat hardening remain open.
+
 ## Explicit non-goal
 
-This ADR does not claim that real workers are already deployed. It records the accepted target architecture; implementation and live proof remain outstanding.
+These GitHub Actions workers are real automation executors, not autonomous AI programmers. They run repository-owned build and test scripts; they do not independently interpret open-ended engineering requirements or author arbitrary new firmware features. External AI coding agents remain intentionally unconnected.
