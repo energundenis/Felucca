@@ -43,18 +43,19 @@ energun_project_map_status_t energun_project_pack_base_params(
     if (output == NULL || runtime == NULL)
         return ENERGUN_PROJECT_MAP_ERR_ARGUMENT;
 
-    for (i = 0; i < ENERGUN_PROJECT_BASE_COMMON_NP; ++i) {
-        int16_t value = runtime[i];
-        if (value < -64 || value > 127)
+    for (i = 0; i < ENERGUN_PROJECT_BASE_COMMON_NP; ++i)
+        if (runtime[i] < -64 || runtime[i] > 127)
             return ENERGUN_PROJECT_MAP_ERR_VALUE;
-        output[i] = (uint8_t)(value + 64);
-    }
-    for (i = 0; i < 8u; ++i) {
-        int16_t value = runtime[ENERGUN_PROJECT_ENGINE_FIRST_ID + i];
-        if (value < -64 || value > 127)
+    for (i = 0; i < 8u; ++i)
+        if (runtime[ENERGUN_PROJECT_ENGINE_FIRST_ID + i] < -64 ||
+            runtime[ENERGUN_PROJECT_ENGINE_FIRST_ID + i] > 127)
             return ENERGUN_PROJECT_MAP_ERR_VALUE;
-        output[ENERGUN_PROJECT_BASE_COMMON_NP + i] = (uint8_t)(value + 64);
-    }
+
+    for (i = 0; i < ENERGUN_PROJECT_BASE_COMMON_NP; ++i)
+        output[i] = (uint8_t)(runtime[i] + 64);
+    for (i = 0; i < 8u; ++i)
+        output[ENERGUN_PROJECT_BASE_COMMON_NP + i] =
+            (uint8_t)(runtime[ENERGUN_PROJECT_ENGINE_FIRST_ID + i] + 64);
     return ENERGUN_PROJECT_MAP_OK;
 }
 
@@ -67,11 +68,11 @@ energun_project_map_status_t energun_project_unpack_base_params(
     if (runtime == NULL || input == NULL || defaults == NULL)
         return ENERGUN_PROJECT_MAP_ERR_ARGUMENT;
 
-    for (i = 0; i < ENERGUN_PROJECT_RUNTIME_NP; ++i)
-        runtime[i] = defaults[i];
     for (i = 0; i < ENERGUN_PROJECT_BASE_NP; ++i)
         if (input[i] > 191u)
             return ENERGUN_PROJECT_MAP_ERR_VALUE;
+    for (i = 0; i < ENERGUN_PROJECT_RUNTIME_NP; ++i)
+        runtime[i] = defaults[i];
     for (i = 0; i < ENERGUN_PROJECT_BASE_COMMON_NP; ++i)
         runtime[i] = (int16_t)input[i] - 64;
     for (i = 0; i < 8u; ++i)
