@@ -21,9 +21,6 @@ static energun_lifecycle_v1_status_t lifecycle_commit(
     if (!lifecycle_valid(lifecycle) || base_payload == NULL ||
         base_length == 0u || sidecar_payload == NULL)
         return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
-    if (lifecycle->write_guard != NULL &&
-        lifecycle->write_guard(lifecycle->guard_context) != 0)
-        return ENERGUN_LIFECYCLE_V1_ERR_GUARD;
     rc = energun_pair_v1_commit(lifecycle->ops, lifecycle->storage_context,
         lifecycle->workspace, object, kind, index, base_payload, base_length,
         sidecar_payload, sidecar_length, lifecycle->base_motion_count);
@@ -111,9 +108,6 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_erase(
     int rc;
     if (!lifecycle_valid(lifecycle))
         return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
-    if (lifecycle->write_guard != NULL &&
-        lifecycle->write_guard(lifecycle->guard_context) != 0)
-        return ENERGUN_LIFECYCLE_V1_ERR_GUARD;
     rc = energun_pair_v1_erase(lifecycle->ops, lifecycle->storage_context, object);
     return rc == ENERGUN_PAIR_V1_OK ? ENERGUN_LIFECYCLE_V1_OK :
                                       ENERGUN_LIFECYCLE_V1_ERR_PAIR;
@@ -124,6 +118,11 @@ energun_lifecycle_v1_status_t energun_lifecycle_v1_autosave(
     uint32_t object, const uint8_t *base_payload, size_t base_length,
     const uint8_t *sidecar_payload, uint16_t sidecar_length)
 {
+    if (!lifecycle_valid(lifecycle))
+        return ENERGUN_LIFECYCLE_V1_ERR_ARGUMENT;
+    if (lifecycle->write_guard != NULL &&
+        lifecycle->write_guard(lifecycle->guard_context) != 0)
+        return ENERGUN_LIFECYCLE_V1_ERR_GUARD;
     return lifecycle_commit(lifecycle, object, ENERGUN_SC_ID_LIVE_AUTOSAVE,
         0u, base_payload, base_length, sidecar_payload, sidecar_length);
 }
