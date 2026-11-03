@@ -102,7 +102,7 @@ class WorkerRuntimeTests(unittest.TestCase):
             finish_worker_task(self.store, first["request_id"], old, 301, "passed",
                                "stale", ["https://example.invalid/old"], SHA,
                                now=NOW + timedelta(seconds=3))
-        with self.assertRaisesRegex(QueueStoreError, "already owned"):
+        with self.assertRaisesRegex(QueueStoreError, "not available"):
             claim_next_for_worker(self.store, old, 301, {}, now=NOW + timedelta(seconds=4))
 
     def test_duplicate_worker_registration_and_task_claim_are_exclusive(self):
