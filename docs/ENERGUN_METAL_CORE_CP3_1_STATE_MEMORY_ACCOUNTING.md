@@ -347,3 +347,25 @@ Focused fast CI [41410200181](https://github.com/energundenis/Felucca/actions/ru
 This closes the **host backing-store evidence gap for the 288-byte VCA state only**. It does not establish the final full METAL CORE state size, AC79 linked memory layout, target runtime CPU, full DSP qualification or physical hardware behavior. The exact-head full baseline run [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) is still running; no full-baseline pass is claimed yet.
 
 No production engine registration, engine ID allocation, production memory-layout change, physical device write or factory firmware change was made.
+
+
+## 19. Fractional feedback-delay signed interpolation correction — 2026-11-04
+
+The earlier Section 15 describes a 0.3-sample fraction (9830/32768). That text is stale and conflicts with the current 44,117.647 Hz / 3 ms calculation. The active candidate uses:
+
+- Delay = 132.35294 samples.
+- Integer component = 132 samples.
+- Fractional component = 0.35294, quantized to Q15 code 11,565.
+- Impulse weights = 0.64706 / 0.35294, emitted at the 132- and 133-sample taps.
+
+A code review found a signed-rounding defect in the candidate interpolation: subtracting half an LSB before a signed right shift can bias negative values on arithmetic-shift targets, and right-shifting negative signed integers is implementation-defined in C. The candidate now rounds the absolute magnitude and reapplies the sign, making the operation symmetric without relying on negative signed shifts.
+
+New host regressions:
+1. The fractional impulse response is invariant for all 133 possible ring cursor positions, including physical wrap.
+2. A negative impulse produces the exact sign inverse of the positive impulse at both fractional taps.
+
+Exact implementation commits:
+- `4a99cf4404cf8f9ec70746e0e5f1e40090cb6a31` — symmetric interpolation rounding.
+- `f0ca45193e80b8eb498728a0db891d86b58b9f45` — wrap and signed-symmetry tests.
+
+This is still a host-only candidate. It does not resolve the interpolation's audible equivalence to Web Audio DelayNode, the production feedback gain implementation, or AC79 cycle cost. The candidate is not included in the production firmware.
