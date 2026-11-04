@@ -21,6 +21,7 @@ int main(void)
 {
     eng_metal_lpg_timing_t lo, hi, short_gate, short_decay, capped, zero_rate;
     eng_metal_lpg_timing_t low_clamp, high_clamp, response_low, response_high, sr48;
+    eng_metal_lpg_timing_t cutoff_low, cutoff_high;
     const uint32_t sr = 44100u;
     const uint32_t gate_125ms = 5513u;
 
@@ -35,6 +36,8 @@ int main(void)
     eng_metal_lpg_timing_q15(sr, 1000000u, gate_125ms, -100, 2000u, &response_low);
     eng_metal_lpg_timing_q15(sr, 1000000u, gate_125ms, 40000, 2000u, &response_high);
     eng_metal_lpg_timing_q15(48000u, 20000u, 48000u, 16384, 2000u, &sr48);
+    eng_metal_lpg_timing_q15(sr, 1000000u, gate_125ms, 0, 1u, &cutoff_low);
+    eng_metal_lpg_timing_q15(sr, 1000000u, gate_125ms, 32767, UINT32_MAX, &cutoff_high);
 
     check("RESPONSE endpoints map attack to 1.5 ms and 7.5 ms",
           lo.attack_samples >= 65u && lo.attack_samples <= 67u &&
@@ -73,6 +76,11 @@ int main(void)
           response_high.attack_samples == hi.attack_samples);
     check("48 kHz conversion rounds attack to 216 samples at midpoint",
           sr48.attack_samples >= 215u && sr48.attack_samples <= 217u);
+    check("base cutoff clamps to the documented 100..8000 Hz range",
+          cutoff_low.filter_return_hz == 100u &&
+          cutoff_low.filter_transient_hz >= 124u && cutoff_low.filter_transient_hz <= 126u &&
+          cutoff_high.filter_return_hz == 8000u &&
+          cutoff_high.filter_transient_hz == 12000u);
 
     printf("metal LPG timing: %s (%d failures)\n",
            failures ? "FAIL" : "PASS", failures);
