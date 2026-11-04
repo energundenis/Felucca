@@ -161,52 +161,61 @@ static void cp3_render_blocks(track_t *t, uint32_t blocks)
 
 static void test_real_engine_memory_pool_contract(void)
 {
-    uint8_t *part0, *part1;
-    uint32_t i;
+    uint8_t *part[NPART];
+    uint32_t p, q, i;
+    int map_ok = 1, unique = 1, isolated = 1;
+    int first_zero = 1, same_owner = 1, switched_clear = 1, tail_kept = 1;
+
     cp3_vca_init();
-    part0 = (uint8_t *)ENG_MEM(0u);
-    part1 = (uint8_t *)ENG_MEM(1u);
-    cp3_vca_check("VCA state accessor points into Felucca ENG_MEM pool",
-                  cp3_part_state(&trk[0]) == (eng_metal_vca_part_state_t *)part0 &&
-                  part0 != part1);
-    cp3_vca_check("each part has an independently allocated engine-memory region",
-                  part0 != part1 && sizeof(eng_mem[0].b) == ENG_MEM_PART);
-
-    /* Re-exercise the production allocator's first-claim zeroing contract. */
-    memset(part0, 0xA5, sizeof(eng_metal_vca_part_state_t));
-    eng_mem_owner[0] = 0u;
-    eng_mem_claim(&trk[0]);
-    {
-        int zero = 1;
-        for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
-            zero &= part0[i] == 0u;
-        cp3_vca_check("first engine claim zeroes the declared VCA state bytes", zero);
+    for (p = 0; p < NPART; ++p) {
+        part[p] = (uint8_t *)ENG_MEM(p);
+        map_ok &= cp3_part_state(&trk[p]) ==
+                  (eng_metal_vca_part_state_t *)part[p];
+        for (q = 0; q < p; ++q)
+            unique &= part[p] != part[q];
     }
+    cp3_vca_check("all four VCA accessors map to their own Felucca ENG_MEM regions",
+                  NPART == 4u && map_ok);
+    cp3_vca_check("all four per-part engine-memory regions have distinct addresses",
+                  unique && sizeof(eng_mem[0].b) == ENG_MEM_PART);
 
-    /* Same owner must retain its state instead of clearing it on every claim. */
-    memset(part0, 0x5Au, sizeof(eng_metal_vca_part_state_t));
-    eng_mem_claim(&trk[0]);
-    {
-        int retained = 1;
-        for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
-            retained &= part0[i] == 0x5Au;
-        cp3_vca_check("reclaim by the same engine preserves its state", retained);
-    }
+    /* A write to one part must not alias any of the other three pools. */
+    for (p = 0; p < NPART; ++p)
+        part[p][0] = (uint8_t)(0x40u + p);
+    for (p = 0; p < NPART; ++p)
+        isolated &= part[p][0] == (uint8_t)(0x40u + p);
+    cp3_vca_check("writes in one part pool do not alias another part", isolated);
 
-    /* Claim by a different descriptor clears exactly its declared state range. */
-    memset(part0, 0xA5, sizeof(eng_mem[0].b));
     ENGINES[1] = &ENG_METAL_CORE_CP3_TEST;
-    trk[0].engine = 1u;
-    eng_mem_claim(&trk[0]);
-    {
-        int cleared = 1, tail_kept = 1;
+    for (p = 0; p < NPART; ++p) {
+        /* Re-exercise the production allocator's first-claim zeroing contract. */
+        memset(part[p], 0xA5, sizeof(eng_metal_vca_part_state_t));
+        eng_mem_owner[p] = 0u;
+        trk[p].engine = 0u;
+        eng_mem_claim(&trk[p]);
         for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
-            cleared &= part0[i] == 0u;
-        for (i = sizeof(eng_metal_vca_part_state_t); i < sizeof(eng_mem[0].b); ++i)
-            tail_kept &= part0[i] == 0xA5u;
-        cp3_vca_check("different engine claim clears only its declared mem bytes",
-                      cleared && tail_kept);
+            first_zero &= part[p][i] == 0u;
+
+        /* The same owner must retain its state instead of clearing it on every claim. */
+        memset(part[p], 0x5Au, sizeof(eng_metal_vca_part_state_t));
+        eng_mem_claim(&trk[p]);
+        for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
+            same_owner &= part[p][i] == 0x5Au;
+
+        /* A different descriptor clears only its declared bytes in this part. */
+        memset(part[p], 0xA5, sizeof(eng_mem[p].b));
+        trk[p].engine = 1u;
+        eng_mem_claim(&trk[p]);
+        for (i = 0; i < sizeof(eng_metal_vca_part_state_t); ++i)
+            switched_clear &= part[p][i] == 0u;
+        for (i = sizeof(eng_metal_vca_part_state_t); i < sizeof(eng_mem[p].b); ++i)
+            tail_kept &= part[p][i] == 0xA5u;
     }
+    cp3_vca_check("first engine claim zeroes the declared VCA bytes in every part",
+                  first_zero);
+    cp3_vca_check("same-owner reclaim preserves VCA state in every part", same_owner);
+    cp3_vca_check("engine switch clears only declared bytes in every part",
+                  switched_clear && tail_kept);
 }
 
 static void test_real_dispatch_uses_engine_owned_vca(void)
