@@ -45,8 +45,12 @@ static inline int32_t test_metal_feedback_delay_read(
     far_sample = d->sample[d->write_index];
     mixed = (int64_t)near_sample * (32768u - TEST_METAL_FB_FRAC_Q15) +
             (int64_t)far_sample * TEST_METAL_FB_FRAC_Q15;
-    mixed += mixed >= 0 ? 16384 : -16384;
-    return (int32_t)(mixed >> 15);
+    /* Round symmetrically. Right-shifting a negative signed integer is
+     * implementation-defined and the previous subtract-then-shift form
+     * biased negative samples by one LSB on arithmetic-shift targets. */
+    if (mixed >= 0)
+        return (int32_t)((mixed + 16384) >> 15);
+    return (int32_t)(-(((-mixed) + 16384) >> 15));
 }
 
 static inline void test_metal_feedback_delay_write(
