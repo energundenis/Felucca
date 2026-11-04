@@ -5,7 +5,7 @@ Repository: energundenis/Felucca
 Work branch: energun-metal-core  
 Initial verified code/test HEAD: 78cc46c39b5b7599c894a2a144cea0f649105beb  
 Latest verified code/test HEAD: 404a51ab03171fe893721ce17665ff461625734f  
-Latest docs checkpoint before this status update: f943824758187a839ccdbe12ce1f081098c9f517 (documentation-only after code/test HEAD 404a51ab03171fe893721ce17665ff461625734f)
+No source/test changes follow the verified code/test HEAD; subsequent commits in this checkpoint update documentation only.
 
 ## Overall status
 
@@ -108,7 +108,7 @@ Full Baseline on the same exact HEAD:
 | #1 — https://github.com/energundenis/Felucca/pull/1 | Draft, open | CP3.1 isolated Q2.30 DF2T biquad | Head 109798d054d51439b94f36c0688aa4ed71dc9d9f at latest refresh; candidate only, not production integration |
 | #2 — https://github.com/energundenis/Felucca/pull/2 | Draft, open | CP3 host lifecycle workstream | Head 820bc84; fast run 41430946644 and baseline run 41430946663 SUCCESS |
 | #4 — https://github.com/energundenis/Felucca/pull/4 | Draft, open | CP8 parallel queue/orchestrator foundation | Head 07f9385; run 41669946022 SUCCESS. Separate orchestration workstream |
-| #5 — https://github.com/energundenis/Felucca/pull/5 | Open, ready for review | CP1 Sidecar torn-write recovery sweep | Head ab782551f0da5a0d873729b8cc114686df2208d8; base is isolated validation branch validation/cp1-pair-recovery-20261104; not merged |
+| #5 — https://github.com/energundenis/Felucca/pull/5 | Open, ready for review | CP1 Sidecar torn-write recovery sweep | Head follows energun-metal-core; base is isolated validation branch validation/cp1-pair-recovery-20261104; not merged |
 
 ## Safety and release boundary
 
