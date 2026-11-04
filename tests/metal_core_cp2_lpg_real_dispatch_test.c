@@ -103,7 +103,7 @@ static void cp2_note_on(struct track *track, voice_t *voice)
                               ENG_METAL_VCA_Q16_ONE, 1, 0,
                               &peak, &sustain);
     eng_metal_vca_trigger(&s->vca, peak, sustain,
-                          attack, attack, attack, UINT32_MAX, release);
+                          attack, 5000u, attack, UINT32_MAX, release);
     eng_metal_lpg_env_trigger(&s->lpg, CP2_TEST_LPG_PEAK_Q15,
                               &CP2_TEST_LPG_TIMING);
 }
