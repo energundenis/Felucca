@@ -36,7 +36,7 @@ static void check(const char *name, int ok)
     failures += !ok;
 }
 
-static eng_metal_vca_part_state_t *part_state(track_t *t)
+static eng_metal_cp3_osc_fm_vca_part_state_t *part_state(track_t *t)
 {
     uintptr_t base = (uintptr_t)&trk[0];
     uintptr_t ptr = (uintptr_t)t;
