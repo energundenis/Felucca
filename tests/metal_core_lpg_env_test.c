@@ -29,6 +29,12 @@ int main(void)
           eng_metal_lpg_env_process(&env) == 0 &&
           env.phase == ENG_METAL_LPG_ENV_IDLE);
 
+    eng_metal_lpg_env_gate_off(&env);
+    check("gate-off on idle is a no-op",
+          env.phase == ENG_METAL_LPG_ENV_IDLE &&
+          env.level_q15 == 0 && env.target_q15 == 0 &&
+          env.coefficient_q30 == 0u);
+
     eng_metal_lpg_env_trigger(&env, 20000, &timing);
     previous = 0;
     for (i = 0; i < 66u; ++i) {
