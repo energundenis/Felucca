@@ -347,3 +347,23 @@ Focused fast CI [41410200181](https://github.com/energundenis/Felucca/actions/ru
 This closes the **host backing-store evidence gap for the 288-byte VCA state only**. It does not establish the final full METAL CORE state size, AC79 linked memory layout, target runtime CPU, full DSP qualification or physical hardware behavior. The exact-head full baseline run [41410200166](https://github.com/energundenis/Felucca/actions/runs/41410200166) is still running; no full-baseline pass is claimed yet.
 
 No production engine registration, engine ID allocation, production memory-layout change, physical device write or factory firmware change was made.
+
+
+## 21. Four-part ENG_MEM isolation regression — 2026-11-04
+
+Extended tests/metal_core_cp3_real_vca_dispatch_test.c so the real Felucca memory-pool contract is exercised for every NPART=4, not only parts 0 and 1:
+
+- Each part's VCA state accessor must resolve to that part's actual ENG_MEM(p) region.
+- All four pool base addresses must be pairwise distinct; per-part marker writes must not alias.
+- The real production eng_mem_claim() path must zero the declared 288-byte VCA range on a first claim, preserve it on a same-owner claim, and clear only the declared range on an engine-owner change for every part.
+- Bytes after the declared VCA range must remain unchanged during the owner switch.
+
+The test still compiles the actual Felucca engines.c / hostsim path. The registry descriptor is private to this host test; no production engine registration or ID is involved.
+
+Exact code/test HEAD: 404a51ab03171fe893721ce17665ff461625734f.
+
+- Fast Regression [run 41796239006](https://github.com/energundenis/Felucca/actions/runs/41796239006): **SUCCESS**; all 24 focused programs/suites passed. All six aggregate four-part pool checks passed.
+- CP1 queue in the same run completed with CP1_QUEUE_STATUS=BLOCKED at production pair-commit ordering. This is an intentional safety gate, not a failing host test: target Sidecar backend, production project/preset wiring and physical Flash/recovery qualification remain absent.
+- Full Baseline [run 41796239193](https://github.com/energundenis/Felucca/actions/runs/41796239193) was still in progress at this documentation checkpoint. Firmware build and AC79 compile-only probes had passed; final host/web regression had not yet been confirmed.
+
+This closes the four-part host ENG_MEM isolation/claim contract for the 288-byte test VCA state. It does not freeze the full METAL CORE state layout, prove the ADPCM target link layout, measure target callback cycles, register the production engine or validate physical FM-1 audio.
