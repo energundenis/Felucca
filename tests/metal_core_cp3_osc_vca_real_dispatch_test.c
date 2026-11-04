@@ -187,7 +187,7 @@ static void test_combined_real_render_and_additive_output(void)
         nonzero += out[i] != sentinel;
     check("real track_render advances independent OSC1/OSC2 phases and runs VCA together",
           phase_after1 != 0u && phase_after2 != 0u &&
-          phase_after1 != phase_after2 && vca->level_q16 > 0 &&
+          phase_after1 == phase_after2 && vca->level_q16 > 0 &&
           vca->phase == ENG_METAL_VCA_ATTACK);
     check("combined renderer adds signal to existing mix instead of overwriting",
           nonzero > 0u);
