@@ -88,6 +88,27 @@ int main(void)
           value >= previous && value - previous < 1000 &&
           env.phase == ENG_METAL_LPG_ENV_ATTACK);
 
+    /* Explicit gate-off must preserve the instantaneous level and start decay. */
+    eng_metal_lpg_env_reset(&env);
+    timing.tail_samples = 1000u;
+    eng_metal_lpg_env_trigger(&env, 22000, &timing);
+    for (i = 0; i < 24u; ++i)
+        eng_metal_lpg_env_process(&env);
+    level_at_gate = env.level_q15;
+    eng_metal_lpg_env_gate_off(&env);
+    check("gate-off switches attack to decay without resetting its level",
+          env.phase == ENG_METAL_LPG_ENV_DECAY &&
+          env.target_q15 == ENG_METAL_LPG_ENV_FLOOR &&
+          env.level_q15 == level_at_gate && env.samples_to_decay == 0u);
+    previous = env.level_q15;
+    value = eng_metal_lpg_env_process(&env);
+    check("gate-off decay moves monotonically from the held level",
+          value <= previous && value > 0);
+    eng_metal_lpg_env_gate_off(&env);
+    check("repeated gate-off is idempotent",
+          env.phase == ENG_METAL_LPG_ENV_DECAY &&
+          env.target_q15 == ENG_METAL_LPG_ENV_FLOOR);
+
     /* Zero-length gate enters decay immediately and never sticks in attack. */
     timing.tail_samples = 0u;
     eng_metal_lpg_env_trigger(&env, 32767, &timing);
