@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - energun-metal-core
+      - energun/cp3-1-biquad-prototype-01
     paths-ignore:
       - 'docs/**'
       - '*.md'
