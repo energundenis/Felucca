@@ -113,6 +113,12 @@ static inline void eng_metal_lpg_timing_q15(uint32_t sample_rate,
     if (filter_tau_us < 12000u) filter_tau_us = 12000u;
     out->filter_decay_tau_samples = eng_metal_us_to_samples(sample_rate, filter_tau_us);
 
+    /* The source MAIN FILTER control is 100..8000 Hz. Clamp at the
+     * boundary before fixed-point multiplication so malformed/out-of-range
+     * values cannot wrap the transient calculation before its 12 kHz cap. */
+    if (base_cutoff_hz < 100u) base_cutoff_hz = 100u;
+    if (base_cutoff_hz > 8000u) base_cutoff_hz = 8000u;
+
     /* v98: min(12000 Hz, base cutoff * (1.25 + RESPONSE * 3.75)). */
     cutoff_factor = 40959u + eng_metal_lpg_mul_q15_u32(122876u, response);
     out->filter_transient_hz = eng_metal_lpg_mul_q15_u32(base_cutoff_hz,
