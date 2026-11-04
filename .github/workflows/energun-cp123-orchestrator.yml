@@ -120,6 +120,7 @@ jobs:
           {
             echo "CP3 memory source SHA: $(git -C cp3-memory rev-parse HEAD) — $(git -C cp3-memory log -1 --format=%s) — $(git -C cp3-memory log -1 --format=%cI)"
             echo "CP3.1 biquad source SHA: $(git -C cp3-biquad rev-parse HEAD) — $(git -C cp3-biquad log -1 --format=%s) — $(git -C cp3-biquad log -1 --format=%cI)"
+            echo "CP3.1 biquad + fractional feedback source SHA: $(git -C cp3-biquad rev-parse HEAD) — $(git -C cp3-biquad log -1 --format=%s) — $(git -C cp3-biquad log -1 --format=%cI)"
           } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Set up Python and Node
         uses: actions/setup-python@v5
@@ -140,6 +141,14 @@ jobs:
             cp3-biquad/tests/metal_core_biquad_candidate_test.c \
             -lm -o /tmp/energun-cp3-biquad-test
           /tmp/energun-cp3-biquad-test
+      - name: Run isolated CP3.1 fractional feedback-delay regression
+        run: |
+          set -eu
+          cc -std=c11 -O2 -Wall -Wextra -Werror \
+            -Icp3-biquad/firmware/src \
+            cp3-biquad/tests/metal_core_feedback_delay_candidate_test.c \
+            -o /tmp/energun-cp3-feedback-test
+          /tmp/energun-cp3-feedback-test
       - name: Upload CP3 evidence
         if: always()
         uses: actions/upload-artifact@v4
