@@ -102,6 +102,46 @@ int main(void)
     CHECK(out133 > 94700000 && out133 < 94800000,
           "second tap must approximate 0.35294 of the impulse");
 
+    /* The same impulse at every ring cursor position must produce the
+     * same two taps, including across the physical ring wrap. */
+    {
+        uint32_t start;
+        int wrap_ok = 1;
+        for (start = 0; start < TEST_METAL_FB_RING_SAMPLES; ++start) {
+            int32_t near_tap = 0, far_tap = 0;
+            uint32_t k;
+            test_metal_feedback_delay_reset(&a);
+            for (k = 0; k < start; ++k) {
+                (void)test_metal_feedback_delay_read(&a);
+                test_metal_feedback_delay_write(&a, 0);
+            }
+            for (k = 0; k < 140u; ++k) {
+                int32_t y = test_metal_feedback_delay_read(&a);
+                if (k == 132u) near_tap = y;
+                if (k == 133u) far_tap = y;
+                test_metal_feedback_delay_write(&a, k == 0u ? impulse : 0);
+            }
+            wrap_ok &= near_tap == out132 && far_tap == out133;
+        }
+        CHECK(wrap_ok,
+              "fractional impulse response is invariant at all 133 ring cursor positions");
+    }
+
+    /* Negative impulses must be the exact sign inverse of positive impulses.
+     * This catches asymmetric rounding and signed-shift bias. */
+    {
+        int32_t neg132 = 0, neg133 = 0;
+        test_metal_feedback_delay_reset(&a);
+        for (n = 0; n < 140u; ++n) {
+            int32_t y = test_metal_feedback_delay_read(&a);
+            if (n == 132u) neg132 = y;
+            if (n == 133u) neg133 = y;
+            test_metal_feedback_delay_write(&a, n == 0u ? -impulse : 0);
+        }
+        CHECK(neg132 == -out132 && neg133 == -out133,
+              "negative fractional impulse is the exact sign inverse of positive impulse");
+    }
+
     /* Reset must erase old feedback energy and restore the cursor. */
     test_metal_feedback_delay_reset(&a);
     CHECK(a.write_index == 0u, "reset must rewind the ring cursor");
