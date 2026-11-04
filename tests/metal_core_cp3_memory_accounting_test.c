@@ -66,6 +66,12 @@ _Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(44100u)
 _Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(96000u)
                    <= TEST_POOL_NO_ADPCM,
                "known 96 kHz subtotal must fit non-ADPCM pool");
+_Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(44100u)
+                   <= TEST_POOL_ADPCM,
+               "known 44.1 kHz subtotal must fit ADPCM pool");
+_Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(96000u)
+                   <= TEST_POOL_ADPCM,
+               "known 96 kHz subtotal must fit ADPCM pool");
 _Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(192000u)
                    > TEST_POOL_ADPCM,
                "192 kHz delay design must be rejected by both pool sizes");
@@ -87,6 +93,8 @@ int main(void)
            (unsigned)sizeof(test_fm_env_candidate_t),
            (unsigned)sizeof(test_provisional_voice_state_t),
            (unsigned)sizeof(test_provisional_part_state_t));
+    printf("CP3.1 selected production pool: %u bytes (FELUCCA_ADPCM=%u)\\n",
+           (unsigned)ENG_METAL_CORE_MEM_PART, (unsigned)FELUCCA_ADPCM);
     printf("CP3.1 expanded subtotal: 44.1k=%u 48k=%u 96k=%u 192k=%u bytes\n",
            bytes_44100, bytes_48000, bytes_96000, bytes_192000);
 
@@ -96,7 +104,9 @@ int main(void)
         bytes_96000 != 10112u || bytes_192000 != 19328u)
         return 1;
     if (TEST_POOL_NO_ADPCM - bytes_44100 != 7736u ||
-        TEST_POOL_NO_ADPCM - bytes_96000 != 2776u)
+        TEST_POOL_NO_ADPCM - bytes_96000 != 2776u ||
+        TEST_POOL_ADPCM - bytes_44100 != 8192u ||
+        TEST_POOL_ADPCM - bytes_96000 != 3232u)
         return 1;
 
     puts("CP3.1 provisional memory accounting: PASS (0 failures; not production layout)");
