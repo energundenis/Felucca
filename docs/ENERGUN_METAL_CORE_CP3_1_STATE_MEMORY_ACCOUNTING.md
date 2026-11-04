@@ -369,3 +369,22 @@ Exact implementation commits:
 - `f0ca45193e80b8eb498728a0db891d86b58b9f45` — wrap and signed-symmetry tests.
 
 This is still a host-only candidate. It does not resolve the interpolation's audible equivalence to Web Audio DelayNode, the production feedback gain implementation, or AC79 cycle cost. The candidate is not included in the production firmware.
+
+
+### Follow-up edge coverage and AC79 codegen — 2026-11-04
+
+The feedback-delay host test was extended further after the signed-rounding correction:
+
+- Positive and negative full-scale constant inputs are preserved exactly at all 133 ring cursor positions.
+- Invalid cursor reads return silence; writes are ignored without cursor mutation.
+- Null read/write/reset calls are safe no-ops.
+- The positive/negative fractional impulse symmetry and all-cursor wrap-invariance checks remain enabled.
+
+The AC79 pi32v2 target-probe workflow was extended to compile the feedback interpolation, Q15 gain and ring-write helpers and inspect the resulting object. A disassembly guard rejects signed or unsigned divide instructions in this candidate object.
+
+Latest exact tested source at this checkpoint: `0376b976a70150e5b694997abea3f7ad24f73c4c`.
+- Fast host regression: https://github.com/energundenis/Felucca/actions/runs/41805775690 — SUCCESS.
+- AC79 biquad + feedback-delay compile/codegen workflow: https://github.com/energundenis/Felucca/actions/runs/41805775422 — SUCCESS.
+- The target workflow completed both biquad and feedback-delay object compilation, symbol checks, disassembly inspection, and artifact upload.
+
+The target result is compile/code-generation evidence only. It does not execute on AC79 hardware, measure cycle counts, qualify worst-case ISR time, or establish audio quality. The feedback-delay code remains under `tests/`, not in the production firmware.
