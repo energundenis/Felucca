@@ -12,6 +12,7 @@
 
 #include "../firmware/src/eng_metal_core_osc_voice.h"
 #include "../firmware/src/eng_metal_core_fm.h"
+#include "../firmware/src/eng_metal_core_metal.h"
 #include "../firmware/src/eng_metal_core_vca_render.h"
 
 #include <stdio.h>
@@ -25,6 +26,7 @@
 typedef struct {
     eng_metal_vca_part_state_t vca;
     uint32_t fm_mod_phase[ENG_METAL_VCA_VOICE_COUNT];
+    uint32_t metal_ring_phase[ENG_METAL_VCA_VOICE_COUNT];
 } eng_metal_cp3_osc_fm_vca_part_state_t;
 
 static int failures;
@@ -95,6 +97,8 @@ static void engine_note_on(struct track *track, voice_t *voice)
             uint32_t index = voice_index(t, voice);
             if (state && index < NVOICE)
                 state->fm_mod_phase[index] = 0u;
+            if (state && index < NVOICE)
+                state->metal_ring_phase[index] = 0u;
         }
     }
     eng_metal_vca_targets_q16(ENG_METAL_VCA_Q16_ONE, 32768,
@@ -124,17 +128,24 @@ static void engine_render(struct track *track, voice_t *voice,
     amp = m->amp0;
     da = (m->amp1 - m->amp0) >> 5;
     for (i = 0; i < n; ++i) {
-        int32_t osc1_fm, osc2, source, level;
+        int32_t osc1_fm, osc2, source, level, ring_mod, post_vca;
+        uint32_t metal_inc = eng_metal_ratio_increment(
+            m->inc, ENG_METAL_RATIO_Q16_4_2);
+        uint32_t ring_phase = state->metal_ring_phase[index];
         amp += da;
+        ring_mod = osc_sine(ring_phase);
         osc1_fm = eng_metal_fm_sine_next(
             &voice->ph[ENG_METAL_OSC1_PHASE_SLOT], m->inc,
-            &state->fm_mod_phase[index], m->inc * 3u,
+            &state->fm_mod_phase[index], metal_inc,
             CP3_FM_DEPTH_PHASE_Q32);
+        state->metal_ring_phase[index] = ring_phase + metal_inc;
         osc2 = eng_metal_osc_voice2_next(
             voice, m, ENG_METAL_OSC_TRI, 0x80000000u);
         source = (osc1_fm + osc2) / 2;
         level = eng_metal_vca_process(vca);
-        out[i] += eng_metal_vca_apply_host_amp(source, level, amp);
+        post_vca = eng_metal_vca_apply_host_amp(source, level, amp);
+        post_vca = eng_metal_ring_apply_q15(post_vca, ring_mod, 1u);
+        out[i] += post_vca;
     }
 }
 
@@ -181,7 +192,7 @@ static void test_combined_real_render_and_additive_output(void)
     voice_t *v;
     eng_metal_vca_t *vca;
     int32_t out[CTL];
-    uint32_t i, nonzero = 0, phase_after1, phase_after2, fm_phase_after;
+    uint32_t i, nonzero = 0, phase_after1, phase_after2, fm_phase_after, ring_phase_after;
     const int32_t sentinel = 1234;
 
     setup_host();
@@ -202,12 +213,17 @@ static void test_combined_real_render_and_additive_output(void)
     phase_after1 = v->ph[ENG_METAL_OSC1_PHASE_SLOT];
     phase_after2 = v->ph[ENG_METAL_OSC2_PHASE_SLOT];
     fm_phase_after = part_state(t)->fm_mod_phase[0];
+    ring_phase_after = part_state(t)->metal_ring_phase[0];
     for (i = 0; i < CTL; ++i)
         nonzero += out[i] != sentinel;
     check("real track_render advances OSC1/OSC2/FM phases and runs VCA together",
           phase_after1 != 0u && phase_after2 != 0u &&
           phase_after1 == phase_after2 && fm_phase_after != 0u &&
-          vca->level_q16 > 0 && vca->phase == ENG_METAL_VCA_ATTACK);
+          ring_phase_after != 0u && vca->level_q16 > 0 &&
+          vca->phase == ENG_METAL_VCA_ATTACK);
+    check("FM and post-VCA Metal ring phases have independent state slots",
+          &part_state(t)->fm_mod_phase[0] !=
+          &part_state(t)->metal_ring_phase[0]);
     check("combined renderer adds signal to existing mix instead of overwriting",
           nonzero > 0u);
 
@@ -215,12 +231,15 @@ static void test_combined_real_render_and_additive_output(void)
     {
         uint32_t phase = v->ph[ENG_METAL_OSC1_PHASE_SLOT];
         uint32_t fm_phase = part_state(t)->fm_mod_phase[0];
+        uint32_t ring_phase = part_state(t)->metal_ring_phase[0];
         int32_t level = vca->level_q16;
         trk_note_on_source(t, 64u, 100u, NOTE_SRC_PERFORMANCE);
         check("real sounding retrigger preserves oscillator phase",
               v->ph[ENG_METAL_OSC1_PHASE_SLOT] == phase);
         check("FM modulator phase survives real sounding retrigger",
               part_state(t)->fm_mod_phase[0] == fm_phase);
+        check("Metal ring phase survives real sounding retrigger",
+              part_state(t)->metal_ring_phase[0] == ring_phase);
         check("VCA retrigger starts from instantaneous held level",
               vca->level_q16 == level && vca->phase == ENG_METAL_VCA_ATTACK);
     }
