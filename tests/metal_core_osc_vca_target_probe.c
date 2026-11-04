@@ -33,7 +33,7 @@ _Static_assert(sizeof(((voice_t *)0)->ph) >= 2u * sizeof(uint32_t),
 #define OSC_VCA_PROBE
 #endif
 
-OSC_VCA_PROBE void eng_metal_osc_fm_vca_target_probe_block(
+OSC_VCA_PROBE void eng_metal_osc_vca_target_probe_block(
     voice_t *voice, uint32_t *fm_mod_phase,
     eng_metal_vca_t *vca, int32_t *out,
     const vmod_t *mod, int32_t amp0_q15, int32_t amp1_q15,
