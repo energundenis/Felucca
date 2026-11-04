@@ -85,7 +85,7 @@ jobs:
           node-version: "22"
       - name: Install source-generation dependencies
         run: python -m pip install --upgrade Pillow fonttools
-      - name: Run CP2 host regression (includes LPG boundary, timing, FOLLOW and VCA)
+      - name: Run CP2 host regression (includes LPG boundary, timing, FOLLOW, VCA and real LPG+VCA gate lifecycle dispatch)
         working-directory: cp2
         run: sh tests/run_metal_core_fast.sh
       - name: Upload CP2 evidence
@@ -131,7 +131,7 @@ jobs:
           node-version: "22"
       - name: Install source-generation dependencies
         run: python -m pip install --upgrade Pillow fonttools
-      - name: Run CP3 memory, real Felucca dispatcher and VCA host regression
+      - name: Run CP3 memory, real Felucca dispatcher, VCA and combined dual-OSC+VCA render host regression
         working-directory: cp3-memory
         run: sh tests/run_metal_core_fast.sh
       - name: Run isolated CP3.1 biquad numeric regression
