@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * ENERGUN METAL CORE — CP3 integrated OSC1 + VCA real-dispatch harness.
+ * ENERGUN METAL CORE — CP3 integrated dual-OSC + FM + VCA real-dispatch harness.
  *
  * Combines the existing production OSC phase adapter and VCA envelope in one
  * private engine descriptor, then exercises Felucca's real voice.c dispatcher
@@ -192,7 +192,7 @@ static void test_combined_real_render_and_additive_output(void)
     check("real dispatcher invokes combined descriptor and allocates voice",
           v->active && v->gate && vca &&
           vca->phase == ENG_METAL_VCA_ATTACK);
-    check("descriptor declares exactly the VCA part-state footprint",
+    check("descriptor declares combined OSC+FM+VCA part-state footprint",
           ENGINES[t->engine]->mem == sizeof(eng_metal_cp3_osc_fm_vca_part_state_t) &&
           ENGINES[t->engine]->ownenv == 1u);
 
@@ -204,7 +204,7 @@ static void test_combined_real_render_and_additive_output(void)
     fm_phase_after = part_state(t)->fm_mod_phase[0];
     for (i = 0; i < CTL; ++i)
         nonzero += out[i] != sentinel;
-    check("real track_render advances independent OSC1/OSC2 phases and runs VCA together",
+    check("real track_render advances OSC1/OSC2/FM phases and runs VCA together",
           phase_after1 != 0u && phase_after2 != 0u &&
           phase_after1 == phase_after2 && fm_phase_after != 0u &&
           vca->level_q16 > 0 && vca->phase == ENG_METAL_VCA_ATTACK);
