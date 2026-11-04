@@ -285,6 +285,39 @@ int main(void)
               y == INT32_MAX && sat >= 1);
     }
 
+    {
+        test_metal_biquad_coeff_q30_t main_c, lpg_c;
+        test_metal_biquad_state_t main_s = {0, 0}, lpg_s = {0, 0};
+        double main_oc[5], lpg_oc[5];
+        double main_z1 = 0.0, main_z2 = 0.0;
+        double lpg_z1 = 0.0, lpg_z2 = 0.0;
+        double worst_error = 0.0;
+        int32_t tail_peak = 0;
+        uint32_t main_sat = 0, lpg_sat = 0;
+        int n;
+        make_lowpass(1200.0, 2.0, &main_c, main_oc);
+        make_lowpass(1800.0, 0.7, &lpg_c, lpg_oc);
+        for (n = 0; n < 65536; ++n) {
+            int32_t input = n == 0 ? 5000000 : 0;
+            int32_t main_y = test_metal_biquad_process_q30(
+                &main_c, &main_s, input, &main_sat);
+            int32_t lpg_y = test_metal_biquad_process_q30(
+                &lpg_c, &lpg_s, main_y, &lpg_sat);
+            double main_ref = oracle_process(main_oc, &main_z1, &main_z2,
+                                             (double)input);
+            double lpg_ref = oracle_process(lpg_oc, &lpg_z1, &lpg_z2,
+                                            main_ref);
+            double error = fabs((double)lpg_y - lpg_ref);
+            int32_t magnitude = lpg_y < 0 ?
+                (lpg_y == INT32_MIN ? INT32_MAX : -lpg_y) : lpg_y;
+            if (error > worst_error) worst_error = error;
+            if (n >= 63488 && magnitude > tail_peak)
+                tail_peak = magnitude;
+        }
+        check("serial MAIN -> LPG cascade stays bounded against independent double oracle",
+              main_sat == 0 && lpg_sat == 0 && worst_error < 15000.0 &&
+              tail_peak < 1024);
+    }
     printf("metal biquad: worst impulse error %.3f LSB; worst sine error %.3f LSB\n",
            worst_impulse, worst_sine);
     printf("metal biquad: %s (%u checks, %d failures)\n",
