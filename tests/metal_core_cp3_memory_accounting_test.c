@@ -4,13 +4,14 @@
  */
 #include "../firmware/src/eng_metal_core_vca.h"
 #include "../firmware/src/eng_metal_core_lpg.h"
+#include "../firmware/src/eng_metal_core_memory_budget.h"
 
 #include <stdint.h>
 #include <stdio.h>
 
 #define TEST_VOICES 8u
-#define TEST_POOL_NO_ADPCM 12888u
-#define TEST_POOL_ADPCM 13344u
+#define TEST_POOL_NO_ADPCM ENG_METAL_CORE_MEM_PART_NO_ADPCM
+#define TEST_POOL_ADPCM ENG_METAL_CORE_MEM_PART_ADPCM
 #define TEST_DELAY_MS 3u
 #define TEST_DELAY_SAMPLES(sr) (((sr) * TEST_DELAY_MS + 999u) / 1000u)
 #define TEST_DELAY_BYTES(sr) (TEST_DELAY_SAMPLES(sr) * 4u * TEST_VOICES)
@@ -51,6 +52,10 @@ _Static_assert(sizeof(test_provisional_voice_state_t) == 112u,
                "provisional voice state subtotal changed");
 _Static_assert(sizeof(test_provisional_part_state_t) == 896u,
                "eight provisional voice records must occupy 896 bytes");
+_Static_assert(ENG_METAL_CORE_MEM_PART_NO_ADPCM == 12888u, "non-ADPCM production pool size");
+_Static_assert(ENG_METAL_CORE_MEM_PART_ADPCM == 13344u, "ADPCM production pool size");
+_Static_assert(ENG_METAL_CORE_MEM_PART == (FELUCCA_ADPCM ? TEST_POOL_ADPCM : TEST_POOL_NO_ADPCM),
+               "accounting must use the same pool configuration as production");
 _Static_assert(TEST_DELAY_SAMPLES(44100u) == 133u, "44.1 kHz ring length");
 _Static_assert(TEST_DELAY_SAMPLES(48000u) == 144u, "48 kHz ring length");
 _Static_assert(TEST_DELAY_SAMPLES(96000u) == 288u, "96 kHz ring length");
@@ -85,6 +90,8 @@ int main(void)
     printf("CP3.1 expanded subtotal: 44.1k=%u 48k=%u 96k=%u 192k=%u bytes\n",
            bytes_44100, bytes_48000, bytes_96000, bytes_192000);
 
+    if (ENG_METAL_CORE_MEM_PART != (FELUCCA_ADPCM ? 13344u : 12888u))
+        return 1;
     if (bytes_44100 != 5152u || bytes_48000 != 5504u ||
         bytes_96000 != 10112u || bytes_192000 != 19328u)
         return 1;
