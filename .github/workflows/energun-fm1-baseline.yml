@@ -168,6 +168,22 @@ jobs:
           "$TC/common/bin/objdump" -t build/metal-core-vca-target/vca_harness_probe.o > build/metal-core-vca-target/vca_harness_probe.symbols
           grep -q "eng_metal_vca_harness_target_sample" build/metal-core-vca-target/vca_harness_probe.dis
           grep -q "eng_metal_vca_harness_target_block32" build/metal-core-vca-target/vca_harness_probe.dis
+
+          # Compile the independent LPG gain + VCA envelope block for AC79.
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wextra -Wno-unused-function -Ifirmware/src \
+            -c tests/metal_core_lpg_vca_target_probe.c \
+            -o build/metal-core-vca-target/lpg_vca_probe.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/lpg_vca_probe.o \
+            > build/metal-core-vca-target/lpg_vca_probe.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/lpg_vca_probe.o \
+            > build/metal-core-vca-target/lpg_vca_probe.symbols
+          grep -q "eng_metal_lpg_vca_target_probe_gate_off" build/metal-core-vca-target/lpg_vca_probe.dis
+          grep -q "eng_metal_lpg_vca_target_probe_block" build/metal-core-vca-target/lpg_vca_probe.dis
+          {
+            echo "## ENERGUN LPG + VCA AC79 compile-only probe"
+            echo "The independent LPG gain envelope and VCA release/sample path compiled for pi32v2. Disassembly and symbol table are uploaded; this is not target execution or cycle measurement."
+          } >> "$GITHUB_STEP_SUMMARY"
           # Compile the OSC1/OSC2 phase adapter with the real Felucca DSP primitives.
           # This is target compile/codegen evidence only; no production engine is registered.
           "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \

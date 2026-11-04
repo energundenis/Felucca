@@ -75,6 +75,10 @@ run_test metal_core_lpg_timing
 compile_test metal_core_lpg_env tests/metal_core_lpg_env_test.c
 run_test metal_core_lpg_env
 
+# Real host Note On/Off dispatch drives distinct LPG gain and VCA envelopes.
+compile_test metal_core_cp2_lpg_real_dispatch tests/metal_core_cp2_lpg_real_dispatch_test.c -lm
+run_test metal_core_cp2_lpg_real_dispatch
+
 compile_test metal_core_vca tests/metal_core_vca_test.c -lm
 run_test metal_core_vca
 
@@ -111,7 +115,7 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 24 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 25 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"

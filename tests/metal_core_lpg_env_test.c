@@ -29,6 +29,12 @@ int main(void)
           eng_metal_lpg_env_process(&env) == 0 &&
           env.phase == ENG_METAL_LPG_ENV_IDLE);
 
+    eng_metal_lpg_env_gate_off(&env);
+    check("gate-off on idle is a no-op",
+          env.phase == ENG_METAL_LPG_ENV_IDLE &&
+          env.level_q15 == 0 && env.target_q15 == 0 &&
+          env.coefficient_q30 == 0u);
+
     eng_metal_lpg_env_trigger(&env, 20000, &timing);
     previous = 0;
     for (i = 0; i < 66u; ++i) {
@@ -87,6 +93,37 @@ int main(void)
     check("retrigger during decay holds level and rises without a reset",
           value >= previous && value - previous < 1000 &&
           env.phase == ENG_METAL_LPG_ENV_ATTACK);
+
+    /* Explicit gate-off must preserve the instantaneous level and start decay. */
+    eng_metal_lpg_env_reset(&env);
+    timing.tail_samples = 1000u;
+    eng_metal_lpg_env_trigger(&env, 22000, &timing);
+    for (i = 0; i < 24u; ++i)
+        eng_metal_lpg_env_process(&env);
+    level_at_gate = env.level_q15;
+    eng_metal_lpg_env_gate_off(&env);
+    check("gate-off switches attack to decay without resetting its level",
+          env.phase == ENG_METAL_LPG_ENV_DECAY &&
+          env.target_q15 == ENG_METAL_LPG_ENV_FLOOR &&
+          env.level_q15 == level_at_gate && env.samples_to_decay == 0u);
+    previous = env.level_q15;
+    value = eng_metal_lpg_env_process(&env);
+    check("gate-off decay moves monotonically from the held level",
+          value <= previous && value > 0);
+    eng_metal_lpg_env_gate_off(&env);
+    check("repeated gate-off is idempotent",
+          env.phase == ENG_METAL_LPG_ENV_DECAY &&
+          env.target_q15 == ENG_METAL_LPG_ENV_FLOOR);
+
+    /* A new trigger after explicit Gate Off must cancel decay and hold
+     * the instantaneous level, not restart from silence. */
+    previous = env.level_q15;
+    eng_metal_lpg_env_trigger(&env, 28000, &timing);
+    value = eng_metal_lpg_env_process(&env);
+    check("retrigger after explicit gate-off cancels decay and holds level",
+          env.phase == ENG_METAL_LPG_ENV_ATTACK &&
+          value >= previous && value - previous < 1000 &&
+          env.target_q15 == 28000);
 
     /* Zero-length gate enters decay immediately and never sticks in attack. */
     timing.tail_samples = 0u;

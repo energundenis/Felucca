@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - energun-metal-core
+      - work/cp2-lpg-cutoff-bounds-20261104
     paths-ignore:
       - 'docs/**'
       - '*.md'
