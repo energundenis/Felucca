@@ -115,6 +115,16 @@ int main(void)
           env.phase == ENG_METAL_LPG_ENV_DECAY &&
           env.target_q15 == ENG_METAL_LPG_ENV_FLOOR);
 
+    /* A new trigger after explicit Gate Off must cancel decay and hold
+     * the instantaneous level, not restart from silence. */
+    previous = env.level_q15;
+    eng_metal_lpg_env_trigger(&env, 28000, &timing);
+    value = eng_metal_lpg_env_process(&env);
+    check("retrigger after explicit gate-off cancels decay and holds level",
+          env.phase == ENG_METAL_LPG_ENV_ATTACK &&
+          value >= previous && value - previous < 1000 &&
+          env.target_q15 == 28000);
+
     /* Zero-length gate enters decay immediately and never sticks in attack. */
     timing.tail_samples = 0u;
     eng_metal_lpg_env_trigger(&env, 32767, &timing);
