@@ -15,6 +15,15 @@ _Static_assert(sizeof(eng_metal_vca_t) == 36u,
                "AC79 combined probe VCA state ABI");
 _Static_assert(sizeof(eng_metal_vca_part_state_t) == 288u,
                "AC79 combined probe eight-voice VCA state");
+typedef struct {
+    eng_metal_vca_part_state_t vca;
+    uint32_t fm_mod_phase[ENG_METAL_VCA_VOICE_COUNT];
+} eng_metal_osc_fm_vca_part_state_t;
+
+_Static_assert(sizeof(eng_metal_osc_fm_vca_part_state_t) == 320u,
+               "AC79 combined OSC+FM+VCA state must remain 320 bytes");
+_Static_assert(sizeof(eng_metal_osc_fm_vca_part_state_t) <= ENG_MEM_PART,
+               "AC79 combined OSC+FM+VCA state must fit engine part memory");
 _Static_assert(sizeof(((voice_t *)0)->ph) >= 2u * sizeof(uint32_t),
                "Felucca voice must retain independent OSC1/OSC2 phase slots");
 
