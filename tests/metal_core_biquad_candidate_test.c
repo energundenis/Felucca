@@ -387,6 +387,44 @@ int main(void)
               valid && sat == 0 && max_error < 20000.0 &&
               max_peak < 20000000 && (state.z1 != 0 || state.z2 != 0));
     }
+    {
+        /* Deterministic randomized automation stress: new stable coefficients
+         * every 64 samples, with state retained across all 2,048 transitions. */
+        test_metal_biquad_coeff_q30_t coeff;
+        test_metal_biquad_state_t state = {0, 0};
+        double oracle_coeff[5], z1 = 0.0, z2 = 0.0;
+        uint32_t rng = 0x91E10DA5u, sat = 0u;
+        double max_error = 0.0;
+        int32_t peak = 0;
+        int valid = 1, n;
+        for (n = 0; n < 131072 && valid; ++n) {
+            if ((n & 63) == 0) {
+                double cutoff, q;
+                rng = rng * 1664525u + 1013904223u;
+                cutoff = 100.0 + (double)(rng % 790001u) / 100.0;
+                rng = rng * 1664525u + 1013904223u;
+                q = 0.5 + (double)(rng % 9501u) / 1000.0;
+                valid = make_lowpass(cutoff, q, &coeff, oracle_coeff);
+            }
+            if (valid) {
+                int32_t input = (int32_t)llround(
+                    1500000.0 * sin(2.0 * PI * 173.0 * n / FS) +
+                    900000.0 * sin(2.0 * PI * 997.0 * n / FS));
+                int32_t y = test_metal_biquad_process_q30(
+                    &coeff, &state, input, &sat);
+                double oy = oracle_process(oracle_coeff, &z1, &z2,
+                                           (double)input);
+                double error = fabs((double)y - oy);
+                int32_t magnitude = y < 0 ?
+                    (y == INT32_MIN ? INT32_MAX : -y) : y;
+                if (error > max_error) max_error = error;
+                if (magnitude > peak) peak = magnitude;
+            }
+        }
+        check("2,048 deterministic randomized coefficient transitions remain stable against double oracle",
+              valid && sat == 0u && max_error < 30000.0 &&
+              peak < 100000000 && (state.z1 != 0 || state.z2 != 0));
+    }
     printf("metal biquad: worst impulse error %.3f LSB; worst sine error %.3f LSB\n",
            worst_impulse, worst_sine);
     printf("metal biquad: %s (%u checks, %d failures)\n",
