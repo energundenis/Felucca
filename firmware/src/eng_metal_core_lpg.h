@@ -77,6 +77,20 @@ static inline void eng_metal_lpg_env_trigger(eng_metal_lpg_env_t *env,
     }
 }
 
+/* Explicit gate-off event: begin the already-qualified decay from the
+ * instantaneous level. Repeated gate-off calls are idempotent; retrigger
+ * remains responsible for starting a new attack from the held level.
+ */
+static inline void eng_metal_lpg_env_gate_off(eng_metal_lpg_env_t *env)
+{
+    if (!env || env->phase == ENG_METAL_LPG_ENV_IDLE)
+        return;
+    env->target_q15 = ENG_METAL_LPG_ENV_FLOOR;
+    env->coefficient_q30 = env->decay_coefficient_q30;
+    env->samples_to_decay = 0;
+    env->phase = ENG_METAL_LPG_ENV_DECAY;
+}
+
 /* One sample. Returns the current nonnegative Q15 gain. */
 static inline int32_t eng_metal_lpg_env_process(eng_metal_lpg_env_t *env)
 {
