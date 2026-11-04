@@ -4,8 +4,8 @@ Date: 2026-11-04
 Repository: energundenis/Felucca  
 Work branch: energun-metal-core  
 Initial verified code/test HEAD: 78cc46c39b5b7599c894a2a144cea0f649105beb  
-Latest queue/test commit: 8b333643e78c34e4bd050337da9d2f43f06ff31b  
-Current branch HEAD at latest refresh: 3d3da78594d679ea97ed9a55cc10e3f200b129a3 (documentation-only after the tested queue commit)
+Latest verified code/test HEAD: 404a51ab03171fe893721ce17665ff461625734f  
+Latest docs checkpoint before this status update: f943824758187a839ccdbe12ce1f081098c9f517 (documentation-only after code/test HEAD 404a51ab03171fe893721ce17665ff461625734f)
 
 ## Overall status
 
@@ -87,7 +87,7 @@ Full Baseline on the same exact HEAD:
 | CP3.0 host callback / voice contract | 100% audit | Real Felucca voice.c / seq.c behavior and block-boundary Gate semantics documented |
 | Real dispatcher / sequencer lifecycle test | 100% host | Test executes Felucca hostsim production sources for POLY, MONO, LEGATO, UNISON, note-off, step dispatch and Accent provenance |
 | Test-only METAL VCA callback dispatch | 100% host | Private test descriptor exercises real host track_render() / engine callback path without allocating a production engine ID |
-| CP3.1 state / memory accounting | 55% | VCA/LPG and provisional filter/FM/delay state subtotals recorded; final complete state structure not frozen |
+| CP3.1 state / memory accounting | 55% | VCA/LPG and provisional filter/FM/delay state subtotals recorded; real ENG_MEM backing/claim contract is host-tested across all four parts for the 288-byte VCA test state; final complete state structure not frozen |
 | CP3.1 fixed-point biquad | 45% | Isolated candidate and host/reference tests exist in Draft PR #1; no production filter integration or frozen state ABI |
 | CP3.2 complete DSP chain integration | 15% | VCA-only harness exists; complete oscillator/FM/FOLD/main-filter/LPG chain remains unconnected |
 | CP3.3 parameter map / stable engine ID / production registry | 0% | 37-control V1 include/defer map and optional SLICE/ADPCM-safe append-only engine ID remain unresolved |
@@ -117,3 +117,22 @@ Full Baseline on the same exact HEAD:
 - No firmware was flashed and no physical FM-1 runtime/audio test was performed.
 - AC79 compile-only checks are not runtime/cycle validation.
 - No PR was merged. Production engine registration, full DSP chain, target Sidecar backend and runtime persistence call sites remain gated.
+
+
+## Latest CP1 / CP3 verification checkpoint — 2026-11-04
+
+Exact code/test HEAD: 404a51ab03171fe893721ce17665ff461625734f.
+
+- Fast Regression [run 41796239006](https://github.com/energundenis/Felucca/actions/runs/41796239006): **SUCCESS**. All 24 focused test programs/suites passed.
+- The CP3 real VCA dispatch test now checks all four ENG_MEM part regions: mapping, pairwise separation, non-aliasing writes, first-claim zeroing, same-owner retention and bounded owner-change clearing. All six aggregate checks passed.
+- The dependency-aware CP1 queue ran its executable host stages, including Private cache/bridge, Sidecar validation, generation binding, A/B selection, pair coordinator fault injection, project/live lifecycle adapter and preset-bank lifecycle adapter. The queue result is **BLOCKED** at production pair-commit ordering / runtime integration, as intended. The host suite's SUCCESS does not close the target-storage or physical Flash gates.
+- Full Baseline [run 41796239193](https://github.com/energundenis/Felucca/actions/runs/41796239193) was **IN PROGRESS** at this status update. Unmodified Felucca firmware build and AC79 compile-only probes for VCA, Sidecar, payload codecs, Private cache/bridge, pair coordinator and lifecycle adapters had passed; final host/web regression was not yet confirmed.
+
+### Current independent pull requests observed 2026-11-04
+
+| PR | Scope | Head | Latest evidence at inspection |
+|---|---|---|---|
+| [#6](https://github.com/energundenis/Felucca/pull/6) | CP3.1 shared Felucca engine-memory budget constants | aaf6faaee310053509add3c205f34458aaee5172 | Fast run 41795538110 SUCCESS; Full Baseline 41795538116 still running at inspection |
+| [#7](https://github.com/energundenis/Felucca/pull/7) | CP2 LPG cutoff input bounds | 4a433b973778409bfb4fdf2a88cbc0654bdd819b | Fast run 41795684551 SUCCESS; Full Baseline 41795684705 still running at inspection |
+
+These PRs remain open and unmerged. The CP3.1 budget PR changes the shared accounting constants only; it does not freeze the full METAL CORE state layout. The CP2 LPG bounds PR is outside this CP1/CP3 increment.
