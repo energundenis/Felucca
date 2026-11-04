@@ -95,6 +95,11 @@ run_test metal_core_cp3_real_dispatch
 compile_test metal_core_cp3_real_vca_dispatch tests/metal_core_cp3_real_vca_dispatch_test.c -lm
 run_test metal_core_cp3_real_vca_dispatch
 
+# Combined OSC1 + VCA callback: real Felucca voice allocation, additive
+# track_render output, sounding retrigger continuity, Gate Off and done().
+compile_test metal_core_cp3_osc_vca_real_dispatch tests/metal_core_cp3_osc_vca_real_dispatch_test.c -lm
+run_test metal_core_cp3_osc_vca_real_dispatch
+
 compile_test_strict metal_core_feedback_delay_candidate tests/metal_core_feedback_delay_candidate_test.c
 run_test metal_core_feedback_delay_candidate
 
