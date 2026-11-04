@@ -17,8 +17,11 @@ int32_t eng_metal_feedback_target_probe_gain_q15(
     int32_t delayed, uint16_t gain_q15)
 {
     int64_t product = (int64_t)delayed * (int64_t)gain_q15;
-    product += product >= 0 ? 16384 : -16384;
-    return (int32_t)(product >> 15);
+    /* Match the candidate's symmetric signed rounding without relying
+     * on implementation-defined right shift of a negative signed value. */
+    if (product >= 0)
+        return (int32_t)((product + 16384) >> 15);
+    return (int32_t)(-(((-product) + 16384) >> 15));
 }
 
 __attribute__((noinline))
