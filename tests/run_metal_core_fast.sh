@@ -115,7 +115,7 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 24 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 25 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
