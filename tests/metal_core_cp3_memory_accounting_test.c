@@ -95,9 +95,9 @@ int main(void)
            (unsigned)sizeof(test_fm_env_candidate_t),
            (unsigned)sizeof(test_provisional_voice_state_t),
            (unsigned)sizeof(test_provisional_part_state_t));
-    printf("CP3.1 total Felucca engine pool: %u bytes across %u parts\\n",
+    printf("CP3.1 total Felucca engine pool: %u bytes across %u parts\n",
            (unsigned)(ENG_METAL_CORE_MEM_PART * NPART), (unsigned)NPART);
-    printf("CP3.1 selected production pool: %u bytes (FELUCCA_ADPCM=%u)\\n",
+    printf("CP3.1 selected production pool: %u bytes (FELUCCA_ADPCM=%u)\n",
            (unsigned)ENG_METAL_CORE_MEM_PART, (unsigned)FELUCCA_ADPCM);
     printf("CP3.1 expanded subtotal: 44.1k=%u 48k=%u 96k=%u 192k=%u bytes\n",
            bytes_44100, bytes_48000, bytes_96000, bytes_192000);
