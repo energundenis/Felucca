@@ -34,7 +34,7 @@ _Static_assert(sizeof(cp2_lpg_vca_part_state_t) <= ENG_MEM_PART,
                "CP2 LPG+VCA state must fit Felucca engine part memory");
 
 static const eng_metal_lpg_timing_t CP2_TEST_LPG_TIMING = {
-    66u, 200u, 100u, 50u, 80u, 8000u, 2000u
+    66u, 5000u, 100u, 50u, 80u, 8000u, 2000u
 };
 
 static int failures;
