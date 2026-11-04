@@ -318,6 +318,40 @@ int main(void)
               main_sat == 0 && lpg_sat == 0 && worst_error < 15000.0 &&
               tail_peak < 1024);
     }
+    {
+        /* Coefficient updates occur at a block boundary without clearing DF2T
+         * history. The oracle follows the same old->new coefficient schedule. */
+        test_metal_biquad_coeff_q30_t old_c, new_c;
+        test_metal_biquad_state_t s = {0, 0};
+        double old_oc[5], new_oc[5], z1 = 0.0, z2 = 0.0;
+        uint32_t sat = 0;
+        int32_t previous = 0;
+        int32_t peak_after_switch = 0;
+        double max_error = 0.0;
+        int n;
+        make_lowpass(900.0, 1.5, &old_c, old_oc);
+        make_lowpass(4200.0, 0.7, &new_c, new_oc);
+        for (n = 0; n < 8192; ++n) {
+            int32_t input = (int32_t)llround(
+                2500000.0 * sin(2.0 * PI * 173.0 * n / FS));
+            const test_metal_biquad_coeff_q30_t *c = n < 4096 ? &old_c : &new_c;
+            const double *oc = n < 4096 ? old_oc : new_oc;
+            int32_t y = test_metal_biquad_process_q30(c, &s, input, &sat);
+            double oy = oracle_process(oc, &z1, &z2, (double)input);
+            double error = fabs((double)y - oy);
+            if (error > max_error) max_error = error;
+            if (n == 4095) previous = y;
+            if (n >= 4096 && n < 4104) {
+                int32_t magnitude = y < 0 ?
+                    (y == INT32_MIN ? INT32_MAX : -y) : y;
+                if (magnitude > peak_after_switch) peak_after_switch = magnitude;
+            }
+        }
+        check("block-boundary coefficient update preserves DF2T history and matches switched double oracle",
+              sat == 0 && max_error < 12000.0 &&
+              peak_after_switch < 20000000 && previous != 0 &&
+              (s.z1 != 0 || s.z2 != 0));
+    }
     printf("metal biquad: worst impulse error %.3f LSB; worst sine error %.3f LSB\n",
            worst_impulse, worst_sine);
     printf("metal biquad: %s (%u checks, %d failures)\n",
