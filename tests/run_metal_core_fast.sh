@@ -86,6 +86,8 @@ run_test metal_core_vca_real_track_adapter
 
 compile_test metal_core_cp3_memory_accounting tests/metal_core_cp3_memory_accounting_test.c
 run_test metal_core_cp3_memory_accounting
+compile_test metal_core_cp3_memory_accounting_adpcm tests/metal_core_cp3_memory_accounting_test.c -DFELUCCA_ADPCM=1
+run_test metal_core_cp3_memory_accounting_adpcm
 
 compile_test metal_core_cp3_real_dispatch tests/metal_core_cp3_real_dispatch_test.c -lm
 run_test metal_core_cp3_real_dispatch
