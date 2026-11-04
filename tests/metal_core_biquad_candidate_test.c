@@ -352,6 +352,41 @@ int main(void)
               peak_after_switch < 20000000 && previous != 0 &&
               (s.z1 != 0 || s.z2 != 0));
     }
+    {
+        /* Repeated block-boundary retunes model fast parameter movement while
+         * retaining DF2T history. The independent oracle follows each block. */
+        static const double retune_cutoff[] = {300.0, 900.0, 2400.0, 6000.0};
+        static const double retune_q[] = {0.7, 2.0, 5.0, 10.0};
+        test_metal_biquad_coeff_q30_t coeff[4];
+        double oracle_coeff[4][5];
+        test_metal_biquad_state_t state = {0, 0};
+        double z1 = 0.0, z2 = 0.0, max_error = 0.0;
+        uint32_t sat = 0;
+        int32_t max_peak = 0;
+        int n, i;
+        int valid = 1;
+        for (i = 0; i < 4; ++i)
+            valid &= make_lowpass(retune_cutoff[i], retune_q[i],
+                                  &coeff[i], oracle_coeff[i]);
+        for (n = 0; n < 16384 && valid; ++n) {
+            unsigned block = (unsigned)n / 256u;
+            unsigned index = block % 4u;
+            int32_t input = (int32_t)llround(
+                2500000.0 * sin(2.0 * PI * 311.0 * n / FS));
+            int32_t y = test_metal_biquad_process_q30(
+                &coeff[index], &state, input, &sat);
+            double oy = oracle_process(oracle_coeff[index], &z1, &z2,
+                                       (double)input);
+            double error = fabs((double)y - oy);
+            int32_t magnitude = y < 0 ?
+                (y == INT32_MIN ? INT32_MAX : -y) : y;
+            if (error > max_error) max_error = error;
+            if (magnitude > max_peak) max_peak = magnitude;
+        }
+        check("64 repeated block-boundary retunes preserve history and track the double oracle",
+              valid && sat == 0 && max_error < 20000.0 &&
+              max_peak < 20000000 && (state.z1 != 0 || state.z2 != 0));
+    }
     printf("metal biquad: worst impulse error %.3f LSB; worst sine error %.3f LSB\n",
            worst_impulse, worst_sine);
     printf("metal biquad: %s (%u checks, %d failures)\n",
