@@ -55,6 +55,9 @@ run_test fm6bank
 compile_test metal_core_osc tests/metal_core_osc_test.c -lm
 run_test metal_core_osc
 
+compile_test_strict metal_core_fm tests/metal_core_fm_test.c
+run_test metal_core_fm
+
 compile_test metal_core_osc_source tests/metal_core_osc_source_test.c -lm
 run_test metal_core_osc_source
 
@@ -118,12 +121,12 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 25 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 26 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 25 focused host tests."
+        echo "Generated headers and compiled/executed all 26 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
