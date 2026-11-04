@@ -61,9 +61,9 @@ static void test_modulation_and_bounds(void)
     int differs = 0, bounded = 1;
     for (i = 0; i < 4096u; ++i) {
         int32_t plain = eng_metal_fm_sine_next(&cp_a, 0x02000000u,
-                                                &mp_a, 0x01000000u, 0u);
+                                                &mp_a, 0x01000001u, 0u);
         int32_t fm = eng_metal_fm_sine_next(&cp_b, 0x02000000u,
-                                             &mp_b, 0x01000000u, 0x20000000u);
+                                             &mp_b, 0x01000001u, 0x20000000u);
         if (plain != fm)
             differs = 1;
         if (fm < -32768 || fm > 32767)
