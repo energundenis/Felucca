@@ -122,6 +122,9 @@ static int engine_done(struct track *track, voice_t *voice)
     return eng_metal_vca_done(voice_state((track_t *)track, voice));
 }
 
+_Static_assert(sizeof(eng_metal_vca_part_state_t) <= ENG_MEM_PART,
+               "combined OSC+VCA state must fit Felucca engine part memory");
+
 static const engine_t ENG_METAL_CORE_OSC_VCA_CP3_TEST = {
     .name = "MC OSC+VCA CP3 TEST",
     .poly = NVOICE,
