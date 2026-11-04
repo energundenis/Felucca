@@ -34,6 +34,10 @@ jobs:
           ref: energun-metal-core
           path: cp1
           submodules: recursive
+      - name: Record CP1 tested revision
+        working-directory: cp1
+        run: |
+          echo "CP1 source SHA: $(git rev-parse HEAD)" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Set up Python and Node
         uses: actions/setup-python@v5
         with:
@@ -68,6 +72,10 @@ jobs:
           ref: work/cp2-lpg-cutoff-bounds-20261104
           path: cp2
           submodules: recursive
+      - name: Record CP2 tested revision
+        working-directory: cp2
+        run: |
+          echo "CP2 source SHA: $(git rev-parse HEAD)" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Set up Python and Node
         uses: actions/setup-python@v5
         with:
@@ -107,6 +115,12 @@ jobs:
         with:
           ref: energun/cp3-1-biquad-prototype-01
           path: cp3-biquad
+      - name: Record CP3 tested revisions
+        run: |
+          {
+            echo "CP3 memory source SHA: $(git -C cp3-memory rev-parse HEAD)"
+            echo "CP3.1 biquad source SHA: $(git -C cp3-biquad rev-parse HEAD)"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Set up Python and Node
         uses: actions/setup-python@v5
         with:
