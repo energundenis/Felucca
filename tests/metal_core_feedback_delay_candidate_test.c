@@ -142,6 +142,44 @@ int main(void)
               "negative fractional impulse is the exact sign inverse of positive impulse");
     }
 
+    /* Interpolation must preserve a constant full-scale signal exactly,
+     * for both polarities and at every ring position. */
+    {
+        uint32_t cursor;
+        int dc_ok = 1;
+        for (cursor = 0; cursor < TEST_METAL_FB_RING_SAMPLES; ++cursor) {
+            uint32_t k;
+            test_metal_feedback_delay_reset(&a);
+            for (k = 0; k < TEST_METAL_FB_RING_SAMPLES; ++k)
+                a.sample[k] = INT32_MAX;
+            a.write_index = (uint16_t)cursor;
+            dc_ok &= test_metal_feedback_delay_read(&a) == INT32_MAX;
+            for (k = 0; k < TEST_METAL_FB_RING_SAMPLES; ++k)
+                a.sample[k] = INT32_MIN;
+            dc_ok &= test_metal_feedback_delay_read(&a) == INT32_MIN;
+        }
+        CHECK(dc_ok,
+              "fractional interpolation preserves positive and negative full-scale DC at every cursor");
+    }
+
+    /* Invalid cursors and null pointers must fail closed without out-of-bounds
+     * access or cursor mutation. */
+    {
+        uint16_t saved;
+        test_metal_feedback_delay_reset(&a);
+        a.write_index = TEST_METAL_FB_RING_SAMPLES;
+        saved = a.write_index;
+        CHECK(test_metal_feedback_delay_read(&a) == 0,
+              "invalid ring cursor reads silence");
+        test_metal_feedback_delay_write(&a, 12345);
+        CHECK(a.write_index == saved,
+              "invalid ring cursor write is ignored without mutation");
+        CHECK(test_metal_feedback_delay_read(0) == 0,
+              "null ring read returns silence");
+        test_metal_feedback_delay_write(0, 12345);
+        test_metal_feedback_delay_reset(0);
+    }
+
     /* Reset must erase old feedback energy and restore the cursor. */
     test_metal_feedback_delay_reset(&a);
     CHECK(a.write_index == 0u, "reset must rewind the ring cursor");
