@@ -108,10 +108,13 @@ static void engine_render(struct track *track, voice_t *voice,
     amp = m->amp0;
     da = (m->amp1 - m->amp0) >> 5;
     for (i = 0; i < n; ++i) {
-        int32_t source, level;
+        int32_t osc1, osc2, source, level;
         amp += da;
-        source = eng_metal_osc_voice1_next(
+        osc1 = eng_metal_osc_voice1_next(
             voice, m, ENG_METAL_OSC_SAW, 0x80000000u);
+        osc2 = eng_metal_osc_voice2_next(
+            voice, m, ENG_METAL_OSC_TRI, 0x80000000u);
+        source = (osc1 + osc2) / 2;
         level = eng_metal_vca_process(vca);
         out[i] += eng_metal_vca_apply_host_amp(source, level, amp);
     }
@@ -160,7 +163,7 @@ static void test_combined_real_render_and_additive_output(void)
     voice_t *v;
     eng_metal_vca_t *vca;
     int32_t out[CTL];
-    uint32_t i, nonzero = 0, phase_after;
+    uint32_t i, nonzero = 0, phase_after1, phase_after2;
     const int32_t sentinel = 1234;
 
     setup_host();
@@ -178,11 +181,13 @@ static void test_combined_real_render_and_additive_output(void)
     for (i = 0; i < CTL; ++i)
         out[i] = sentinel;
     (void)track_render(t, out, CTL);
-    phase_after = v->ph[ENG_METAL_OSC1_PHASE_SLOT];
+    phase_after1 = v->ph[ENG_METAL_OSC1_PHASE_SLOT];
+    phase_after2 = v->ph[ENG_METAL_OSC2_PHASE_SLOT];
     for (i = 0; i < CTL; ++i)
         nonzero += out[i] != sentinel;
-    check("real track_render advances OSC1 phase and runs VCA in same callback",
-          phase_after != 0u && vca->level_q16 > 0 &&
+    check("real track_render advances independent OSC1/OSC2 phases and runs VCA together",
+          phase_after1 != 0u && phase_after2 != 0u &&
+          phase_after1 != phase_after2 && vca->level_q16 > 0 &&
           vca->phase == ENG_METAL_VCA_ATTACK);
     check("combined renderer adds signal to existing mix instead of overwriting",
           nonzero > 0u);
