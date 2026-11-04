@@ -216,3 +216,17 @@ The full baseline workflow on this exact HEAD, run `41340134381`, was pending at
 ### Acceptance boundary
 
 This adds **target compile/code-generation evidence only** for the OSC phase adapter. It does not link the adapter into a METAL CORE engine, register an engine, render the complete DSP chain, measure AC79 cycles, execute on hardware, or establish audible behavior. CP3 remains **40%**; this probe alone does not close CP3.2 or CP3.4.
+
+
+## CP3.1 four-part engine-memory contract — 2026-11-04
+
+The host VCA dispatch regression now checks all four Felucca per-part memory regions through the real ENG_MEM(p) accessor and production eng_mem_claim() implementation compiled by tests/hostsim.c:
+
+- four-part accessor mapping and pairwise pool separation;
+- write isolation between parts;
+- first-claim zeroing and same-owner retention;
+- owner-change clearing limited to the descriptor's declared engine_t.mem bytes, with the pool tail preserved.
+
+Evidence: code/test HEAD 404a51ab03171fe893721ce17665ff461625734f, Fast Regression [41796239006](https://github.com/energundenis/Felucca/actions/runs/41796239006) **SUCCESS**, 24/24 focused programs/suites. This is host evidence for the current 288-byte VCA test state only. The exact-head Full Baseline [41796239193](https://github.com/energundenis/Felucca/actions/runs/41796239193) was still running when recorded; its final status must be checked separately.
+
+CP3.1 remains open: filter/FM/fold/delay state and retrigger semantics are not fully frozen, complete engine state size is unknown, and target cycle/runtime qualification has not been performed.
