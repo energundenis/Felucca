@@ -5,6 +5,7 @@
 #include "../firmware/src/eng_metal_core_vca.h"
 #include "../firmware/src/eng_metal_core_lpg.h"
 #include "../firmware/src/eng_metal_core_memory_budget.h"
+#include "../firmware/src/core.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -52,6 +53,7 @@ _Static_assert(sizeof(test_provisional_voice_state_t) == 112u,
                "provisional voice state subtotal changed");
 _Static_assert(sizeof(test_provisional_part_state_t) == 896u,
                "eight provisional voice records must occupy 896 bytes");
+_Static_assert(NPART == 4u, "Felucca has four independently allocated part pools");
 _Static_assert(ENG_METAL_CORE_MEM_PART_NO_ADPCM == 12888u, "non-ADPCM production pool size");
 _Static_assert(ENG_METAL_CORE_MEM_PART_ADPCM == 13344u, "ADPCM production pool size");
 _Static_assert(ENG_METAL_CORE_MEM_PART == (FELUCCA_ADPCM ? TEST_POOL_ADPCM : TEST_POOL_NO_ADPCM),
@@ -93,6 +95,8 @@ int main(void)
            (unsigned)sizeof(test_fm_env_candidate_t),
            (unsigned)sizeof(test_provisional_voice_state_t),
            (unsigned)sizeof(test_provisional_part_state_t));
+    printf("CP3.1 total Felucca engine pool: %u bytes across %u parts\\n",
+           (unsigned)(ENG_METAL_CORE_MEM_PART * NPART), (unsigned)NPART);
     printf("CP3.1 selected production pool: %u bytes (FELUCCA_ADPCM=%u)\\n",
            (unsigned)ENG_METAL_CORE_MEM_PART, (unsigned)FELUCCA_ADPCM);
     printf("CP3.1 expanded subtotal: 44.1k=%u 48k=%u 96k=%u 192k=%u bytes\n",
