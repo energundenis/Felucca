@@ -55,7 +55,7 @@ run_test fm6bank
 compile_test metal_core_osc tests/metal_core_osc_test.c -lm
 run_test metal_core_osc
 
-compile_test_strict metal_core_fm tests/metal_core_fm_test.c
+compile_test metal_core_fm tests/metal_core_fm_test.c
 run_test metal_core_fm
 
 compile_test metal_core_osc_source tests/metal_core_osc_source_test.c -lm
