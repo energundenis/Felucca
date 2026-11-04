@@ -108,3 +108,20 @@ No filter code was added in this proposal. No production engine registration, pa
 ## 8. Disposition
 
 DF2T is the preferred candidate for a first host prototype because its two-state mono realization has a compact and explicit memory footprint. Q3.29 coefficients and int32 signal-scale states are proposals pending numeric-range proof. CP3.1 remains open.
+
+
+## 9. Dense quantized stability checkpoint — 2026-11-04
+
+The isolated host candidate test now sweeps the full documented MAIN FILTER cutoff interval and Q interval on a dense deterministic grid:
+
+- Cutoff: 100–8,000 Hz in 25 Hz increments (317 values).
+- Q: 0.5–20 in 0.25 increments (79 values).
+- Total: 25,043 normalized coefficient sets.
+- Each coefficient set is quantized to the candidate Q2.30 format and checked against the Jury second-order stability conditions.
+
+Exact checked head: `2b5519b3400a8ce679455a07ca00fbc1dcfeb3ab`.
+Fast host regression: https://github.com/energundenis/Felucca/actions/runs/41802612945 — SUCCESS.
+AC79 pi32v2 compile-only candidate probe: https://github.com/energundenis/Felucca/actions/runs/41802612938 — SUCCESS.
+Cross-CP orchestrator #6: https://github.com/energundenis/Felucca/actions/runs/41802864500 — SUCCESS; CP3.1 lane reports 16 candidate checks, 0 failures.
+
+This strengthens the coefficient quantization/stability evidence only. It does not validate all dynamic filter trajectories, the full pre-filter signal range, target runtime cycle cost, audio artifacts, or production integration. The candidate state/coefficient ABI remains provisional.
