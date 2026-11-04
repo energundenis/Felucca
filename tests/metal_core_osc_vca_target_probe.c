@@ -9,6 +9,7 @@
 #include "../firmware/src/engines.c"
 #include "../firmware/src/eng_metal_core_osc_voice.h"
 #include "../firmware/src/eng_metal_core_fm.h"
+#include "../firmware/src/eng_metal_core_metal.h"
 #include "../firmware/src/eng_metal_core_vca_render.h"
 
 _Static_assert(sizeof(eng_metal_vca_t) == 36u,
@@ -18,10 +19,11 @@ _Static_assert(sizeof(eng_metal_vca_part_state_t) == 288u,
 typedef struct {
     eng_metal_vca_part_state_t vca;
     uint32_t fm_mod_phase[ENG_METAL_VCA_VOICE_COUNT];
+    uint32_t metal_ring_phase[ENG_METAL_VCA_VOICE_COUNT];
 } eng_metal_osc_fm_vca_part_state_t;
 
-_Static_assert(sizeof(eng_metal_osc_fm_vca_part_state_t) == 320u,
-               "AC79 combined OSC+FM+VCA state must remain 320 bytes");
+_Static_assert(sizeof(eng_metal_osc_fm_vca_part_state_t) == 352u,
+               "AC79 combined OSC+FM+Metal+VCA state must remain 352 bytes");
 _Static_assert(sizeof(eng_metal_osc_fm_vca_part_state_t) <= ENG_MEM_PART,
                "AC79 combined OSC+FM+VCA state must fit engine part memory");
 _Static_assert(sizeof(((voice_t *)0)->ph) >= 2u * sizeof(uint32_t),
@@ -34,29 +36,34 @@ _Static_assert(sizeof(((voice_t *)0)->ph) >= 2u * sizeof(uint32_t),
 #endif
 
 OSC_VCA_PROBE void eng_metal_osc_vca_target_probe_block(
-    voice_t *voice, uint32_t *fm_mod_phase,
+    voice_t *voice, uint32_t *fm_mod_phase, uint32_t *metal_ring_phase,
     eng_metal_vca_t *vca, int32_t *out,
     const vmod_t *mod, int32_t amp0_q15, int32_t amp1_q15,
     uint32_t n)
 {
     uint32_t i;
     int32_t amp, da;
-    if (!voice || !fm_mod_phase || !vca || !out || !mod)
+    if (!voice || !fm_mod_phase || !metal_ring_phase || !vca || !out || !mod)
         return;
     if (n > CTL)
         n = CTL;
     amp = amp0_q15;
     da = (amp1_q15 - amp0_q15) >> 5;
     for (i = 0; i < n; ++i) {
-        int32_t osc1_fm, osc2, source, level;
+        int32_t osc1_fm, osc2, source, level, ring_mod, post_vca;
+        uint32_t metal_inc = eng_metal_ratio_increment(
+            mod->inc, ENG_METAL_RATIO_Q16_4_2);
+        ring_mod = osc_sine(*metal_ring_phase);
         amp += da;
         osc1_fm = eng_metal_fm_sine_next(
             &voice->ph[ENG_METAL_OSC1_PHASE_SLOT], mod->inc,
-            fm_mod_phase, mod->inc * 3u, 0x20000000u);
+            fm_mod_phase, metal_inc, 0x20000000u);
+        *metal_ring_phase += metal_inc;
         osc2 = eng_metal_osc_voice2_next(
             voice, mod, ENG_METAL_OSC_TRI, 0x80000000u);
         source = (osc1_fm + osc2) / 2;
         level = eng_metal_vca_process(vca);
-        out[i] += eng_metal_vca_apply_host_amp(source, level, amp);
+        post_vca = eng_metal_vca_apply_host_amp(source, level, amp);
+        out[i] += eng_metal_ring_apply_q15(post_vca, ring_mod, 1u);
     }
 }
