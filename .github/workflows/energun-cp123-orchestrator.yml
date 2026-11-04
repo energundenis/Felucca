@@ -1,0 +1,170 @@
+name: ENERGUN FM-1 CORE CP1-CP2-CP3 orchestrator
+
+on:
+  push:
+    branches:
+      - work/cp123-orchestrator-20261104
+    paths:
+      - .github/workflows/energun-cp123-orchestrator.yml
+  pull_request:
+    branches:
+      - energun-metal-core
+    paths:
+      - .github/workflows/energun-cp123-orchestrator.yml
+      - tests/**
+      - firmware/src/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: energun-cp123-orchestrator-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  cp1-persistence:
+    name: CP1 — persistence DAG + full focused host regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout CP1 coordination branch
+        uses: actions/checkout@v4
+        with:
+          ref: energun-metal-core
+          path: cp1
+          submodules: recursive
+      - name: Set up Python and Node
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install source-generation dependencies
+        run: python -m pip install --upgrade Pillow fonttools
+      - name: Run CP1 queue and complete fast regression
+        working-directory: cp1
+        run: sh tests/run_metal_core_fast.sh
+      - name: Upload CP1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp1-persistence-${{ github.sha }}
+          path: |
+            cp1/build/metal-core-fast/
+            cp1/build/cp1-test-queue/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp2-dsp:
+    name: CP2 — FOLLOW / VCA / LPG focused host regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout CP2 work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/cp2-lpg-cutoff-bounds-20261104
+          path: cp2
+          submodules: recursive
+      - name: Set up Python and Node
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install source-generation dependencies
+        run: python -m pip install --upgrade Pillow fonttools
+      - name: Run CP2 host regression (includes LPG boundary, timing, FOLLOW and VCA)
+        working-directory: cp2
+        run: sh tests/run_metal_core_fast.sh
+      - name: Upload CP2 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp2-dsp-${{ github.sha }}
+          path: |
+            cp2/build/metal-core-fast/
+            cp2/build/cp1-test-queue/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cp3-engine:
+    name: CP3 — memory / real dispatcher / biquad candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout CP3 memory and real-dispatch branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/cp3-shared-memory-budget-20261104
+          path: cp3-memory
+          submodules: recursive
+      - name: Checkout isolated CP3.1 biquad candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: energun/cp3-1-biquad-prototype-01
+          path: cp3-biquad
+      - name: Set up Python and Node
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install source-generation dependencies
+        run: python -m pip install --upgrade Pillow fonttools
+      - name: Run CP3 memory, real Felucca dispatcher and VCA host regression
+        working-directory: cp3-memory
+        run: sh tests/run_metal_core_fast.sh
+      - name: Run isolated CP3.1 biquad numeric regression
+        run: |
+          set -eu
+          cc -std=c11 -O2 -Wall -Wextra -Werror \
+            cp3-biquad/tests/metal_core_biquad_candidate_test.c \
+            -lm -o /tmp/energun-cp3-biquad-test
+          /tmp/energun-cp3-biquad-test
+      - name: Upload CP3 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cp3-engine-${{ github.sha }}
+          path: |
+            cp3-memory/build/metal-core-fast/
+            cp3-memory/build/cp1-test-queue/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  orchestration-result:
+    name: Orchestration result
+    if: always()
+    needs:
+      - cp1-persistence
+      - cp2-dsp
+      - cp3-engine
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report lane results
+        env:
+          CP1: ${{ needs.cp1-persistence.result }}
+          CP2: ${{ needs.cp2-dsp.result }}
+          CP3: ${{ needs.cp3-engine.result }}
+        run: |
+          {
+            echo "## ENERGUN FM-1 CORE — CP1 / CP2 / CP3 orchestration"
+            echo
+            echo "| Lane | Result |"
+            echo "|---|---|"
+            echo "| CP1 persistence | ${CP1} |"
+            echo "| CP2 DSP | ${CP2} |"
+            echo "| CP3 engine | ${CP3} |"
+            echo
+            echo "All three lanes are independent GitHub-hosted jobs. CP1 additionally runs its dependency-aware host DAG with max_parallel=3."
+            echo "A lane is not considered passed unless its own job conclusion is success."
+            echo "No hardware access, physical Flash writes, firmware flashing, engine production registration, or automatic merge is performed."
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "$CP1" = success
+          test "$CP2" = success
+          test "$CP3" = success
