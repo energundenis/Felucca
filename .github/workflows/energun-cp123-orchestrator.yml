@@ -37,7 +37,7 @@ jobs:
       - name: Record CP1 tested revision
         working-directory: cp1
         run: |
-          echo "CP1 source SHA: $(git rev-parse HEAD)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "CP1 source SHA: $(git rev-parse HEAD) — $(git log -1 --format=%s)" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Set up Python and Node
         uses: actions/setup-python@v5
         with:
@@ -75,7 +75,7 @@ jobs:
       - name: Record CP2 tested revision
         working-directory: cp2
         run: |
-          echo "CP2 source SHA: $(git rev-parse HEAD)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "CP2 source SHA: $(git rev-parse HEAD) — $(git log -1 --format=%s)" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Set up Python and Node
         uses: actions/setup-python@v5
         with:
@@ -118,8 +118,8 @@ jobs:
       - name: Record CP3 tested revisions
         run: |
           {
-            echo "CP3 memory source SHA: $(git -C cp3-memory rev-parse HEAD)"
-            echo "CP3.1 biquad source SHA: $(git -C cp3-biquad rev-parse HEAD)"
+            echo "CP3 memory source SHA: $(git -C cp3-memory rev-parse HEAD) — $(git -C cp3-memory log -1 --format=%s)"
+            echo "CP3.1 biquad source SHA: $(git -C cp3-biquad rev-parse HEAD) — $(git -C cp3-biquad log -1 --format=%s)"
           } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Set up Python and Node
         uses: actions/setup-python@v5
