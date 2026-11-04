@@ -75,6 +75,10 @@ run_test metal_core_lpg_timing
 compile_test metal_core_lpg_env tests/metal_core_lpg_env_test.c
 run_test metal_core_lpg_env
 
+# Real host Note On/Off dispatch drives distinct LPG gain and VCA envelopes.
+compile_test metal_core_cp2_lpg_real_dispatch tests/metal_core_cp2_lpg_real_dispatch_test.c -lm
+run_test metal_core_cp2_lpg_real_dispatch
+
 compile_test metal_core_vca tests/metal_core_vca_test.c -lm
 run_test metal_core_vca
 
