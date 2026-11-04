@@ -196,6 +196,30 @@ int main(void)
         }
         check("all 28 quantized denominator coefficient sets pass Jury stability", stable);
     }
+    {
+        /* Dense host-only parameter-domain sweep. This is deliberately a
+         * coefficient/stability audit, not per-sample target work. */
+        test_metal_biquad_coeff_q30_t c;
+        double oracle[5];
+        unsigned cutoff_step, q_step;
+        unsigned tested = 0u;
+        int stable = 1;
+        for (cutoff_step = 0u; cutoff_step <= 316u; ++cutoff_step) {
+            double cutoff = 100.0 + 25.0 * cutoff_step;
+            for (q_step = 0u; q_step <= 78u; ++q_step) {
+                double q = 0.5 + 0.25 * q_step;
+                if (!make_lowpass(cutoff, q, &c, oracle) ||
+                    !coefficients_stable(&c)) {
+                    stable = 0;
+                    break;
+                }
+                ++tested;
+            }
+            if (!stable) break;
+        }
+        check("25,043-point cutoff/Q domain sweep remains Jury-stable after Q30 quantization",
+              stable && tested == 317u * 79u);
+    }
 
     for (ci = 0; ci < sizeof(cutoffs)/sizeof(cutoffs[0]); ++ci) {
         if (cutoffs[ci] >= FS * 0.5) continue;
