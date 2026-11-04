@@ -55,6 +55,12 @@ run_test fm6bank
 compile_test metal_core_osc tests/metal_core_osc_test.c -lm
 run_test metal_core_osc
 
+compile_test metal_core_fm tests/metal_core_fm_test.c
+run_test metal_core_fm
+
+compile_test_strict metal_core_metal tests/metal_core_metal_test.c
+run_test metal_core_metal
+
 compile_test metal_core_osc_source tests/metal_core_osc_source_test.c -lm
 run_test metal_core_osc_source
 
@@ -86,12 +92,19 @@ run_test metal_core_vca_real_track_adapter
 
 compile_test metal_core_cp3_memory_accounting tests/metal_core_cp3_memory_accounting_test.c
 run_test metal_core_cp3_memory_accounting
+compile_test metal_core_cp3_memory_accounting_adpcm tests/metal_core_cp3_memory_accounting_test.c -DFELUCCA_ADPCM=1
+run_test metal_core_cp3_memory_accounting_adpcm
 
 compile_test metal_core_cp3_real_dispatch tests/metal_core_cp3_real_dispatch_test.c -lm
 run_test metal_core_cp3_real_dispatch
 
 compile_test metal_core_cp3_real_vca_dispatch tests/metal_core_cp3_real_vca_dispatch_test.c -lm
 run_test metal_core_cp3_real_vca_dispatch
+
+# Combined OSC1 + VCA callback: real Felucca voice allocation, additive
+# track_render output, sounding retrigger continuity, Gate Off and done().
+compile_test metal_core_cp3_osc_vca_real_dispatch tests/metal_core_cp3_osc_vca_real_dispatch_test.c -lm
+run_test metal_core_cp3_osc_vca_real_dispatch
 
 compile_test_strict metal_core_feedback_delay_candidate tests/metal_core_feedback_delay_candidate_test.c
 run_test metal_core_feedback_delay_candidate
@@ -111,12 +124,12 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 24 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 27 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 24 focused host tests."
+        echo "Generated headers and compiled/executed all 27 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo

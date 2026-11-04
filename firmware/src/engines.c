@@ -4,6 +4,7 @@
  * factory patterns (SAVE > PHRASES) and the parts' sounds at power-on. */
 #include "../engines/src/dsp.c"   /* Felucca-Engines (MIT): the shared DSP blocks */
 #include "eng_metal_core_follow_host.h" /* isolated host pitch/source adapter; not called by an engine yet */
+#include "eng_metal_core_memory_budget.h" /* shared CP3.1 pool budget contract */
 
 /* The parts' engine memory (1.5): a part plays one engine at a time, so the engines with large per-part state
  * (engine_t.mem: PHYS's slots, GRAIN's grains and index, DRUM's lanes, FM6's notes, SLICE's reverse windows)
@@ -13,11 +14,7 @@
  * that runs on across notes and switches stays outside (WHEEL's wheels, GRAIN's random numbers).
  * Sized by the largest, ADPCM when it is built (else PHYS, 3 x SYMP's slot); an engine that needs more than ENG_MEM_PART grows it for
  * every part (x NPART of the pool). Zero-initialised pool section: main.c fm1_cstart clears it. */
-#if FELUCCA_ADPCM
-#define ENG_MEM_PART 13344u    /* ADPCM: its 192 ms echo line, 8 voices and the DSP (13288 B; the host's pointers 13320) */
-#else
-#define ENG_MEM_PART 12888u
-#endif
+#define ENG_MEM_PART ENG_METAL_CORE_MEM_PART
 static union {
     uint64_t align;
     uint8_t b[ENG_MEM_PART];

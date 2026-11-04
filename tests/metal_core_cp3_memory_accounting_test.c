@@ -4,13 +4,15 @@
  */
 #include "../firmware/src/eng_metal_core_vca.h"
 #include "../firmware/src/eng_metal_core_lpg.h"
+#include "../firmware/src/eng_metal_core_memory_budget.h"
+#include "../firmware/src/core.h"
 
 #include <stdint.h>
 #include <stdio.h>
 
 #define TEST_VOICES 8u
-#define TEST_POOL_NO_ADPCM 12888u
-#define TEST_POOL_ADPCM 13344u
+#define TEST_POOL_NO_ADPCM ENG_METAL_CORE_MEM_PART_NO_ADPCM
+#define TEST_POOL_ADPCM ENG_METAL_CORE_MEM_PART_ADPCM
 #define TEST_DELAY_MS 3u
 #define TEST_DELAY_SAMPLES(sr) (((sr) * TEST_DELAY_MS + 999u) / 1000u)
 #define TEST_DELAY_BYTES(sr) (TEST_DELAY_SAMPLES(sr) * 4u * TEST_VOICES)
@@ -51,6 +53,11 @@ _Static_assert(sizeof(test_provisional_voice_state_t) == 112u,
                "provisional voice state subtotal changed");
 _Static_assert(sizeof(test_provisional_part_state_t) == 896u,
                "eight provisional voice records must occupy 896 bytes");
+_Static_assert(NPART == 4u, "Felucca has four independently allocated part pools");
+_Static_assert(ENG_METAL_CORE_MEM_PART_NO_ADPCM == 12888u, "non-ADPCM production pool size");
+_Static_assert(ENG_METAL_CORE_MEM_PART_ADPCM == 13344u, "ADPCM production pool size");
+_Static_assert(ENG_METAL_CORE_MEM_PART == (FELUCCA_ADPCM ? TEST_POOL_ADPCM : TEST_POOL_NO_ADPCM),
+               "accounting must use the same pool configuration as production");
 _Static_assert(TEST_DELAY_SAMPLES(44100u) == 133u, "44.1 kHz ring length");
 _Static_assert(TEST_DELAY_SAMPLES(48000u) == 144u, "48 kHz ring length");
 _Static_assert(TEST_DELAY_SAMPLES(96000u) == 288u, "96 kHz ring length");
@@ -61,6 +68,12 @@ _Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(44100u)
 _Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(96000u)
                    <= TEST_POOL_NO_ADPCM,
                "known 96 kHz subtotal must fit non-ADPCM pool");
+_Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(44100u)
+                   <= TEST_POOL_ADPCM,
+               "known 44.1 kHz subtotal must fit ADPCM pool");
+_Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(96000u)
+                   <= TEST_POOL_ADPCM,
+               "known 96 kHz subtotal must fit ADPCM pool");
 _Static_assert(sizeof(test_provisional_part_state_t) + TEST_DELAY_BYTES(192000u)
                    > TEST_POOL_ADPCM,
                "192 kHz delay design must be rejected by both pool sizes");
@@ -82,14 +95,22 @@ int main(void)
            (unsigned)sizeof(test_fm_env_candidate_t),
            (unsigned)sizeof(test_provisional_voice_state_t),
            (unsigned)sizeof(test_provisional_part_state_t));
+    printf("CP3.1 total Felucca engine pool: %u bytes across %u parts\n",
+           (unsigned)(ENG_METAL_CORE_MEM_PART * NPART), (unsigned)NPART);
+    printf("CP3.1 selected production pool: %u bytes (FELUCCA_ADPCM=%u)\n",
+           (unsigned)ENG_METAL_CORE_MEM_PART, (unsigned)FELUCCA_ADPCM);
     printf("CP3.1 expanded subtotal: 44.1k=%u 48k=%u 96k=%u 192k=%u bytes\n",
            bytes_44100, bytes_48000, bytes_96000, bytes_192000);
 
+    if (ENG_METAL_CORE_MEM_PART != (FELUCCA_ADPCM ? 13344u : 12888u))
+        return 1;
     if (bytes_44100 != 5152u || bytes_48000 != 5504u ||
         bytes_96000 != 10112u || bytes_192000 != 19328u)
         return 1;
     if (TEST_POOL_NO_ADPCM - bytes_44100 != 7736u ||
-        TEST_POOL_NO_ADPCM - bytes_96000 != 2776u)
+        TEST_POOL_NO_ADPCM - bytes_96000 != 2776u ||
+        TEST_POOL_ADPCM - bytes_44100 != 8192u ||
+        TEST_POOL_ADPCM - bytes_96000 != 3232u)
         return 1;
 
     puts("CP3.1 provisional memory accounting: PASS (0 failures; not production layout)");

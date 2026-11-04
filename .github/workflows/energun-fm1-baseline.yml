@@ -186,6 +186,37 @@ jobs:
             echo "The probe compiles the real Felucca shared DSP translation unit together with the ENERGUN per-voice OSC adapter for pi32v2. It is not linked into firmware, executed on hardware, or a cycle measurement."
           } >> "$GITHUB_STEP_SUMMARY"
 
+          # Compile the two-operator FM candidate against the pinned AC79 toolchain.
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wno-unused-function -Ibuild/gen -Ifirmware/src \
+            -c tests/metal_core_fm_target_probe.c \
+            -o build/metal-core-vca-target/fm_probe.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/fm_probe.o \
+            > build/metal-core-vca-target/fm_probe.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/fm_probe.o \
+            > build/metal-core-vca-target/fm_probe.symbols
+          grep -q "eng_metal_fm_target_probe_sample" build/metal-core-vca-target/fm_probe.dis
+          {
+            echo "## ENERGUN two-operator FM AC79 compile-only probe"
+            echo "The bounded two-operator phase-modulation primitive compiled for pi32v2; disassembly and symbols are uploaded. This is not target execution, cycle measurement, or production engine registration."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Compile the combined dual-OSC + VCA sample loop used by the CP3 host
+          # real-dispatch harness. Compile/codegen only; no target execution.
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wno-unused-function -Ibuild/gen -Ifirmware/src \
+            -c tests/metal_core_osc_vca_target_probe.c \
+            -o build/metal-core-vca-target/osc_vca_probe.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/osc_vca_probe.o \
+            > build/metal-core-vca-target/osc_vca_probe.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/osc_vca_probe.o \
+            > build/metal-core-vca-target/osc_vca_probe.symbols
+          grep -q "eng_metal_osc_vca_target_probe_block" build/metal-core-vca-target/osc_vca_probe.dis
+          {
+            echo "## ENERGUN dual-OSC + VCA AC79 compile-only probe"
+            echo "The combined OSC1/OSC2 + VCA block callback compiled for pi32v2; disassembly and symbols are uploaded. This is not a firmware registration, target execution, or cycle measurement."
+          } >> "$GITHUB_STEP_SUMMARY"
+
           # Feedback-delay candidate probe: compile-only, no hardware execution.
           "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
             -Wall -Wno-unused-function -Ifirmware/src -Itests \
