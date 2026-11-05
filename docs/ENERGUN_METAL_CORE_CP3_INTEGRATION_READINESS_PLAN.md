@@ -230,3 +230,13 @@ The host VCA dispatch regression now checks all four Felucca per-part memory reg
 Evidence: code/test HEAD 404a51ab03171fe893721ce17665ff461625734f, Fast Regression [41796239006](https://github.com/energundenis/Felucca/actions/runs/41796239006) **SUCCESS**, 24/24 focused programs/suites. This is host evidence for the current 288-byte VCA test state only. The exact-head Full Baseline [41796239193](https://github.com/energundenis/Felucca/actions/runs/41796239193) was still running when recorded; its final status must be checked separately.
 
 CP3.1 remains open: filter/FM/fold/delay state and retrigger semantics are not fully frozen, complete engine state size is unknown, and target cycle/runtime qualification has not been performed.
+
+
+## CP3.2 isolated METAL ratio / ring-modulation candidate — 2026-11-05
+
+- Added `firmware/src/eng_metal_core_metal.h` with a bounded Q16.16 METAL ratio increment and signed-Q15 ring multiply. This remains an isolated candidate, not part of a registered engine or production render callback.
+- Boundary review found the full-negative × full-negative Q15 corner could round to +32768, outside the signed-Q15 maximum. The implementation now saturates positive results at +32767 while retaining the negative bound.
+- Added strict host tests for ratio scaling/clamping, disabled bit-exact bypass, polarity, zero input, symmetric rounding, input clamping, the full-scale corner and a deterministic Q15 grid.
+- Added `tests/metal_core_metal_target_probe.c` and an AC79 pi32v2 compile/disassembly step in the full baseline workflow.
+- The host test is arithmetic evidence for this primitive only. The AC79 probe is compile/code-generation evidence only; neither proves target cycle cost, production graph integration or audible behavior.
+- No stable parameter/engine ID, production registry entry, Sidecar field, physical Flash allocation or device operation is introduced.

@@ -55,6 +55,10 @@ run_test fm6bank
 compile_test metal_core_osc tests/metal_core_osc_test.c -lm
 run_test metal_core_osc
 
+# Isolated METAL ratio/ring candidate: signed-Q15 saturation and bypass contract.
+compile_test_strict metal_core_metal tests/metal_core_metal_test.c
+run_test metal_core_metal
+
 compile_test metal_core_osc_source tests/metal_core_osc_source_test.c -lm
 run_test metal_core_osc_source
 
@@ -111,12 +115,12 @@ run_test metal_core_parameter_inventory
 python3 tests/test_cp1_test_queue.py
 echo "PASS: cp1_test_queue" >> "$OUT/results.txt"
 
-echo "== ENERGUN METAL CORE fast regression: all 24 tests passed"
+echo "== ENERGUN METAL CORE fast regression: all 25 tests passed"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     {
         echo "## ENERGUN METAL CORE fast host regression"
         echo
-        echo "Generated headers and compiled/executed all 24 focused host tests."
+        echo "Generated headers and compiled/executed all 25 focused host tests."
         echo
         cat "$OUT/results.txt"
         echo
