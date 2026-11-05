@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "queue_id": "ENERGUN-FM1-CP1",
-  "description": "Dependency-aware CP1 persistence verification. Project/live and preset-bank lifecycle adapters now have dedicated host acceptance stages. The preset stage verifies bank-granularity pair commits and per-slot Private isolation. Production project.c/upreset.c call-site wiring and a target Sidecar backend remain distinct gates.",
+  "description": "Dependency-aware CP1 persistence verification. The host-only pair coordinator, seven-identity history, Base/Sidecar torn-write sweeps and the Sidecar record/header byte-cut sweep are implemented and passed on exact code/test HEAD 78cc46c39b5b7599c894a2a144cea0f649105beb. Project/live and preset-bank lifecycle adapters pass host acceptance. Production project.c/upreset.c call-site wiring, an approved target Sidecar backend, physical Flash/recovery qualification and pair-aware Archive V2 restore remain distinct gates.",
   "stop_on_first_failure": true,
   "stages": [
     {
@@ -178,7 +178,7 @@
         "fm6-staging-reservation"
       ],
       "command": null,
-      "blocker": "The backend-neutral coordinator is implemented and host-tested. Production pair ordering remains blocked on the approved target Sidecar storage adapter, runtime integration and the full-device Flash/recovery gate; no physical address is authorized."
+      "blocker": "The backend-neutral coordinator and exhaustive host fault-injection harness are implemented. The Sidecar record/header byte-cut sweep passed in Fast Regression on exact HEAD 78cc46c39b5b7599c894a2a144cea0f649105beb (run 41734515051). This stage intentionally remains BLOCKED until an approved target Sidecar backend, production runtime integration and the physical Flash/recovery safety gate are complete; no physical address is authorized."
     },
     {
       "id": "sidecar-integrity",
@@ -201,7 +201,7 @@
         "legacy-sidecar-fallback"
       ],
       "command": null,
-      "blocker": "Backend-neutral generation-bound pair load and simulated recovery are implemented and tested. Missing: production runtime pair restore, legacy FUN10 E0–E7 fallback/default handling, and restoration of live engine/runtime caches at actual project and preset load call sites."
+      "blocker": "Backend-neutral generation-bound pair load and simulated recovery are implemented and passed, including the Sidecar record/header byte-cut sweep on exact HEAD 78cc46c39b5b7599c894a2a144cea0f649105beb (run 41734515051). Remaining production gates: project/live/preset runtime pair restore, legacy FUN10 E0–E7 canonical-default handling, and restoration of live engine/runtime caches at actual project and preset load call sites. This stage remains BLOCKED until those paths are integrated and tested."
     },
     {
       "id": "archive-v2-offline-validation",

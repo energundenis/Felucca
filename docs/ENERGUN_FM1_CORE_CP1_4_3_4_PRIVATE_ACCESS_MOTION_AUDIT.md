@@ -98,3 +98,21 @@ The controlling E0–E7 freeze remains:
 The reconciled P_MC set removes OSC2 LEVEL and TIMBRE (already E1/E2) and includes FM INDEX and LPG DECAY instead. The 16-control whitelist and value-domain candidate are updated in `ENERGUN_FM1_CORE_CP1_4_3_4_PRIVATE_MOTION_IMPLEMENTATION_DESIGN_DRAFT.md`.
 
 This resolves the logical overlap only. It does not assign numeric IDs, change `motion_param()`, implement the whitelist, or alter firmware/storage/editor source. CP1.4.3/4.4 implementation and regression remain open.
+
+
+## 7. Implementation reconciliation — 2026-11-04
+
+The original audit's statement that the Private cache/bridge implementation had not started is superseded by the current host-testable modules:
+
+- firmware/src/energun_private_v1.h provides a typed 4-part × 13-key runtime cache with canonical defaults, per-part generation, dirty masks, typed get/set, snapshot/compare-and-replace and generation-safe persistence acknowledgement.
+- firmware/src/energun_private_payload_v1.h bridges all four project/live parts and individual preset slots to the Sidecar payload codecs. Capture/restore validates before publishing cache changes.
+- tests/energun_private_v1_test.c and tests/private_payload_v1_test.c exercise cache validation, stale-generation rejection, all four parts, all 13 keys, atomic project restore and preset-slot isolation.
+- The Sidecar V1 validator has an explicit candidate P_MC motion range 103–118 in firmware/src/energun_sidecar_v1.h. This is Sidecar payload validation only; it does not change core.h parameter count or assign live Felucca parameter IDs.
+
+**Revised CP1.4.3 status:** typed cache and payload bridge primitives are implemented and host-tested. Production project.c, upreset.c, autosave and editor/UI call-site integration remains open. The current source still does not provide a production Private page/protocol or connect the cache to real project/preset load/save paths.
+
+**Revised CP1.4.4 status:** the Sidecar semantic validator's P_MC candidate whitelist is host-tested. The production motion_param() path remains unchanged and still uses the existing Felucca parameter namespace. Do not wire the 103–118 candidate into live Motion Lock until the controlling parameter conversion/compatibility decision is accepted and the production event migration/restore path is tested. Private/discrete values and MCX remain excluded.
+
+Fast Regression [run 41796239006](https://github.com/energundenis/Felucca/actions/runs/41796239006) passed on exact code/test HEAD 404a51ab03171fe893721ce17665ff461625734f and includes the Private cache/bridge tests among 24 focused programs/suites. This confirms host behavior only; the production call sites and target storage backend are not connected.
+
+No stable live parameter IDs, engine IDs, project ABI, physical Flash allocation or device write is authorized by this reconciliation.

@@ -206,6 +206,26 @@ jobs:
             echo "Feedback-delay probe is compile/codegen evidence only; it is not linked into firmware and is not executed on hardware."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Compile isolated METAL ring candidate with AC79 target compiler
+        run: |
+          set -euo pipefail
+          mkdir -p build/metal-core-vca-target
+          TC="$HOME/.jieli/toolchain"
+          "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -fno-builtin \
+            -Wall -Wextra -Wno-unused-function -Ifirmware/src \
+            -c tests/metal_core_metal_target_probe.c \
+            -o build/metal-core-vca-target/metal_probe.o
+          "$TC/common/bin/objdump" -d build/metal-core-vca-target/metal_probe.o \
+            > build/metal-core-vca-target/metal_probe.dis
+          "$TC/common/bin/objdump" -t build/metal-core-vca-target/metal_probe.o \
+            > build/metal-core-vca-target/metal_probe.symbols
+          grep -q "eng_metal_metal_target_probe_ring" build/metal-core-vca-target/metal_probe.symbols
+          grep -q "eng_metal_metal_target_probe_ratio" build/metal-core-vca-target/metal_probe.symbols
+          {
+            echo "## Isolated METAL ring candidate AC79 compile-only probe"
+            echo "The bounded Q15 ring stage and ratio increment compiled for pi32v2; object disassembly and symbols are uploaded. This is not firmware linkage, target execution, cycle measurement or audio qualification."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Compile Sidecar V1 with AC79 target compiler
         run: |
           set -euo pipefail
