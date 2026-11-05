@@ -9,7 +9,7 @@ static int failures;
 
 static void check(const char *name, int ok)
 {
-    printf("metal ring: %-70s %s\\n", name, ok ? "PASS" : "FAIL");
+    printf("metal ring: %-70s %s\n", name, ok ? "PASS" : "FAIL");
     failures += !ok;
 }
 
@@ -79,7 +79,7 @@ int main(void)
     test_ratio();
     test_ring_contract();
     test_q15_bounds();
-    printf("metal ring: %s (%d failures)\\n",
+    printf("metal ring: %s (%d failures)\n",
            failures ? "FAIL" : "PASS", failures);
     return failures ? 1 : 0;
 }
