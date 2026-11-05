@@ -240,3 +240,15 @@ CP3.1 remains open: filter/FM/fold/delay state and retrigger semantics are not f
 - Added `tests/metal_core_metal_target_probe.c` and an AC79 pi32v2 compile/disassembly step in the full baseline workflow.
 - The host test is arithmetic evidence for this primitive only. The AC79 probe is compile/code-generation evidence only; neither proves target cycle cost, production graph integration or audible behavior.
 - No stable parameter/engine ID, production registry entry, Sidecar field, physical Flash allocation or device operation is introduced.
+
+
+### Exact-head verification — METAL Q15 ring candidate, 2026-11-05
+
+Code/test HEAD: `46f4c4794cead3abd90e469dab3ef9c62b8f7b09`.
+
+- Fast Regression [run 41988840389](https://github.com/energundenis/Felucca/actions/runs/41988840389): **SUCCESS** on this exact SHA. All 25 focused test programs/suites passed; the new strict METAL ratio/ring suite passed all 14 assertions, including the signed-Q15 positive full-scale saturation corner.
+- Full Baseline [run 41988840409](https://github.com/energundenis/Felucca/actions/runs/41988840409): still **IN PROGRESS** at this documentation update. The unmodified Felucca firmware build passed, and the new AC79 pi32v2 METAL target probe passed symbol checks and emitted disassembly. The final full host/web regression had not yet completed.
+- The first baseline attempt on the preceding commit was cancelled after its new shell step used doubled line-continuation escapes; the workflow was corrected in `46f4c479`, and the exact-head baseline rerun passed the METAL target compile step.
+- CP1 test queue completed its executable host stages but remains intentionally **BLOCKED** at `pair-recovery-roundtrip` / `pair-commit-order`: production project/preset/autosave restore callsites and an approved target Sidecar backend/Flash recovery route are still absent. No physical address is authorized.
+
+The host suite is arithmetic evidence for the isolated candidate; AC79 is compile/code-generation evidence only. Neither is production engine integration, cycle-accurate timing, or device audio validation.
